@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浮时 · 桌面小助手 UI 原型 v4</title>
+<style>
+/* ============================================================
+   浮时 · 设计系统 v4
+   语言：Liquid Glass（Apple HIG, 2025-09）
+   依据：功能层浮于内容层之上 · 玻璃从背后内容取色 · 颜色只给状态与主操作
+   ============================================================ */
+:root{
+  /* 表面 —— 取 Apple 系统灰阶：近白不纯白，近黑不纯黑 */
+  --bg:#F5F5F7;
+  --surface:#FFFFFF;
+  --surface-2:#EDEDF0;
+  --label:#1D1D1F;
+  --label-2:#6E6E73;
+  --label-3:#96969C;
+  --sep:#D2D2D7;
+  --sep-2:#E8E8ED;
+  /* 强调色：只给主操作与前景区块 */
+  --accent:#FF7A45;
+  --accent-ink:#FFFFFF;
+  /* 语义色：Apple 系统色，只做小面积（点 / 环 / 状态） */
+  --c-focus:#007AFF;
+  --c-soon:#FF9500;
+  --c-done:#34C759;
+
+  --r-xl:28px; --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --ease:cubic-bezier(.2,0,0,1);
+  --spring:cubic-bezier(.34,1.15,.5,1);
+}
+[data-theme="dark"]{
+  --bg:#000000;
+  --surface:#1C1C1E;
+  --surface-2:#2C2C2E;
+  --label:#F5F5F7;
+  --label-2:#A1A1A6;
+  --label-3:#7C7C81;
+  --sep:#38383A;
+  --sep-2:#2C2C2E;
+  --accent:#FF8A5B;
+  --accent-ink:#1A0F09;
+  --c-focus:#0A84FF;
+  --c-soon:#FF9F0A;
+  --c-done:#30D158;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);color:var(--label);font-family:var(--font);
+  font-size:16px;line-height:1.6;letter-spacing:-.005em;
+  padding:72px 32px 112px;-webkit-font-smoothing:antialiased;
+  transition:background .35s var(--ease),color .35s var(--ease);
+}
+.wrap{max-width:960px;margin:0 auto;}
+
+/* ---------- 玻璃：唯一材质 ---------- */
+.glass{
+  position:relative;
+  background:linear-gradient(150deg,rgba(255,255,255,.16),rgba(255,255,255,.05));
+  -webkit-backdrop-filter:blur(30px) saturate(180%);
+  backdrop-filter:blur(30px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.40),
+    inset 0 0 0 .5px rgba(255,255,255,.16),
+    0 2px 6px rgba(6,8,22,.18),
+    0 28px 56px -16px rgba(6,8,22,.46);
+}
+/* 镜面边缘：上亮下暗的 1px 渐变描边，模拟折射棱边 */
+.glass::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  padding:1px;
+  background:linear-gradient(155deg,rgba(255,255,255,.85),rgba(255,255,255,.06) 36%,rgba(255,255,255,0) 58%,rgba(255,255,255,.34));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+}
+.glass-thin{
+  background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.04));
+  -webkit-backdrop-filter:blur(24px) saturate(170%);
+  backdrop-filter:blur(24px) saturate(170%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 4px rgba(6,8,22,.16);
+}
+
+/* ---------- 页头 ---------- */
+.masthead{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;
+  padding-bottom:28px;border-bottom:1px solid var(--sep);margin-bottom:72px;}
+.masthead h1{margin:0;font-size:40px;line-height:1.08;letter-spacing:-.032em;font-weight:700;}
+.masthead .tagline{margin:10px 0 0;color:var(--label-2);font-size:15px;letter-spacing:0;}
+.ghost{border:1px solid var(--sep);background:var(--surface);color:var(--label);
+  font-family:var(--font);font-size:14px;font-weight:500;border-radius:980px;padding:9px 18px;
+  cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04);
+  transition:transform .12s var(--ease),background .16s var(--ease),border-color .16s var(--ease);}
+.ghost:hover{border-color:var(--label-3);}
+.ghost:active{transform:scale(.96);}
+
+/* ---------- 章节 ---------- */
+.section{margin-bottom:88px;}
+.section > header{display:flex;align-items:baseline;gap:14px;margin-bottom:10px;}
+.num{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--label-3);
+  font-variant-numeric:tabular-nums;}
+.section h2{margin:0;font-size:26px;line-height:1.25;letter-spacing:-.022em;font-weight:650;}
+.lede{margin:0 0 28px 38px;color:var(--label-2);font-size:16px;max-width:64ch;letter-spacing:0;}
+.lede code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;
+  background:var(--surface-2);padding:1px 6px;border-radius:6px;color:var(--label-2);}
+
+/* ============================================================
+   助手本体：团 · 黑团子（定稿，双眼屏）
+   壳体恒为亮面黑；两只竖椭圆发光眼＝唯一表情＋唯一光源
+   状态只改眼形与眼色；无嘴无眉无腮红
+   ============================================================ */
+.bot{position:relative;display:block;width:var(--bot-size,64px);height:var(--bot-size,64px);flex:none;}
+.bot svg{display:block;width:100%;height:100%;overflow:visible;}
+.bot.sm{--bot-size:40px;}
+.bot.lg{--bot-size:88px;}
+
+/* 眼是屏幕：光色只给状态 */
+.bot{--glow:#CFE9FF;}
+.bot[data-s="soon"]{--glow:#FFC46A;}
+.bot[data-s="done"]{--glow:#7DEBAA;}
+
+.bot .eyeg{transform-box:fill-box;transform-origin:center;
+  transition:transform .3s var(--spring);}
+.bot .ovals,.bot .arcs{transition:opacity .18s var(--ease);}
+.bot .eye{fill:var(--glow);}
+.bot .eye-deep{fill:rgba(6,14,30,.18);}
+.bot .eye-lit{fill:#FFFFFF;}
+.bot .halo{fill:var(--glow);opacity:.30;}
+.bot :where(.arcs path){fill:none;stroke:var(--glow);stroke-width:4.8;stroke-linecap:round;}
+.bot :where(.arcs){opacity:0;filter:drop-shadow(0 0 5px var(--glow));}
+
+/* 待机：两块屏安静亮着（眨眼由 JS 离散插播） */
+/* 专注：眼睑压低，屏变窄 —— 收敛，不打扰 */
+.bot[data-s="focus"] .eyeg{transform:scaleY(.58);}
+
+/* 临期：双眼放大＋琥珀光 —— 一次性被"提醒到" */
+.bot[data-s="soon"] .eyeg{transform:scale(1.1);}
+
+/* 完成：上弧眼＋薄荷绿光 —— 短促的肯定 */
+.bot[data-s="done"] .ovals{opacity:0;}
+.bot[data-s="done"] .arcs{opacity:1;}
+
+/* 眨眼：JS 临时状态 */
+.bot[data-s="blink"] .eyeg{transform:scaleY(.08);}
+
+/* 形象展示台（第 ② 节卡片内）：给黑壳一个受光背景 */
+.bstage{width:136px;height:136px;border-radius:20px;
+  background:linear-gradient(165deg,#EDEFF2,#CFD4DB);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5);}
+[data-theme="dark"] .bstage{background:linear-gradient(165deg,#2A2C31,#141518);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06);}
+
+/* Toast 里的团子 */
+.toast .bot{--bot-size:38px;}
+
+/* ============================================================
+   ① 桌面场景
+   ============================================================ */
+.desk{position:relative;aspect-ratio:16/9;border-radius:var(--r-xl);overflow:hidden;
+  /* 放大取景：把壁纸右下角的生成水印裁出画外，同时让极光铺满画面 */
+  background-color:#0B0C18;
+  background-image:url(assets/wallpaper.jpg);
+  background-size:132% auto;background-position:18% 28%;background-repeat:no-repeat;
+  box-shadow:0 32px 64px -24px rgba(8,10,30,.6),0 0 0 1px rgba(255,255,255,.06);}
+.desk::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 10%,rgba(0,0,0,0) 40%,rgba(0,0,0,.34) 100%);}
+
+/* 桌面菜单栏 */
+.menubar{position:absolute;left:0;right:0;top:0;height:30px;z-index:4;
+  display:flex;align-items:center;justify-content:space-between;padding:0 16px;
+  color:rgba(255,255,255,.92);font-size:12px;letter-spacing:0;
+  border-radius:0;box-shadow:inset 0 -.5px 0 rgba(255,255,255,.12);}
+.menubar .grp{display:flex;align-items:center;gap:16px;}
+.menubar b{font-weight:600;}
+.menubar .dim{color:rgba(255,255,255,.66);}
+
+/* 后台窗口：低对比剪影，把前台衬托出来 */
+.ghostwin{position:absolute;left:36px;top:74px;width:340px;border-radius:var(--r-md);
+  overflow:hidden;opacity:.72;}
+.gw-bar{display:flex;gap:6px;padding:12px 14px;}
+.gw-bar i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.35);}
+.gw-body{padding:4px 14px 20px;}
+.gw-body i{display:block;height:7px;border-radius:4px;background:rgba(255,255,255,.20);margin:10px 0;}
+.gw-body i:nth-child(1){width:44%;height:10px;background:rgba(255,255,255,.34);}
+.gw-body i:nth-child(2){width:86%;}
+.gw-body i:nth-child(3){width:72%;}
+.gw-body i:nth-child(4){width:80%;}
+
+/* 收起态：一颗玻璃胶囊 */
+.pill{position:absolute;left:36px;bottom:120px;z-index:6;
+  display:flex;align-items:center;gap:10px;padding:8px 18px 8px 8px;border-radius:980px;color:#fff;}
+.pill .pill-t{font-size:15px;font-weight:600;letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums;}
+
+/* 展开态：主卡片 */
+.widget{position:absolute;right:40px;top:50%;transform:translateY(-50%);z-index:7;
+  width:308px;border-radius:var(--r-lg);padding:10px;color:#fff;
+  transition:width .32s var(--spring);}
+.widget:hover,.widget:focus-within{width:344px;}
+.w-row{display:grid;grid-template-columns:64px 1fr;gap:16px;align-items:center;padding:8px;}
+.w-main{min-width:0;display:flex;flex-direction:column;gap:7px;}
+.w-subj{font-size:13px;font-weight:500;letter-spacing:0;color:rgba(255,255,255,.70);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.w-time{font-size:26px;font-weight:650;letter-spacing:-.03em;margin-top:-2px;
+  font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap;}
+.w-bar{height:4px;border-radius:2px;background:rgba(255,255,255,.20);overflow:hidden;}
+.w-bar i{display:block;height:100%;border-radius:2px;background:rgba(255,255,255,.85);
+  transition:width .4s var(--ease),background .3s var(--ease);}
+.w-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.70);letter-spacing:0;}
+.w-dot{width:6px;height:6px;border-radius:50%;background:var(--st,currentColor);flex:none;}
+
+/* 展开区 */
+.w-more{display:grid;grid-template-rows:0fr;opacity:0;
+  transition:grid-template-rows .32s var(--spring),opacity .22s var(--ease);}
+.w-more > div{overflow:hidden;}
+.widget:hover .w-more,.widget:focus-within .w-more{grid-template-rows:1fr;opacity:1;}
+.w-tl{padding:6px 8px 0;margin-top:10px;border-top:.5px solid rgba(255,255,255,.16);}
+.w-tl-row{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:9px 0;
+  border-bottom:.5px solid rgba(255,255,255,.10);}
+.w-tl-row:last-child{border-bottom:0;}
+.w-tl-t{font-size:12px;color:rgba(255,255,255,.58);font-variant-numeric:tabular-nums;}
+.w-tl-n{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.w-tl-s{font-size:11px;color:rgba(255,255,255,.55);white-space:nowrap;}
+.w-tl-s.ok{color:#8FE3A6;}
+.w-tl-s.now{color:#9FD0FF;display:inline-flex;align-items:center;gap:6px;}
+.w-tl-s.now::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;}
+.w-actions{display:flex;gap:8px;padding:10px 8px 6px;}
+.btn{font-family:var(--font);font-size:14px;font-weight:600;letter-spacing:-.01em;
+  border-radius:980px;padding:10px 20px;cursor:pointer;border:0;
+  transition:transform .12s var(--ease),filter .16s var(--ease),background .16s var(--ease);}
+.btn:active{transform:scale(.96);}
+/* 主操作：颜色只给这一个（Apple：把色加在背景而不是文字上） */
+.btn.primary{flex:1;background:var(--accent);color:var(--accent-ink);
+  box-shadow:0 6px 18px -6px rgba(255,122,69,.7),inset 0 1px 0 rgba(255,255,255,.35);}
+.btn.primary:hover{filter:brightness(1.06);}
+.btn.ghost2{background:rgba(255,255,255,.14);color:#fff;
+  box-shadow:inset 0 0 0 .5px rgba(255,255,255,.28);}
+.btn.ghost2:hover{background:rgba(255,255,255,.22);}
+
+/* Dock */
+.dock{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:5;
+  display:flex;gap:10px;padding:10px 12px;border-radius:22px;}
+.app{width:44px;height:44px;border-radius:12px;display:block;
+  background:linear-gradient(160deg,var(--c1),var(--c2));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 4px 10px -3px rgba(6,8,22,.5);
+  transition:transform .18s var(--spring);}
+.app:hover{transform:translateY(-8px) scale(1.06);}
+
+/* 状态切换条：两处的标签给定宽，分段控件才落在同一 x 上 */
+.toolbar{display:flex;align-items:center;gap:12px;margin-left:38px;margin-bottom:16px;}
+.toolbar .label{width:58px;flex:none;font-size:12px;font-weight:600;
+  letter-spacing:.06em;color:var(--label-3);}
+.seg{display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--surface);
+  border:1px solid var(--sep);box-shadow:0 1px 2px rgba(0,0,0,.04);}
+.seg button{border:0;background:transparent;color:var(--label-2);font-family:var(--font);
+  font-size:13px;font-weight:500;padding:6px 14px;border-radius:9px;cursor:pointer;
+  transition:background .16s var(--ease),color .16s var(--ease);}
+.seg button:hover{color:var(--label);}
+.seg button[aria-selected="true"]{background:var(--label);color:var(--bg);font-weight:600;}
+
+/* ============================================================
+   ② 助手形态
+   ============================================================ */
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.gcard{background:var(--surface);border:.5px solid var(--sep-2);border-radius:var(--r-lg);
+  padding:32px 16px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;
+  box-shadow:0 2px 8px -2px rgba(0,0,0,.06);
+  transition:box-shadow .2s var(--ease),transform .2s var(--ease);}
+.gcard:hover{box-shadow:0 12px 32px -10px rgba(0,0,0,.18);transform:translateY(-2px);}
+.gcard .name{font-size:15px;font-weight:600;letter-spacing:-.01em;}
+.gcard .desc{font-size:12px;color:var(--label-2);text-align:center;line-height:1.65;margin:0;letter-spacing:0;}
+.chip{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:600;
+  color:var(--label-2);background:var(--surface-2);padding:4px 10px;border-radius:980px;}
+.chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.chip[data-s="idle"]{color:var(--label-3);}
+.chip[data-s="focus"]{color:var(--c-focus);}
+.chip[data-s="soon"]{color:var(--c-soon);}
+.chip[data-s="done"]{color:var(--c-done);}
+
+/* ============================================================
+   ③ 提醒
+   ============================================================ */
+.two{display:grid;grid-template-columns:1.12fr 1fr;gap:16px;}
+.pane{border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  padding:32px;display:flex;flex-direction:column;gap:16px;align-items:flex-start;
+  box-shadow:0 2px 8px -2px rgba(0,0,0,.06);}
+.pane .label{font-size:11px;letter-spacing:.08em;color:var(--label-3);font-weight:700;}
+.pane.center{align-items:center;justify-content:center;position:relative;overflow:hidden;
+  background:linear-gradient(160deg,#2B3A6B,#1A1F3A);border-color:transparent;}
+.popup{width:100%;max-width:352px;border-radius:var(--r-xl);padding:24px;color:#fff;}
+.popup.play{animation:rise .42s var(--spring);}
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.965)}to{opacity:1;transform:none}}
+.pop-head{display:flex;gap:16px;align-items:center;margin-bottom:18px;}
+.pop-kicker{font-size:11px;font-weight:600;letter-spacing:.06em;
+  color:rgba(255,255,255,.62);margin-bottom:4px;}
+.pop-subj{font-size:17px;font-weight:650;letter-spacing:-.015em;}
+.pop-title{font-size:15px;font-weight:600;margin:0 0 6px;}
+.pop-desc{font-size:13px;color:rgba(255,255,255,.72);margin:0 0 14px;letter-spacing:0;}
+.pop-meta{font-size:13px;color:rgba(255,255,255,.72);font-variant-numeric:tabular-nums;}
+.hr{height:.5px;background:rgba(255,255,255,.18);margin:18px 0;}
+.popup .w-actions{padding:0;}
+
+.toasts{display:flex;flex-direction:column;gap:10px;width:100%;}
+.toast{display:flex;align-items:center;gap:12px;width:100%;
+  border-radius:16px;padding:12px 16px;color:#fff;}
+.toast .dot{width:7px;height:7px;border-radius:50%;flex:none;}
+.toast p{margin:0;font-size:13px;color:rgba(255,255,255,.78);letter-spacing:0;}
+.toast b{color:#fff;font-weight:600;}
+/* 基础态可见：关掉动效时（reduced-motion）内容不会消失 */
+.toast.play{animation:slidein .3s var(--spring),fadeout .5s var(--ease) 5s forwards;}
+.toast:nth-child(2).play{animation-delay:.1s,5.1s;}
+.toast:nth-child(3).play{animation-delay:.2s,5.2s;}
+@keyframes slidein{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+@keyframes fadeout{to{opacity:0;transform:translateY(-6px)}}
+
+/* ============================================================
+   ④ 规范
+   ============================================================ */
+.spec{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+.spec .box{border:.5px solid var(--sep-2);border-radius:var(--r-lg);padding:24px;
+  background:var(--surface);box-shadow:0 2px 8px -2px rgba(0,0,0,.06);}
+.spec h3{margin:0 0 18px;font-size:13px;font-weight:650;letter-spacing:-.005em;}
+.sw{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--label-2);
+  padding:6px 0;letter-spacing:0;}
+.sw i{width:22px;height:22px;border-radius:7px;flex:none;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.24);}
+.typerow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding:9px 0;border-bottom:.5px solid var(--sep-2);}
+.typerow:last-child{border-bottom:0;}
+.typerow span:last-child{font-size:11px;color:var(--label-3);font-variant-numeric:tabular-nums;}
+.sp{display:flex;align-items:flex-end;gap:8px;margin-bottom:14px;}
+.sp i{background:var(--label-3);opacity:.42;border-radius:3px;display:block;}
+.sp b{font-size:11px;color:var(--label-2);font-weight:500;}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;
+  border:.5px solid var(--sep-2);border-radius:var(--r-lg);overflow:hidden;background:var(--surface);}
+th,td{padding:13px 18px;text-align:left;border-bottom:.5px solid var(--sep-2);vertical-align:top;}
+th{font-size:11px;letter-spacing:.07em;color:var(--label-3);font-weight:700;background:var(--surface-2);}
+tbody tr:last-child td{border-bottom:0;}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;
+  background:var(--surface-2);padding:2px 6px;border-radius:6px;color:var(--label-2);letter-spacing:0;}
+.reasons{list-style:none;padding:0;margin:0;}
+.reasons li{display:grid;grid-template-columns:34px 1fr;gap:16px;
+  padding:18px 0;border-bottom:.5px solid var(--sep-2);font-size:15px;color:var(--label-2);
+  letter-spacing:0;line-height:1.62;}
+.reasons li:last-child{border-bottom:0;}
+.reasons li::before{content:"§" counter(r);counter-increment:r;font-size:12px;
+  color:var(--label-3);font-variant-numeric:tabular-nums;padding-top:3px;font-weight:600;}
+.reasons{counter-reset:r;}
+.reasons b{color:var(--label);font-weight:620;}
+.foot{padding-top:28px;border-top:1px solid var(--sep);color:var(--label-3);font-size:12px;
+  letter-spacing:0;line-height:1.8;}
+.foot a{color:var(--label-2);}
+
+@media (max-width:880px){
+  .grid4,.spec,.two{grid-template-columns:1fr;}
+  body{padding:36px 18px 72px;}
+  .lede,.toolbar{margin-left:0;}
+  .ghostwin{display:none;}
+  .widget{right:16px;width:266px;}
+  .widget:hover,.widget:focus-within{width:266px;}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.001ms!important;}
+}
+</style>
+</head>
+<body data-theme="light">
+
+<!-- ============ 黑团子共享 defs ============ -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+<defs>
+  <filter id="fB1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1"/></filter>
+  <filter id="fB2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>
+  <filter id="fB4" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="4"/></filter>
+  <filter id="fB5" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5"/></filter>
+
+  <radialGradient id="gGloss" cx="36%" cy="20%" r="105%">
+    <stop offset="0%" stop-color="#4E565E"/><stop offset="40%" stop-color="#262B31"/>
+    <stop offset="76%" stop-color="#12151A"/><stop offset="100%" stop-color="#0B0D11"/>
+  </radialGradient>
+
+  <!-- 团 · 黑团子：用户图片矢量复刻（横向鹅卵石黑团，亮面壳体） -->
+  <clipPath id="c-loaf"><rect x="14" y="38" width="92" height="48" rx="24"/></clipPath>
+  <symbol id="b-loaf" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="93" rx="30" ry="5" fill="rgba(0,0,0,.30)" filter="url(#fB5)"/>
+    <rect x="14" y="38" width="92" height="48" rx="24" fill="url(#gGloss)" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
+    <g clip-path="url(#c-loaf)">
+      <ellipse cx="50" cy="45" rx="34" ry="11" transform="rotate(-5 50 45)" fill="rgba(255,255,255,.13)" filter="url(#fB4)"/>
+      <ellipse cx="34" cy="44" rx="11" ry="3.6" transform="rotate(-16 34 44)" fill="rgba(255,255,255,.22)" filter="url(#fB1)"/>
+      <ellipse cx="60" cy="86" rx="30" ry="8" fill="rgba(110,150,210,.10)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="90" rx="38" ry="8" fill="rgba(0,0,0,.35)" filter="url(#fB4)"/>
+    </g>
+  </symbol>
+</defs>
+</svg>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>浮时 · 桌面小助手</h1>
+      <p class="tagline">悬浮课表提醒 · UI 原型 v5　助手定稿：团 · 黑团子（双眼屏）　设计语言：Liquid Glass ＋ 系统灰阶 ＋ 单一强调色</p>
+    </div>
+    <button class="ghost" id="themeBtn">切换外观</button>
+  </div>
+
+  <!-- ============ ① 场景 ============ -->
+  <section class="section">
+    <header><span class="num">01</span><h2>场景</h2></header>
+    <p class="lede">玻璃不在内容层里，而在内容层<b>之上</b>——它从背后的桌面取色、模糊、调亮，从而把"功能"和"内容"分成两层。这是 Liquid Glass 的核心：玻璃本身没有固定颜色，颜色来自它压住的东西。</p>
+
+    <div class="toolbar">
+      <span class="label">预览状态</span>
+      <div class="seg" id="seg" role="tablist">
+        <button role="tab" aria-selected="false" data-s="idle">待机</button>
+        <button role="tab" aria-selected="true"  data-s="focus">专注</button>
+        <button role="tab" aria-selected="false" data-s="soon">临期</button>
+        <button role="tab" aria-selected="false" data-s="done">完成</button>
+      </div>
+    </div>
+
+    <div class="desk">
+      <div class="menubar glass-thin">
+        <div class="grp"><b>浮时</b><span class="dim">文件</span><span class="dim">编辑</span><span class="dim">视图</span></div>
+        <div class="grp"><span class="dim">周三</span><span>21:04</span></div>
+      </div>
+
+      <div class="ghostwin glass-thin">
+        <div class="gw-bar"><i></i><i></i><i></i></div>
+        <div class="gw-body"><i></i><i></i><i></i><i></i></div>
+      </div>
+
+      <div class="pill glass">
+        <span class="bot sm" data-s="focus" id="pillBot"></span>
+        <span class="pill-t" id="pillTime">1:12:04</span>
+      </div>
+
+      <div class="widget glass" id="widget">
+        <div class="w-row">
+          <span class="bot" data-s="focus" id="mainBot"></span>
+          <div class="w-main">
+            <span class="w-subj" id="cardSubj">高等数学 · 强化</span>
+            <span class="w-time" id="cardTime">1:12:04</span>
+            <div class="w-bar"><i id="cardBar" style="width:42%"></i></div>
+            <div class="w-meta"><span class="w-dot"></span><span id="cardState">专注中 · 19:45 – 21:45</span></div>
+          </div>
+        </div>
+        <div class="w-more"><div>
+          <div class="w-tl">
+            <div class="w-tl-row"><span class="w-tl-t">06:45</span><span class="w-tl-n">英语一 · 晨读</span><span class="w-tl-s ok">已完成</span></div>
+            <div class="w-tl-row"><span class="w-tl-t">07:40</span><span class="w-tl-n">通勤 · 政治带背</span><span class="w-tl-s ok">已完成</span></div>
+            <div class="w-tl-row"><span class="w-tl-t">19:45</span><span class="w-tl-n">数学一 · 高数强化</span><span class="w-tl-s now">进行中</span></div>
+            <div class="w-tl-row"><span class="w-tl-t">21:45</span><span class="w-tl-n">复盘 · 错题整理</span><span class="w-tl-s">待开始</span></div>
+          </div>
+          <div class="w-actions">
+            <button class="btn primary">开始专注</button>
+            <button class="btn ghost2">稍后</button>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="dock glass">
+        <span class="app" style="--c1:#7FD3FF;--c2:#0A84FF"></span>
+        <span class="app" style="--c1:#FFB86B;--c2:#FF7A45"></span>
+        <span class="app" style="--c1:#8FE3A6;--c2:#2FB85A"></span>
+        <span class="app" style="--c1:#D3B8FF;--c2:#8A63FF"></span>
+        <span class="app" style="--c1:#FFD68A;--c2:#FFAB1F"></span>
+        <span class="app" style="--c1:#B9C2D8;--c2:#6B7694"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ② 助手形态 ============ -->
+  <section class="section" id="botsec">
+    <header><span class="num">02</span><h2>助手形态</h2></header>
+    <p class="lede">定稿形象：<b>团 · 黑团子</b>。壳体永远是同一颗亮面黑团，脸上只有两块会发光的屏——<b>无嘴、无眉、无腮红</b>，状态是眼形与眼色的变化。颜色只做语义提示，永远有文字兜底。</p>
+
+    <div class="grid4">
+      <div class="gcard">
+        <div class="bstage"><span class="bot lg" data-s="idle" id="gBotIdle"></span></div>
+        <span class="name">待机</span>
+        <span class="chip" data-s="idle"><i class="dot"></i>无任务</span>
+        <p class="desc">竖椭圆双眼安静亮着<br>偶发眨眼、张望</p>
+      </div>
+      <div class="gcard">
+        <div class="bstage"><span class="bot lg" data-s="focus"></span></div>
+        <span class="name">专注中</span>
+        <span class="chip" data-s="focus"><i class="dot"></i>进行中</span>
+        <p class="desc">眼睑压低，屏变窄<br>收敛，不打扰</p>
+      </div>
+      <div class="gcard">
+        <div class="bstage"><span class="bot lg" data-s="soon"></span></div>
+        <span class="name">即将开始</span>
+        <span class="chip" data-s="soon"><i class="dot"></i>5 分钟后</span>
+        <p class="desc">双眼放大＋琥珀光<br>被提醒到，但不刺眼</p>
+      </div>
+      <div class="gcard">
+        <div class="bstage"><span class="bot lg" data-s="done"></span></div>
+        <span class="name">已完成</span>
+        <span class="chip" data-s="done"><i class="dot"></i>今日完成</span>
+        <p class="desc">上弧眼＋薄荷绿光<br>给一个短促的肯定</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ③ 提醒 ============ -->
+  <section class="section">
+    <header><span class="num">03</span><h2>提醒</h2></header>
+    <p class="lede">两档强度。主操作只有一个、且只有它上色（Apple：强调色加在背景，而非文字）。入场 420ms 弹簧、只播一次、可被"稍后"打断。</p>
+    <div class="two">
+      <div class="pane center">
+        <div class="popup glass play" id="popup">
+          <div class="pop-head">
+            <span class="bot" data-s="soon"></span>
+            <div>
+              <div class="pop-kicker">数学一 · 强化轮</div>
+              <div class="pop-subj">该开始高数强化了</div>
+            </div>
+          </div>
+          <p class="pop-title">中值定理 · 定积分应用</p>
+          <p class="pop-desc">今天计划 2 小时，专注模式已就绪。</p>
+          <div class="pop-meta">19:45 – 21:45 · 共 2 小时</div>
+          <div class="hr"></div>
+          <div class="w-actions">
+            <button class="btn primary">开始</button>
+            <button class="btn ghost2">10 分钟后</button>
+            <button class="btn ghost2">跳过</button>
+          </div>
+        </div>
+        <button class="ghost" id="replayBtn" style="align-self:center;margin-top:16px">重放入场</button>
+      </div>
+      <div class="pane" style="background:linear-gradient(160deg,#2B3A6B,#1A1F3A);border-color:transparent">
+        <span class="label" style="color:rgba(255,255,255,.6)">轻提醒 · 5 秒后自动淡出</span>
+        <div class="toasts" id="toasts">
+          <div class="toast glass play"><span class="bot" data-s="soon"></span><p><b>5 分钟后</b> · 408 计算机组成原理</p></div>
+          <div class="toast glass play"><span class="bot" data-s="done"></span><p><b>已完成</b> · 英语一 今日打卡</p></div>
+          <div class="toast glass play"><span class="bot" data-s="idle"></span><p><b>提醒</b> · 明天 19:45 有 408</p></div>
+        </div>
+        <button class="ghost" id="toastBtn" style="align-self:flex-end">重放</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ④ 规范 ============ -->
+  <section class="section">
+    <header><span class="num">04</span><h2>设计规范</h2></header>
+    <p class="lede">三套基础系统。所有数值都能在第 ⑤ 节找到出处，没有"看起来差不多"的随手值。</p>
+    <div class="spec">
+      <div class="box">
+        <h3>颜色</h3>
+        <div class="sw"><i style="background:var(--bg)"></i>背景 · 系统灰 #F5F5F7</div>
+        <div class="sw"><i style="background:var(--label)"></i>文字 · 近黑 #1D1D1F</div>
+        <div class="sw"><i style="background:var(--accent)"></i>强调 · 仅主操作</div>
+        <div class="sw"><i style="background:var(--c-focus)"></i>语义 · 进行中</div>
+        <div class="sw"><i style="background:var(--c-soon)"></i>语义 · 临期</div>
+        <div class="sw"><i style="background:var(--c-done)"></i>语义 · 完成</div>
+        <div class="sw"><i style="background:#000000"></i>深色主题底 · 纯黑</div>
+      </div>
+      <div class="box">
+        <h3>字阶</h3>
+        <div class="typerow"><span style="font-size:40px;font-weight:700;letter-spacing:-.032em">小助手</span><span>40 / −3.2%</span></div>
+        <div class="typerow"><span style="font-size:21px;font-weight:650;letter-spacing:-.02em">1:12:04</span><span>21 / −2%</span></div>
+        <div class="typerow"><span style="font-size:15px;font-weight:600">科目与正文</span><span>15 / −1%</span></div>
+        <div class="typerow"><span style="font-size:12px;color:var(--label-2)">辅助信息</span><span>12 / 0</span></div>
+        <div class="typerow"><span style="font-size:11px;letter-spacing:.08em;color:var(--label-3)">大写标签</span><span>11 / +8%</span></div>
+      </div>
+      <div class="box">
+        <h3>间距 · 8pt 网格</h3>
+        <div class="sp">
+          <i style="width:4px;height:16px"></i><b>4</b>
+          <i style="width:8px;height:24px"></i><b>8</b>
+          <i style="width:12px;height:32px"></i><b>12</b>
+          <i style="width:16px;height:40px"></i><b>16</b>
+          <i style="width:24px;height:48px"></i><b>24</b>
+          <i style="width:32px;height:56px"></i><b>32</b>
+        </div>
+        <div class="typerow"><span style="font-size:13px;color:var(--label-2)">外圆角 − 内边距 = 内圆角</span><span>20 − 10 = 10</span></div>
+        <div class="typerow"><span style="font-size:13px;color:var(--label-2)">玻璃模糊半径</span><span>30px</span></div>
+        <div class="typerow"><span style="font-size:13px;color:var(--label-2)">最小可点区域</span><span>44 × 44</span></div>
+        <div class="typerow"><span style="font-size:13px;color:var(--label-2)">棱边描边</span><span>1px 渐变</span></div>
+        <div class="typerow"><span style="font-size:13px;color:var(--label-2)">层级（功能 / 内容）</span><span>2</span></div>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th style="width:132px">动效</th><th style="width:230px">时长 / 曲线</th><th>为什么</th></tr></thead>
+      <tbody>
+        <tr><td>状态切换</td><td><code>300ms</code> 弹簧 <code>.34,1.15,.5,1</code></td><td>一次到位、不回弹过头；形体像被轻轻"按"了一下</td></tr>
+        <tr><td>卡片展开</td><td><code>320ms</code> 弹簧</td><td>用 <code>grid-template-rows</code> 做高度过渡，不会跳变</td></tr>
+        <tr><td>悬停 / 按下</td><td><code>120–160ms</code>，按下 <code>scale(.96)</code></td><td>只改颜色与极小的位移，不让人等</td></tr>
+        <tr><td>弹窗入场</td><td><code>420ms</code> 上移 14px ＋ 微缩</td><td>方向明确：从下方来；只播一次</td></tr>
+        <tr><td>轻提醒</td><td><code>300ms</code> 入 · 5s 后 <code>500ms</code> 出</td><td>不抢焦点，自动退场</td></tr>
+        <tr><td>眼形切换</td><td>形变 <code>300ms</code> 弹簧 · 眼色 <code>180ms</code></td><td>眼睛是屏：换状态＝换屏显，一次到位</td></tr>
+        <tr><td>眨眼 / 张望</td><td><code>4–6s</code> 一次 · 闭 <code>90ms</code></td><td>离散事件，不是持续往复</td></tr>
+      </tbody>
+    </table>
+    <p class="lede" style="margin:18px 0 0">全部动效响应 <code>prefers-reduced-motion</code>；团子的眼是它唯一的光源与动效载体，不承载装饰性循环动画。</p>
+  </section>
+
+  <!-- ============ ⑤ 依据 ============ -->
+  <section class="section">
+    <header><span class="num">05</span><h2>设计依据</h2></header>
+    <p class="lede">这套稿子不是审美偏好，逐条对应当前公认的设计规则（来源见页脚）。</p>
+    <ol class="reasons">
+      <li><span><b>功能层浮在内容层之上。</b>玻璃用在导航与功能（悬浮卡、弹窗、Dock），不铺在内容上；这样层级才清楚，而不是"到处都是毛玻璃"。</span></li>
+      <li><span><b>玻璃本身不带颜色，颜色来自它压住的背景。</b>所以桌面上放的是真壁纸：玻璃的韵味全靠"透"出来，而不是自己画一层渐变色。</span></li>
+      <li><span><b>强调色只给一个主操作。</b>"开始专注"是唯一的实色按钮，且颜色加在<b>背景</b>上，不加在文字上——这是系统的做法。</span></li>
+      <li><span><b>颜色永远不是唯一信号。</b>状态同时有文字（"专注中""5 分钟后"）与形状（进度环、表情），色盲用户也读得懂。</span></li>
+      <li><span><b>不靠纯黑纯白制造对比。</b>文字 #1D1D1F、背景 #F5F5F7，深色主题直接落到纯黑（OLED 上才够静）。</span></li>
+      <li><span><b>描边要能解释自己。</b>玻璃的 1px 棱边是上亮下暗的渐变，模拟真实折射；普通卡片的描边降到 0.5px 且几乎看不见。</span></li>
+      <li><span><b>嵌套圆角要算。</b>外 20 − 内边距 10 = 内 10，圆角始终同心。</span></li>
+      <li><span><b>阴影模糊 ≈ 2 × 偏移。</b>悬浮件用 <code>0 28px 56px -16px</code>，大而软，且带负扩展避免发胀。</span></li>
+      <li><span><b>一切都落在 8pt 网格。</b>间距、圆角、玻璃层位移全部取 4 的倍数。</span></li>
+      <li><span><b>动效短、准、可打断、不平移。</b>频繁发生的交互不做动画；出现类动效一律 300–420ms，且无需等待即可操作。</span></li>
+      <li><span><b>避免持续往复的脉动。</b>团子默认完全静止，"活着"只有眨眼（4–6 秒一次）与状态切换这类离散事件。</span></li>
+      <li><span><b>复杂配简单。</b>桌面是丰富的壁纸，浮件就讲究克制：只有一个强调色、一种材质、一套字阶。</span></li>
+    </ol>
+  </section>
+
+  <div class="foot">
+    浮时 · 桌面小助手 UI 原型 v5 · 助手形象定稿接入（团 · 黑团子，情绪全集见《浮时-助手定稿-黑团子》）<br>
+    参考：Apple Human Interface Guidelines — <i>Materials</i>（Liquid Glass, 2025-09）／<i>Color</i>／<i>Motion</i>；Anthony Hobday《Visual design rules you can safely follow every time》。
+  </div>
+</div>
+
+<script>
+(function(){
+  // 团 · 黑团子：两只竖椭圆发光眼（唯一表情器官）
+  function eyeg(side){
+    var cx = side === 'l' ? 44.5 : 75.5;
+    return '<g class="eyeg eyeg-' + side + '">' +
+      '<g class="ovals">' +
+        '<ellipse class="halo" cx="' + cx + '" cy="60" rx="10.5" ry="15" filter="url(#fB5)"/>' +
+        '<ellipse class="eye" cx="' + cx + '" cy="60" rx="7.4" ry="13"/>' +
+        '<ellipse class="eye-deep" cx="' + cx + '" cy="64.5" rx="5.2" ry="7.6" filter="url(#fB2)"/>' +
+        '<ellipse class="eye-lit" cx="' + cx + '" cy="53.5" rx="3.4" ry="4.4" opacity=".5" filter="url(#fB1)"/>' +
+      '</g>' +
+    '</g>';
+  }
+  var FACE =
+    '<g class="face">' +
+      '<g class="eyes">' + eyeg('l') + eyeg('r') + '</g>' +
+      '<g class="arcs">' +
+        '<path d="M37.5 64 Q44.5 54 51.5 64"/>' +
+        '<path d="M68.5 64 Q75.5 54 82.5 64"/>' +
+      '</g>' +
+    '</g>';
+
+  // 给所有团子注入同一副身体＋同一张脸
+  document.querySelectorAll('.bot').forEach(function(b){
+    b.innerHTML = '<svg viewBox="0 0 120 120" aria-hidden="true"><use href="#b-loaf"/>' + FACE + '</svg>';
+  });
+
+  var state = {
+    idle : {t:'— —',     w:'0%',   bar:'rgba(255,255,255,.85)', s:'无任务 · 守候中'},
+    focus: {t:'1:12:04', w:'42%',  bar:'rgba(255,255,255,.85)', s:'专注中 · 19:45 – 21:45'},
+    soon : {t:'04:58',   w:'96%',  bar:'#FFAB1F',               s:'即将开始 · 5 分钟后'},
+    done : {t:'已完成',   w:'100%', bar:'#2FB85A',               s:'已完成 · 用时 1h48m'}
+  };
+
+  var mainBot = document.getElementById('mainBot');
+  var pillBot = document.getElementById('pillBot');
+  var cardTime = document.getElementById('cardTime');
+  var pillTime = document.getElementById('pillTime');
+  var cardBar  = document.getElementById('cardBar');
+  var cardMeta = document.getElementById('cardState');
+  var widget   = document.getElementById('widget');
+  var seg      = document.getElementById('seg');
+
+  function apply(s){
+    var d = state[s];
+    mainBot.dataset.s = s;
+    pillBot.dataset.s = s;
+    cardTime.textContent = d.t;
+    pillTime.textContent = d.t;
+    cardBar.style.width = d.w;
+    cardBar.style.background = d.bar;
+    cardMeta.textContent = d.s;
+    widget.querySelector('.w-dot').style.background =
+      s === 'soon' ? '#FFAB1F' : s === 'done' ? '#2FB85A' : s === 'focus' ? '#57C4FF' : 'rgba(255,255,255,.6)';
+  }
+
+  seg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-selected','false'); });
+    b.setAttribute('aria-selected','true');
+    apply(b.dataset.s);
+    // 轻按一下：像被确认了
+    [mainBot, pillBot].forEach(function(o){
+      o.animate(
+        [{transform:'scale(1)'},{transform:'scale(.94,1.05)'},{transform:'scale(1)'}],
+        {duration:300, easing:'cubic-bezier(.34,1.15,.5,1)'});
+    });
+  });
+
+  // 待机时的活气：眨眼，偶尔张望（离散插播，必回退）
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  [mainBot, pillBot, document.getElementById('gBotIdle')].forEach(function(b){
+    if(!b || reduced) return;
+    (function loop(){
+      setTimeout(function(){
+        if(b.dataset.s !== 'idle'){ loop(); return; }
+        var blink = Math.random() < .72;
+        b.dataset.s = 'blink';
+        setTimeout(function(){
+          b.dataset.s = 'idle';
+          if(!blink){  // 张望：睁眼后轻轻看一眼再回来
+            setTimeout(function(){
+              b.querySelectorAll('.eyeg').forEach(function(g){
+                g.style.transform = 'translate(-3.5px,-1px)';
+              });
+              setTimeout(function(){
+                b.querySelectorAll('.eyeg').forEach(function(g){ g.style.transform = ''; });
+              }, 620);
+            }, 60);
+          }
+          loop();
+        }, 90);
+      }, 3800 + Math.random() * 2400);
+    })();
+  });
+
+  // 外观
+  var body = document.body;
+  document.getElementById('themeBtn').addEventListener('click', function(){
+    body.dataset.theme = body.dataset.theme === 'light' ? 'dark' : 'light';
+  });
+
+  var popup = document.getElementById('popup');
+  document.getElementById('replayBtn').addEventListener('click', function(){
+    popup.classList.remove('play'); void popup.offsetWidth; popup.classList.add('play');
+  });
+  var toasts = document.getElementById('toasts');
+  function replayToasts(){
+    toasts.querySelectorAll('.toast').forEach(function(t){
+      t.classList.remove('play'); void t.offsetWidth; t.classList.add('play');
+    });
+  }
+  document.getElementById('toastBtn').addEventListener('click', replayToasts);
+  setInterval(replayToasts, 10000);  // 演示用：常显面板，每 10s 再演一次入场
+})();
+</script>
+</body>
+</html>

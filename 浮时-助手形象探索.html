@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浮时 · 助手形象探索</title>
+<style>
+:root{
+  --bg:#F5F5F7; --surface:#FFFFFF; --surface-2:#EDEDF0;
+  --label:#1D1D1F; --label-2:#6E6E73; --label-3:#96969C;
+  --sep:#D2D2D7; --sep-2:#E8E8ED;
+  --accent:#FF7A45;
+  --stage-a:#EFEFF2; --stage-b:#DCDDE2;
+  --r-xl:28px; --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --ease:cubic-bezier(.2,0,0,1);
+  --spring:cubic-bezier(.34,1.15,.5,1);
+}
+[data-theme="dark"]{
+  --bg:#000; --surface:#1C1C1E; --surface-2:#2C2C2E;
+  --label:#F5F5F7; --label-2:#A1A1A6; --label-3:#7C7C81;
+  --sep:#38383A; --sep-2:#2C2C2E;
+  --stage-a:#26262A; --stage-b:#161619;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);color:var(--label);font-family:var(--font);
+  font-size:16px;line-height:1.6;letter-spacing:-.005em;
+  padding:72px 32px 112px;-webkit-font-smoothing:antialiased;
+  transition:background .35s var(--ease),color .35s var(--ease);}
+.wrap{max-width:1000px;margin:0 auto;}
+
+.masthead{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;
+  padding-bottom:28px;border-bottom:1px solid var(--sep);margin-bottom:64px;}
+.masthead h1{margin:0;font-size:40px;line-height:1.08;letter-spacing:-.032em;font-weight:700;}
+.masthead .tagline{margin:10px 0 0;color:var(--label-2);font-size:15px;letter-spacing:0;}
+.ghost{border:1px solid var(--sep);background:var(--surface);color:var(--label);
+  font-family:var(--font);font-size:14px;font-weight:500;border-radius:980px;padding:9px 18px;
+  cursor:pointer;transition:transform .12s var(--ease),border-color .16s var(--ease);}
+.ghost:hover{border-color:var(--label-3);} .ghost:active{transform:scale(.96);}
+
+.section{margin-bottom:80px;}
+.section > header{display:flex;align-items:baseline;gap:14px;margin-bottom:10px;}
+.num{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--label-3);font-variant-numeric:tabular-nums;}
+.section h2{margin:0;font-size:26px;line-height:1.25;letter-spacing:-.022em;font-weight:650;}
+.lede{margin:0 0 28px;color:var(--label-2);font-size:16px;max-width:68ch;letter-spacing:0;}
+
+/* ---------- 诊断 ---------- */
+.diag{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.dcard{border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  padding:22px 24px;box-shadow:0 2px 8px -2px rgba(0,0,0,.06);}
+.dcard h3{margin:0 0 8px;font-size:14px;font-weight:650;letter-spacing:-.005em;}
+.dcard p{margin:0;font-size:13px;color:var(--label-2);line-height:1.68;letter-spacing:0;}
+.dcard .bad{color:#C2361E;} .dcard .good{color:#2F7D45;}
+
+/* ============================================================
+   形象卡片
+   ============================================================ */
+.grid6{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.concept{border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  overflow:hidden;box-shadow:0 2px 8px -2px rgba(0,0,0,.06);
+  transition:box-shadow .2s var(--ease),transform .2s var(--ease);}
+.concept:hover{box-shadow:0 16px 40px -14px rgba(0,0,0,.22);transform:translateY(-2px);}
+.stage{position:relative;height:200px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(165deg,var(--stage-a) 0%,var(--stage-b) 100%);}
+.stage::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(70% 50% at 50% 26%,rgba(255,255,255,.5),rgba(255,255,255,0) 70%);}
+[data-theme="dark"] .stage::before{background:radial-gradient(70% 50% at 50% 26%,rgba(255,255,255,.07),rgba(255,255,255,0) 70%);}
+.states{display:flex;justify-content:center;gap:18px;padding:16px 16px 4px;}
+.states figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:7px;}
+.states figcaption{font-size:10px;letter-spacing:.04em;color:var(--label-3);}
+.cbody{padding:8px 22px 24px;}
+.cbody h3{margin:0 0 4px;font-size:17px;font-weight:650;letter-spacing:-.015em;}
+.cbody .concept-line{font-size:13px;color:var(--label-2);margin:0 0 16px;letter-spacing:0;line-height:1.6;}
+.spec2{display:flex;flex-direction:column;gap:0;}
+.spec2 .r{display:grid;grid-template-columns:66px 1fr;gap:12px;padding:8px 0;
+  border-top:.5px solid var(--sep-2);font-size:12.5px;letter-spacing:0;line-height:1.55;}
+.spec2 .r b{color:var(--label-3);font-weight:600;font-size:11px;letter-spacing:.05em;padding-top:2px;}
+.spec2 .r span{color:var(--label-2);}
+.spec2 .r.risk span{color:#B4642A;}
+.tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;
+  padding:3px 9px;border-radius:980px;background:var(--surface-2);color:var(--label-2);margin-bottom:12px;}
+
+/* ============================================================
+   角色：6 套轮廓 + 材质，共用一套脸
+   ============================================================ */
+.ch{position:relative;width:var(--s,104px);height:var(--s,104px);}
+.ch.sm{--s:46px;} .ch.xs{--s:32px;} .ch.xxs{--s:24px;}
+.ch .face{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;}
+.ch [class^="skin"],.ch [class*=" skin"]{position:absolute;}
+
+/* 语义色：只给机器人的指示灯 */
+.ch[data-s="idle"]{--st:#9AA5B4;}
+.ch[data-s="focus"]{--st:#007AFF;}
+.ch[data-s="soon"]{--st:#FF9500;}
+.ch[data-s="done"]{--st:#34C759;}
+
+/* ---------- ① 灯 ---------- */
+.ch-lamp{--fb:#4A2A12;--fb2:#9A6430;}
+.ch-lamp .skin{inset:12% 7% 10% 7%;
+  border-radius:50% 50% 42% 42% / 58% 58% 42% 42%;
+  background:radial-gradient(115% 108% at 34% 22%,#FFF0CE 0%,#FFD08A 32%,#E99242 66%,#A85A24 100%);
+  box-shadow:inset 0 -12% 20% -8% rgba(96,44,10,.55),inset 0 2px 3px rgba(255,255,255,.7),
+    0 16% 30% -12% rgba(196,120,44,.55);}
+.ch-lamp .cap{position:absolute;left:33%;right:33%;top:3%;height:11%;border-radius:5px 5px 2px 2px;
+  background:linear-gradient(#94704C,#5A4229);box-shadow:inset 0 1px 0 rgba(255,255,255,.35);}
+.ch-lamp .cap::before{content:"";position:absolute;left:50%;top:-78%;transform:translateX(-50%);
+  width:56%;height:86%;border:2.5px solid #7E5F3E;border-bottom:0;border-radius:50% 50% 0 0;}
+.ch-lamp .base{position:absolute;left:27%;right:27%;bottom:5%;height:8%;border-radius:3px 3px 7px 7px;
+  background:linear-gradient(#7A5A3A,#463322);}
+.ch-lamp .face{filter:drop-shadow(0 0 5px rgba(255,196,120,.75));}
+.ch-lamp[data-s="focus"] .skin{filter:saturate(.86) brightness(1.02);}
+.ch-lamp[data-s="done"] .skin{filter:saturate(1.1) brightness(1.06);}
+
+/* ---------- ② 石 ---------- */
+.ch-stone{--fb:#2E343B;--fb2:#62 6C77;}
+.ch-stone{--fb2:#626C77;}
+.ch-stone .skin{inset:14% 6% 12% 9%;border-radius:58% 42% 52% 48% / 50% 56% 44% 50%;
+  background:
+    radial-gradient(2.5% 2.5% at 62% 26%,rgba(255,255,255,.55),rgba(255,255,255,0) 100%),
+    radial-gradient(2% 2% at 40% 68%,rgba(30,36,44,.35),rgba(30,36,44,0) 100%),
+    radial-gradient(3% 3% at 74% 60%,rgba(30,36,44,.3),rgba(30,36,44,0) 100%),
+    radial-gradient(2.2% 2.2% at 24% 40%,rgba(30,36,44,.28),rgba(30,36,44,0) 100%),
+    radial-gradient(58% 48% at 32% 26%,rgba(255,255,255,.5),rgba(255,255,255,0) 64%),
+    radial-gradient(130% 120% at 70% 86%,rgba(38,46,56,.6),rgba(38,46,56,0) 62%),
+    linear-gradient(162deg,#BDC2C8 0%,#969DA5 50%,#6B737C 100%);
+  box-shadow:inset 0 -10% 18% -8% rgba(28,34,42,.5),0 12% 24% -12% rgba(28,34,42,.55);}
+.ch-stone .face .eyes{filter:drop-shadow(0 1.2px 0 rgba(255,255,255,.5));}
+
+/* ---------- ③ 机 ---------- */
+.ch-bot{--fb:#2A3038;--fb2:#5E6A78;}
+.ch-bot .skin{inset:13% 6% 10% 6%;border-radius:32% 32% 28% 28% / 30% 30% 34% 34%;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,0) 42%),
+    repeating-linear-gradient(96deg,rgba(255,255,255,.28) 0 1px,rgba(255,255,255,0) 1px 5px),
+    linear-gradient(162deg,#EDF0F4 0%,#CBD3DD 46%,#98A3B2 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -12% 20% -9% rgba(48,58,72,.5),
+    0 12% 24% -12% rgba(30,40,60,.5);}
+.ch-bot .ant{position:absolute;left:50%;top:0;width:2px;height:14%;transform:translateX(-50%);
+  background:linear-gradient(#A8B2BE,#6E7684);border-radius:2px;}
+.ch-bot .led{position:absolute;left:50%;top:-7%;width:13%;height:13%;transform:translateX(-50%);
+  border-radius:50%;background:var(--st);box-shadow:0 0 9px var(--st);
+  transition:background .3s var(--ease),box-shadow .3s var(--ease);}
+
+/* ---------- ④ 纸 ---------- */
+.ch-paper{--fb:#2B2F38;--fb2:#646C7A;}
+.ch-paper .skin{inset:10% 6% 10% 6%;
+  clip-path:polygon(50% 0%,97% 27%,83% 93%,17% 93%,3% 27%);
+  background:
+    linear-gradient(153deg,rgba(255,255,255,.92) 0 31%,rgba(255,255,255,0) 31%),
+    linear-gradient(206deg,rgba(90,80,64,.16) 0 38%,rgba(90,80,64,0) 38%),
+    linear-gradient(162deg,#FFFDF7 0%,#EFE9DB 56%,#D6CDB9 100%);
+  filter:drop-shadow(0 6px 7px rgba(64,58,46,.34));}
+.ch-paper .face{opacity:.94;}
+.ch-paper[data-s="focus"] .skin{clip-path:polygon(50% 0%,97% 27%,83% 93%,17% 93%,3% 27%);}
+
+/* ---------- ⑤ 芽 ---------- */
+.ch-sprout{--fb:#1E3018;--fb2:#3F6A34;}
+.ch-sprout .skin{inset:22% 10% 8% 10%;border-radius:48% 48% 44% 44% / 56% 56% 44% 44%;
+  background:radial-gradient(120% 118% at 34% 22%,#C6EDB4 0%,#84CE6C 38%,#4E9A46 72%,#2E682F 100%);
+  box-shadow:inset 0 -12% 20% -8% rgba(18,58,24,.55),0 12% 24% -12% rgba(20,60,30,.5);}
+.ch-sprout .leaf{position:absolute;width:34%;height:24%;border-radius:66% 18% 66% 18%;}
+.ch-sprout .leaf.l{left:11%;top:4%;transform:rotate(-30deg);
+  background:linear-gradient(150deg,#A6E18E,#4E9A46);}
+.ch-sprout .leaf.r{right:11%;top:4%;transform:rotate(30deg) scaleX(-1);
+  background:linear-gradient(150deg,#A6E18E,#4E9A46);}
+.ch-sprout .stem{position:absolute;left:50%;top:20%;width:3%;height:12%;transform:translateX(-50%);
+  background:#3E7E3A;border-radius:2px;}
+
+/* ---------- ⑥ 极简 ---------- */
+.ch-min{--fb:#1B1A20;--fb2:#4E4E5A;}
+.ch-min .skin{inset:5%;border-radius:46% 54% 50% 50% / 52% 48% 52% 48%;
+  background:
+    radial-gradient(58% 52% at 31% 23%,rgba(255,255,255,.88),rgba(255,255,255,0) 62%),
+    linear-gradient(164deg,#F6F4F0 0%,#DCD8D0 52%,#A6A199 100%);
+  box-shadow:inset 0 -12% 20% -8% rgba(38,38,44,.42),0 14% 28% -12% rgba(28,28,38,.5);}
+.ch-min .face .eye{transform:scale(1.12);}
+.ch-min .face .crescents{transform:scale(1.12);}
+
+/* ---------- 共用面部 ---------- */
+.ch .face .fx{transform-box:fill-box;transform-origin:center;
+  transition:transform .3s var(--spring),opacity .22s var(--ease);}
+.ch .face :where(.eye){fill:var(--fb);}
+.ch .face :where(.eye-sh){fill:var(--fb2);opacity:.55;}
+.ch .face :where(.hl){fill:#fff;opacity:.7;}
+.ch .face :where(.crescents path){fill:none;stroke:var(--fb);stroke-width:3.2;stroke-linecap:round;}
+.ch .face :where(.mouths path){fill:none;stroke:var(--fb);stroke-width:2.8;stroke-linecap:round;}
+.ch .face :where(.m-o){fill:var(--fb);stroke:none;}
+.ch .face :where(.crescents),
+.ch .face :where(.mouths path){opacity:0;}
+/* 待机：圆眼，一点极淡的笑（不用满嘴弧线） */
+.ch .face :where(.m-soft){opacity:.30;}
+/* 专注：眼睑压低、抿嘴 */
+.ch[data-s="focus"] .eyes{transform:scaleY(.58) translateY(2px);}
+.ch[data-s="focus"] .m-soft{opacity:0;} .ch[data-s="focus"] .m-flat{opacity:1;}
+/* 临期：瞪眼、小圆嘴 */
+.ch[data-s="soon"] .eyes{transform:scale(1.08);}
+.ch[data-s="soon"] .m-soft{opacity:0;} .ch[data-s="soon"] .m-o{opacity:1;}
+/* 完成：月牙眼、浅笑 */
+.ch[data-s="done"] .eyes{opacity:0;}
+.ch[data-s="done"] .crescents{opacity:1;}
+.ch[data-s="done"] .m-soft{opacity:0;} .ch[data-s="done"] .m-wide{opacity:1;}
+
+/* ---------- 尺寸检验 ---------- */
+.sizebar{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;}
+.szcol{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:20px 12px;display:flex;flex-direction:column;align-items:center;gap:10px;
+  box-shadow:0 2px 8px -2px rgba(0,0,0,.06);}
+.szcol .nm{font-size:12px;font-weight:600;}
+.szrow{display:flex;align-items:center;gap:12px;}
+.szrow .cap2{font-size:10px;color:var(--label-3);width:24px;text-align:right;font-variant-numeric:tabular-nums;}
+
+/* ---------- 面部规则 ---------- */
+.facenote{display:grid;grid-template-columns:260px 1fr;gap:32px;align-items:center;
+  border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  padding:32px;box-shadow:0 2px 8px -2px rgba(0,0,0,.06);}
+.facenote ul{margin:0;padding-left:18px;font-size:14px;color:var(--label-2);line-height:1.85;letter-spacing:0;}
+.facenote li::marker{color:var(--label-3);}
+.facenote b{color:var(--label);font-weight:620;}
+.facestage{display:flex;justify-content:center;}
+.foot{padding-top:28px;border-top:1px solid var(--sep);color:var(--label-3);font-size:12px;
+  letter-spacing:0;line-height:1.8;}
+
+@media (max-width:940px){
+  .grid6,.diag{grid-template-columns:1fr;}
+  .sizebar{grid-template-columns:repeat(3,1fr);}
+  .facenote{grid-template-columns:1fr;}
+  body{padding:36px 18px 72px;}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.001ms!important;}
+}
+</style>
+</head>
+<body data-theme="light">
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>浮时 · 助手形象探索</h1>
+      <p class="tagline">承 v4 的 Liquid Glass 外壳不变，只重做"住在里面的那个东西"　·　六个方案，等你选</p>
+    </div>
+    <button class="ghost" id="themeBtn">切换外观</button>
+  </div>
+
+  <!-- ============ ① 诊断 ============ -->
+  <section class="section">
+    <header><span class="num">01</span><h2>先诊断：它为什么显廉价</h2></header>
+    <p class="lede">廉价感不是"不够可爱"，而是<b>结构上的偷懒</b>。上一版踩了五个坑，这一版每一条都给出对策。</p>
+    <div class="diag">
+      <div class="dcard">
+        <h3>轮廓太安全</h3>
+        <p><span class="bad">一个正圆。</span>正圆是"默认形状"，等于没有做形状设计。<br>
+          <span class="good">对策：每个方案都有可识别的剪影——灯是钟形、石是不对称卵石、机是圆角方、纸是多边形。</span></p>
+      </div>
+      <div class="dcard">
+        <h3>材质是画的，不是"有"的</h3>
+        <p><span class="bad">白色高光球 = 塑料珠。</span>高光又亮又硬，所有角色长得一样。<br>
+          <span class="good">对策：材质决定高光。石头是哑光的宽而弱的高光，灯是内发光，金属是窄而锐的条状高光。</span></p>
+      </div>
+      <div class="dcard">
+        <h3>五官是贴上去的</h3>
+        <p><span class="bad">黑点眼睛 + 白色圆点高光。</span>眼睛和身体没有关系，像贴纸。<br>
+          <span class="good">对策：眼睛的色从材质里取（石头上是石青、灯里是焦褐），并按材质加不同处理——石头上是"刻"出来的（下缘有受光边），灯里是"透"出来的（带暖光晕）。</span></p>
+      </div>
+      <div class="dcard">
+        <h3>嘴唇出卖了它</h3>
+        <p><span class="bad">一条弧线嘴。</span>这是表情包的语言，不是角色的语言。<br>
+          <span class="good">对策：默认无嘴，只留一道极淡的安心感；只有"临期"和"完成"才出现嘴，且很小、很低调。</span></p>
+      </div>
+      <div class="dcard" style="grid-column:1/-1">
+        <h3>比例太"卡通"</h3>
+        <p><span class="bad">眼距窄、眼睛小、位置偏下</span>——这是婴幼儿插画的比例，用在桌面挂件上就显幼稚。<br>
+          <span class="good">对策：眼睛放大、拉开眼距、位置上移，并给眼睛加"眼睑"结构（专注时压低眼睑而不是把眼睛变小），表情从"面部肌肉"来，而不是从嘴来。</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ② 六个方案 ============ -->
+  <section class="section">
+    <header><span class="num">02</span><h2>六个形象方案</h2></header>
+    <p class="lede">每个都按同一套面部规则绘制，差别在<b>轮廓</b>与<b>材质</b>。每张卡里的大图是待机态，下面一排是四个状态（待机 / 专注 / 临期 / 完成）。</p>
+
+    <div class="grid6">
+
+      <!-- 1 灯 -->
+      <div class="concept">
+        <div class="stage"><div class="ch ch-lamp" data-s="idle"><span class="skin"></span><span class="cap"></span><span class="base"></span></div></div>
+        <div class="states">
+          <figure><div class="ch ch-lamp sm" data-s="idle"><span class="skin"></span><span class="cap"></span><span class="base"></span></div><figcaption>待机</figcaption></figure>
+          <figure><div class="ch ch-lamp sm" data-s="focus"><span class="skin"></span><span class="cap"></span><span class="base"></span></div><figcaption>专注</figcaption></figure>
+          <figure><div class="ch ch-lamp sm" data-s="soon"><span class="skin"></span><span class="cap"></span><span class="base"></span></div><figcaption>临期</figcaption></figure>
+          <figure><div class="ch ch-lamp sm" data-s="done"><span class="skin"></span><span class="cap"></span><span class="base"></span></div><figcaption>完成</figcaption></figure>
+        </div>
+        <div class="cbody">
+          <span class="tag">方案 A</span>
+          <h3>灯 · 灯芯</h3>
+          <p class="concept-line">一只提灯。光本来就代表时间与陪伴——你在灯下读书，它替你看着钟。</p>
+          <div class="spec2">
+            <div class="r"><b>轮廓</b><span>钟形／铃铛形，顶部提梁 + 底部圈足，剪影一眼可辨</span></div>
+            <div class="r"><b>材质</b><span>半透暖光壳体：内部自发光，高光柔和弥散</span></div>
+            <div class="r"><b>优势</b><span>与"学习／夜晚／陪伴"的语义天然契合；暖色在深色桌面上极出彩</span></div>
+            <div class="r risk"><b>风险</b><span>暖光可能被理解成"夜间模式"；需要控制不要变成纯橙</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 石 -->
+      <div class="concept">
+        <div class="stage"><div class="ch ch-stone" data-s="idle"><span class="skin"></span></div></div>
+        <div class="states">
+          <figure><div class="ch ch-stone sm" data-s="idle"><span class="skin"></span></div><figcaption>待机</figcaption></figure>
+          <figure><div class="ch ch-stone sm" data-s="focus"><span class="skin"></span></div><figcaption>专注</figcaption></figure>
+          <figure><div class="ch ch-stone sm" data-s="soon"><span class="skin"></span></div><figcaption>临期</figcaption></figure>
+          <figure><div class="ch ch-stone sm" data-s="done"><span class="skin"></span></div><figcaption>完成</figcaption></figure>
+        </div>
+        <div class="cbody">
+          <span class="tag">方案 B</span>
+          <h3>石 · 卵石</h3>
+          <p class="concept-line">一块被水磨圆的石头。沉、稳、不打扰，像一个放在桌角的老物件。</p>
+          <div class="spec2">
+            <div class="r"><b>轮廓</b><span>不对称卵石——刻意不圆，这一条就甩开了"默认球体"</span></div>
+            <div class="r"><b>材质</b><span>哑光石质：宽而弱的高光、可见的细斑、下缘沉影</span></div>
+            <div class="r"><b>眼睛</b><span>"刻"进去的——深石青填色，下缘加一道受光边，像真的凿痕</span></div>
+            <div class="r risk"><b>风险</b><span>最安静也最容易"没存在感"；适合极简路线，需要靠动作补性格</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 机 -->
+      <div class="concept">
+        <div class="stage"><div class="ch ch-bot" data-s="idle"><span class="ant"></span><span class="skin"></span><span class="led"></span></div></div>
+        <div class="states">
+          <figure><div class="ch ch-bot sm" data-s="idle"><span class="ant"></span><span class="skin"></span><span class="led"></span></div><figcaption>待机</figcaption></figure>
+          <figure><div class="ch ch-bot sm" data-s="focus"><span class="ant"></span><span class="skin"></span><span class="led"></span></div><figcaption>专注</figcaption></figure>
+          <figure><div class="ch ch-bot sm" data-s="soon"><span class="ant"></span><span class="skin"></span><span class="led"></span></div><figcaption>临期</figcaption></figure>
+          <figure><div class="ch ch-bot sm" data-s="done"><span class="ant"></span><span class="skin"></span><span class="led"></span></div><figcaption>完成</figcaption></figure>
+        </div>
+        <div class="cbody">
+          <span class="tag">方案 C</span>
+          <h3>机 · 发条</h3>
+          <p class="concept-line">一台小小的、被磨旧了的仪器。它是个工具，但被用久了，就有了脾气。</p>
+          <div class="spec2">
+            <div class="r"><b>轮廓</b><span>圆角方体 + 顶针天线，唯一非圆形剪影，工具属性最强</span></div>
+            <div class="r"><b>材质</b><span>拉丝铝：窄而锐的竖向高光条、明确的顶面受光</span></div>
+            <div class="r"><b>状态</b><span>天线指示灯是唯一上色的地方（灰／蓝／橙／绿），语义一目了然</span></div>
+            <div class="r risk"><b>风险</b><span>最"冷"。若你想要陪伴感，它不是首选；但最像"专业软件"</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 纸 -->
+      <div class="concept">
+        <div class="stage"><div class="ch ch-paper" data-s="idle"><span class="skin"></span></div></div>
+        <div class="states">
+          <figure><div class="ch ch-paper sm" data-s="idle"><span class="skin"></span></div><figcaption>待机</figcaption></figure>
+          <figure><div class="ch ch-paper sm" data-s="focus"><span class="skin"></span></div><figcaption>专注</figcaption></figure>
+          <figure><div class="ch ch-paper sm" data-s="soon"><span class="skin"></span></div><figcaption>临期</figcaption></figure>
+          <figure><div class="ch ch-paper sm" data-s="done"><span class="skin"></span></div><figcaption>完成</figcaption></figure>
+        </div>
+        <div class="cbody">
+          <span class="tag">方案 D</span>
+          <h3>纸 · 折角</h3>
+          <p class="concept-line">一张被折了几次的纸。纸上有字、有折痕、有计划——它就是"课表"本身。</p>
+          <div class="spec2">
+            <div class="r"><b>轮廓</b><span>五边形折面，唯一全直线剪影，气质最"文气"</span></div>
+            <div class="r"><b>材质</b><span>纸：明暗两到三个折面，几乎无镜面高光，靠折角分面</span></div>
+            <div class="r"><b>优势</b><span>和"笔记／计划／待办"的产品语义最近；放大了也不俗</span></div>
+            <div class="r risk"><b>风险</b><span>小尺寸下折面会糊成一片灰；24px 以下需要简化成单色剪影</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 芽 -->
+      <div class="concept">
+        <div class="stage"><div class="ch ch-sprout" data-s="idle"><span class="leaf l"></span><span class="leaf r"></span><span class="stem"></span><span class="skin"></span></div></div>
+        <div class="states">
+          <figure><div class="ch ch-sprout sm" data-s="idle"><span class="leaf l"></span><span class="leaf r"></span><span class="stem"></span><span class="skin"></span></div><figcaption>待机</figcaption></figure>
+          <figure><div class="ch ch-sprout sm" data-s="focus"><span class="leaf l"></span><span class="leaf r"></span><span class="stem"></span><span class="skin"></span></div><figcaption>专注</figcaption></figure>
+          <figure><div class="ch ch-sprout sm" data-s="soon"><span class="leaf l"></span><span class="leaf r"></span><span class="stem"></span><span class="skin"></span></div><figcaption>临期</figcaption></figure>
+          <figure><div class="ch ch-sprout sm" data-s="done"><span class="leaf l"></span><span class="leaf r"></span><span class="stem"></span><span class="skin"></span></div><figcaption>完成</figcaption></figure>
+        </div>
+        <div class="cbody">
+          <span class="tag">方案 E</span>
+          <h3>芽 · 新叶</h3>
+          <p class="concept-line">一颗刚发芽的种子。每天长一点，正好对应"坚持"这件事。</p>
+          <div class="spec2">
+            <div class="r"><b>轮廓</b><span>圆身 + 顶上一对叶——剪影有"长出去的部分"，辨识度很高</span></div>
+            <div class="r"><b>材质</b><span>哑光绿：上缘一道柔光，底部沉入深绿，无镜面反射</span></div>
+            <div class="r"><b>状态</b><span>完成时双叶会微微张开，是最自然的一次"正反馈"</span></div>
+            <div class="r risk"><b>风险</b><span>最容易滑向"可爱但廉价"；必须靠克制的哑光材质压住</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6 极简 -->
+      <div class="concept">
+        <div class="stage"><div class="ch ch-min" data-s="idle"><span class="skin"></span></div></div>
+        <div class="states">
+          <figure><div class="ch ch-min sm" data-s="idle"><span class="skin"></span></div><figcaption>待机</figcaption></figure>
+          <figure><div class="ch ch-min sm" data-s="focus"><span class="skin"></span></div><figcaption>专注</figcaption></figure>
+          <figure><div class="ch ch-min sm" data-s="soon"><span class="skin"></span></div><figcaption>临期</figcaption></figure>
+          <figure><div class="ch ch-min sm" data-s="done"><span class="skin"></span></div><figcaption>完成</figcaption></figure>
+        </div>
+        <div class="cbody">
+          <span class="tag">方案 F</span>
+          <h3>灵 · 极简</h3>
+          <p class="concept-line">不讲故事，只留一双眼睛。最没有文化包袱的方案，也最难做错。</p>
+          <div class="spec2">
+            <div class="r"><b>轮廓</b><span>柔和的不规则块体，不圆不方，刻意避开"数学形状"</span></div>
+            <div class="r"><b>材质</b><span>素陶／鹅卵白，宽高光 + 底部沉影，靠比例而非细节取胜</span></div>
+            <div class="r"><b>优势</b><span>最耐看、最不会过时；在任何尺寸下都成立</span></div>
+            <div class="r risk"><b>风险</b><span>个性最弱。若你更想要"陪伴感"，它偏中性</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ ③ 尺寸检验 ============ -->
+  <section class="section">
+    <header><span class="num">03</span><h2>真实尺寸检验</h2></header>
+    <p class="lede">桌面挂件大部分时间只有托盘那么大。<b>一个形象如果在 24px 下认不出，就不能用</b>——这一步会淘汰掉不少好看的方案。</p>
+    <div class="sizebar">
+      <div class="szcol"><span class="nm">灯</span><div class="szrow"><span class="cap2">46</span><div class="ch ch-lamp sm" data-s="idle"><span class="skin"></span><span class="cap"></span><span class="base"></span></div></div><div class="szrow"><span class="cap2">32</span><div class="ch ch-lamp xs" data-s="idle"><span class="skin"></span><span class="cap"></span><span class="base"></span></div></div><div class="szrow"><span class="cap2">24</span><div class="ch ch-lamp xxs" data-s="idle"><span class="skin"></span><span class="cap"></span><span class="base"></span></div></div></div>
+      <div class="szcol"><span class="nm">石</span><div class="szrow"><span class="cap2">46</span><div class="ch ch-stone sm" data-s="idle"><span class="skin"></span></div></div><div class="szrow"><span class="cap2">32</span><div class="ch ch-stone xs" data-s="idle"><span class="skin"></span></div></div><div class="szrow"><span class="cap2">24</span><div class="ch ch-stone xxs" data-s="idle"><span class="skin"></span></div></div></div>
+      <div class="szcol"><span class="nm">机</span><div class="szrow"><span class="cap2">46</span><div class="ch ch-bot sm" data-s="idle"><span class="ant"></span><span class="skin"></span><span class="led"></span></div></div><div class="szrow"><span class="cap2">32</span><div class="ch ch-bot xs" data-s="idle"><span class="ant"></span><span class="skin"></span><span class="led"></span></div></div><div class="szrow"><span class="cap2">24</span><div class="ch ch-bot xxs" data-s="idle"><span class="ant"></span><span class="skin"></span><span class="led"></span></div></div></div>
+      <div class="szcol"><span class="nm">纸</span><div class="szrow"><span class="cap2">46</span><div class="ch ch-paper sm" data-s="idle"><span class="skin"></span></div></div><div class="szrow"><span class="cap2">32</span><div class="ch ch-paper xs" data-s="idle"><span class="skin"></span></div></div><div class="szrow"><span class="cap2">24</span><div class="ch ch-paper xxs" data-s="idle"><span class="skin"></span></div></div></div>
+      <div class="szcol"><span class="nm">芽</span><div class="szrow"><span class="cap2">46</span><div class="ch ch-sprout sm" data-s="idle"><span class="leaf l"></span><span class="leaf r"></span><span class="stem"></span><span class="skin"></span></div></div><div class="szrow"><span class="cap2">32</span><div class="ch ch-sprout xs" data-s="idle"><span class="leaf l"></span><span class="leaf r"></span><span class="stem"></span><span class="skin"></span></div></div><div class="szrow"><span class="cap2">24</span><div class="ch ch-sprout xxs" data-s="idle"><span class="leaf l"></span><span class="leaf r"></span><span class="stem"></span><span class="skin"></span></div></div></div>
+      <div class="szcol"><span class="nm">灵</span><div class="szrow"><span class="cap2">46</span><div class="ch ch-min sm" data-s="idle"><span class="skin"></span></div></div><div class="szrow"><span class="cap2">32</span><div class="ch ch-min xs" data-s="idle"><span class="skin"></span></div></div><div class="szrow"><span class="cap2">24</span><div class="ch ch-min xxs" data-s="idle"><span class="skin"></span></div></div></div>
+    </div>
+  </section>
+
+  <!-- ============ ④ 面部规则 ============ -->
+  <section class="section">
+    <header><span class="num">04</span><h2>共用的面部规则</h2></header>
+    <p class="lede">这套脸是为"显贵"而设计的，不是为"可爱"。下面是它和上一版的全部差别。</p>
+    <div class="facenote">
+      <div class="facestage"><div class="ch ch-min" style="--s:170px" data-s="idle"><span class="skin"></span></div></div>
+      <div>
+        <ul>
+          <li><b>眼睛变大、眼距拉开、位置上移到面部中上。</b>婴幼儿比例是"眼睛小而低"；成年角色的眼睛在中上部。</li>
+          <li><b>眼睛是"有深度的"，不是一块黑。</b>主体是深色椭圆，下方叠一层更亮的同色（模拟光透进来），再给一个小而柔的高光——三层，而不是"黑点 + 白点"。</li>
+          <li><b>眼睛的颜色从材质里取。</b>石头上是石青、灯里是焦褐、纸上是墨。这样五官才长在角色身上，而不是贴上去。</li>
+          <li><b>表情靠"眼睑"，不靠"嘴"。</b>专注 = 眼睑压低（`scaleY(.58)`），临期 = 睁大，完成 = 换成月牙。嘴只在两个状态出现，且只有 2.8px 线宽。</li>
+          <li><b>默认状态几乎不笑。</b>只留一道 30% 不透明度的淡痕。真正的"表情"留给有意义的那一刻——这也符合 Apple 的动效原则：改动只在有意义时发生。</li>
+          <li><b>不允许出现的东西：</b>白色圆点高光、粗弧线嘴、腮红、眉毛。这四样是"廉价感"的主要来源。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    浮时 · 助手形象探索 · 承 v4 Liquid Glass 外壳　·　此为设计稿（非产品代码）<br>
+    选一个方向后，我会把它接入 v4 原型，再按最终形象重画第 02 节与提醒弹窗。
+  </div>
+</div>
+
+<script>
+(function(){
+  var FACE =
+    '<svg class="face" viewBox="0 0 100 100" aria-hidden="true">' +
+      '<g class="eyes fx">' +
+        '<ellipse class="eye" cx="34" cy="44" rx="9.6" ry="11"/>' +
+        '<ellipse class="eye" cx="66" cy="44" rx="9.6" ry="11"/>' +
+        '<ellipse class="eye-sh" cx="35.2" cy="48.8" rx="6.2" ry="4.8"/>' +
+        '<ellipse class="eye-sh" cx="67.2" cy="48.8" rx="6.2" ry="4.8"/>' +
+        '<ellipse class="hl" cx="30.8" cy="39.4" rx="3" ry="2.3"/>' +
+        '<ellipse class="hl" cx="62.8" cy="39.4" rx="3" ry="2.3"/>' +
+      '</g>' +
+      '<g class="crescents fx">' +
+        '<path d="M24.5 47.5 Q34 37 43.5 47.5"/>' +
+        '<path d="M56.5 47.5 Q66 37 75.5 47.5"/>' +
+      '</g>' +
+      '<g class="mouths fx">' +
+        '<path class="m-soft" d="M45.5 65.5 Q50 68.8 54.5 65.5"/>' +
+        '<path class="m-flat" d="M45 66.5 L55 66.5"/>' +
+        '<ellipse class="m-o" cx="50" cy="67" rx="3.4" ry="4.2"/>' +
+        '<path class="m-wide" d="M42.5 64.5 Q50 73 57.5 64.5"/>' +
+      '</g>' +
+    '</svg>';
+
+  document.querySelectorAll('.ch').forEach(function(c){
+    c.insertAdjacentHTML('beforeend', FACE);
+  });
+
+  var body = document.body;
+  document.getElementById('themeBtn').addEventListener('click', function(){
+    body.dataset.theme = body.dataset.theme === 'light' ? 'dark' : 'light';
+  });
+})();
+</script>
+</body>
+</html>

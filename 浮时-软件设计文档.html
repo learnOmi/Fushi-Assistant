@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浮时 FloatTime · 软件设计文档</title>
+<style>
+  :root{
+    --ink:#1a2233;
+    --ink-2:#4a5568;
+    --line:#e2e8f0;
+    --bg:#f7f9fc;
+    --card:#ffffff;
+    --primary:#1e3a5f;
+    --math:#2563eb;
+    --cs:#7c3aed;
+    --en:#0d9488;
+    --pol:#d97706;
+    --now:#059669;
+    --brand:#059669;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;padding:32px 20px 64px;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.6;font-size:14px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;}
+  header{border-bottom:3px solid var(--primary);padding-bottom:18px;margin-bottom:26px;}
+  h1{font-size:26px;margin:0 0 6px;letter-spacing:.5px;color:var(--primary);}
+  .sub{color:var(--ink-2);font-size:13px;}
+  h2{font-size:17px;margin:40px 0 14px;padding-left:11px;border-left:4px solid var(--primary);color:var(--primary);}
+  h3{font-size:14.5px;margin:24px 0 8px;color:var(--ink);}
+  h4{font-size:13.5px;margin:18px 0 6px;color:var(--ink-2);}
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:10px;overflow:hidden;border:1px solid var(--line);font-size:13px;margin:10px 0;}
+  th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{background:#eef3f9;font-weight:600;color:var(--primary);font-size:12.5px;}
+  tbody tr:last-child td{border-bottom:none;}
+  code{background:#eef2f7;padding:1px 6px;border-radius:4px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;}
+  .muted{color:var(--ink-2);}
+  ul{margin:8px 0;padding-left:20px;} li{margin:4px 0;}
+  .note{background:#fff8e6;border:1px solid #f0d9a0;border-left:4px solid #d99a18;border-radius:8px;padding:12px 16px;margin:16px 0;font-size:13px;}
+  .note strong{color:#8a5a00;}
+  .note.cool{background:#eff6ff;border-color:#c3d9f7;border-left-color:#2563eb;}
+  .note.cool strong{color:#1d4ed8;}
+  .note.warn{background:#fef2f2;border-color:#f5c2c2;border-left-color:#dc2626;}
+  .note.warn strong{color:#a11a1a;}
+  .note.ok{background:#ecfdf5;border-color:#a7e8c6;border-left-color:#059669;}
+  .note.ok strong{color:#046c4e;}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:18px 0;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+  .card .k{font-size:11px;color:var(--ink-2);letter-spacing:.5px;text-transform:uppercase;}
+  .card .v{font-size:15px;font-weight:700;color:var(--primary);margin-top:4px;}
+  .card .d{font-size:12px;color:var(--ink-2);margin-top:4px;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media (max-width:820px){.grid2{grid-template-columns:1fr;}}
+
+  /* ===== app mockups ===== */
+  .mock-stage{background:#eef2f7;border:1px solid var(--line);border-radius:12px;padding:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:230px;}
+  .mock-cap{font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:6px;}
+  .m-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;width:100%;max-width:250px;box-shadow:0 1px 3px rgba(26,34,51,.08);}
+  .m-row{display:flex;align-items:center;gap:8px;}
+  .m-dot{width:10px;height:10px;border-radius:50%;flex:none;}
+  .m-name{font-weight:600;font-size:13.5px;flex:1;}
+  .m-time{font-weight:700;font-size:12.5px;color:var(--now);font-variant-numeric:tabular-nums;}
+  .m-bar{height:6px;border-radius:99px;background:#eef2f7;overflow:hidden;margin:8px 0;}
+  .m-bar i{display:block;height:100%;background:var(--math);}
+  .m-next{font-size:11.5px;color:var(--ink-2);border-top:1px dashed var(--line);padding-top:8px;}
+
+  .m-expand{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;width:100%;max-width:300px;box-shadow:0 1px 3px rgba(26,34,51,.08);}
+  .m-ehead{display:flex;justify-content:space-between;align-items:baseline;}
+  .m-etitle{font-weight:600;font-size:14px;}
+  .m-etime{font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums;}
+  .m-list{margin:10px 0;display:flex;flex-direction:column;gap:6px;}
+  .m-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;border:1px solid transparent;}
+  .m-item.now{background:#ecfdf5;border-color:var(--now);}
+  .m-t{font-size:11px;color:var(--ink-2);width:42px;flex:none;font-variant-numeric:tabular-nums;}
+  .m-b{width:3px;height:15px;border-radius:99px;flex:none;}
+  .m-n{font-size:12.5px;flex:1;}
+  .m-item.now .m-n{font-weight:600;color:#046c4e;}
+  .m-tag{font-size:10.5px;font-weight:600;color:#046c4e;background:#ecfdf5;border:1px solid var(--now);border-radius:99px;padding:0 7px;}
+  .m-done{font-size:10.5px;color:var(--ink-2);}
+  .m-div{height:1px;background:var(--line);margin:8px 0;}
+  .m-btns{display:flex;gap:8px;}
+  .m-btn{flex:1;text-align:center;font-size:11.5px;font-weight:600;border-radius:8px;padding:7px;border:1px solid var(--line);background:#fff;color:var(--ink);}
+  .m-btn.pri{border-color:var(--primary);background:var(--primary);color:#fff;}
+
+  .m-popup{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;width:100%;max-width:360px;display:flex;gap:14px;box-shadow:0 2px 6px rgba(26,34,51,.1);}
+  .m-edge{width:4px;border-radius:99px;flex:none;}
+  .m-pbody{display:flex;flex-direction:column;gap:9px;flex:1;min-width:0;}
+  .m-kick{font-size:11px;color:var(--ink-2);}
+  .m-ptitle{font-size:15.5px;font-weight:600;}
+  .m-psub{font-size:12.5px;color:var(--ink-2);}
+  .m-pmeta{font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .m-toast{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;max-width:270px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 3px rgba(26,34,51,.08);}
+  .m-tt{font-size:11.5px;flex:1;}
+
+  /* week grid mockup */
+  .m-win{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;width:100%;box-shadow:0 1px 3px rgba(26,34,51,.08);}
+  .m-tb{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);}
+  .m-logo{font-weight:700;font-size:14px;color:var(--primary);}
+  .m-phase{font-size:11px;font-weight:600;color:#046c4e;background:#ecfdf5;border:1px solid var(--now);border-radius:99px;padding:1px 10px;}
+  .m-sp{flex:1;}
+  .m-add{font-size:11.5px;border:1px solid var(--line);border-radius:8px;padding:3px 10px;}
+  .m-tabs{display:flex;gap:16px;padding:0 14px;border-bottom:1px solid var(--line);}
+  .m-tab{font-size:11.5px;font-weight:600;color:var(--ink-2);padding:10px 0;border-bottom:2px solid transparent;}
+  .m-tab.on{color:var(--primary);border-bottom-color:var(--primary);}
+  .m-grid{display:grid;grid-template-columns:60px repeat(7,1fr);gap:4px;padding:14px;}
+  .m-hd{font-size:11px;font-weight:600;color:var(--ink-2);text-align:center;padding:3px 0;}
+  .m-hd.wk{color:var(--ink);}
+  .m-tr{font-size:11px;color:var(--ink-2);display:flex;align-items:center;font-variant-numeric:tabular-nums;}
+  .m-cell{border-radius:8px;padding:6px 3px;text-align:center;font-size:11px;font-weight:600;border:1px solid transparent;background:#eef2f7;}
+  .m-cell.math{background:#eaf0fd;color:#1d4ed8;border-color:#c9d8fb;}
+  .m-cell.cs{background:#f2ecfd;color:#6d28d9;border-color:#ddd0fb;}
+  .m-cell.en{background:#e6f6f3;color:#0f766e;border-color:#c3e9e2;}
+  .m-cell.rev{background:#f1f5f9;color:#64748b;}
+  .m-cell.void{background:transparent;color:#94a3b8;}
+  .m-cell.now{background:#ecfdf5;color:#046c4e;border-color:var(--now);box-shadow:0 0 0 1px var(--now) inset;}
+  .m-legend{display:flex;flex-wrap:wrap;gap:14px;padding:0 14px 14px;}
+  .m-lg{font-size:11px;color:var(--ink-2);display:inline-flex;align-items:center;gap:5px;}
+  .m-lg .m-dot{width:8px;height:8px;}
+
+  /* architecture layered */
+  .arch{display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;}
+  .arch-layer{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--bg);}
+  .arch-layer.core{border-color:var(--now);}
+  .arch-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px;}
+  .arch-n{font-weight:600;font-size:13.5px;}
+  .arch-note{font-size:11px;color:var(--ink-2);}
+  .arch-core{font-size:10.5px;font-weight:600;color:#046c4e;background:#ecfdf5;border-radius:99px;padding:1px 9px;}
+  .arch-chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .arch-chip{font-size:11.5px;font-weight:600;background:#fff;border:1px solid var(--line);border-radius:8px;padding:3px 10px;}
+  .arch-chip.hot{color:#046c4e;background:#ecfdf5;border-color:var(--now);}
+  .arch-arrow{display:flex;align-items:center;gap:8px;color:var(--ink-2);font-size:11px;}
+  .arch-arrow .ln{flex:1;height:1px;background:var(--line);}
+
+  .footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink-2);font-size:12px;}
+  @media print{
+    body{background:#fff;padding:0;font-size:12px;}
+    h2{page-break-after:avoid;}
+    table,.note,.arch,.m-win{page-break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>浮时 FloatTime · 软件设计文档</h1>
+  <div class="sub">Windows 桌面悬浮课表提醒组件 · v1.0 设计基线 · 2026-10 · 纯设计阶段（未写代码）</div>
+</header>
+
+<div class="note cool">
+  <strong>产品定位：</strong>一个常驻 Windows 桌面的悬浮课表 + 提醒组件。它不是「课表 App」，而是一个<strong>行为触发器</strong>——核心价值在于「到点了会打断你」，而不是「给你看一张表」。这个定位决定了后续所有取舍。
+</div>
+
+<h2>0 · 设计决策基线</h2>
+<div class="cards">
+  <div class="card"><div class="k">技术栈</div><div class="v">WPF (.NET 8)</div><div class="d">原生 Windows，悬浮窗/托盘/通知全成熟</div></div>
+  <div class="card"><div class="k">组件交互</div><div class="v">完全可交互</div><div class="d">悬停展开、可点击、可拖动</div></div>
+  <div class="card"><div class="k">提醒强度</div><div class="v">按科目分档</div><div class="d">学习时段强提醒，通勤/复盘轻提醒</div></div>
+  <div class="card"><div class="k">产品范围</div><div class="v">个人自用工具</div><div class="d">功能精简、快速可用</div></div>
+</div>
+
+<h2>1 · 需求分析</h2>
+
+<h3>1.1 用户故事</h3>
+<table>
+  <thead><tr><th style="width:70px">ID</th><th>故事</th></tr></thead>
+  <tbody>
+    <tr><td>US-1</td><td>我坐在电脑前，角落有个小条告诉我「现在是数学一，还剩 1h12m」</td></tr>
+    <tr><td>US-2</td><td>到点了，弹出一张卡，我点「开始」就开始计时</td></tr>
+    <tr><td>US-3</td><td>我临时想改课表（周三 19:45 数学换成 408）</td></tr>
+    <tr><td>US-4</td><td>我要加个一次性事项：「周五 14:00 提交周报」</td></tr>
+    <tr><td>US-5</td><td>我要切阶段（基础轮→强化轮），整套课表换掉</td></tr>
+    <tr><td>US-6</td><td>我想看这周完成率，知道自己有没有掉链子</td></tr>
+    <tr><td>US-7</td><td>我在英国，时间要按英国时区走</td></tr>
+  </tbody>
+</table>
+
+<h3>1.2 功能需求（FR）</h3>
+<table>
+  <thead><tr><th style="width:88px">模块</th><th style="width:70px">编号</th><th>需求</th><th style="width:62px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="5"><strong>课表</strong></td><td>FR-1.1</td><td>周网格视图编辑（7 天 × 时段），支持点击 / 拖拽</td><td>Must</td></tr>
+    <tr><td>FR-1.2</td><td>每时段字段：科目、起止时间、备注、颜色、类型（学习/工作/休息）</td><td>Must</td></tr>
+    <tr><td>FR-1.3</td><td>复制、批量、跨天拖拽</td><td>Should</td></tr>
+    <tr><td>FR-1.4</td><td>阶段（Phase）管理：一套课表 + 生效日期区间，可一键切换</td><td>Should</td></tr>
+    <tr><td>FR-1.5</td><td>导入 / 导出（CSV / 模板）</td><td>Could</td></tr>
+    <tr><td rowspan="5"><strong>悬浮组件</strong></td><td>FR-2.1</td><td>置顶、无边框、可拖动、记忆位置</td><td>Must</td></tr>
+    <tr><td>FR-2.2</td><td>双形态：收起卡片 / 展开卡片</td><td>Must</td></tr>
+    <tr><td>FR-2.3</td><td>显示当前/下一时段、剩余倒计时、进度条</td><td>Must</td></tr>
+    <tr><td>FR-2.4</td><td>透明度调节、贴边吸附、多屏记忆</td><td>Could</td></tr>
+    <tr><td>FR-2.5</td><td>完全可交互（悬停展开、单击、拖动）</td><td>Must</td></tr>
+    <tr><td rowspan="6"><strong>提醒引擎</strong></td><td>FR-3.1</td><td>开始时提醒 + 结束前 N 分钟预告（可配）</td><td>Must</td></tr>
+    <tr><td>FR-3.2</td><td>提醒形式：强弹窗 / 轻 Toast / 声音 / 组件闪烁（可组合）</td><td>Must</td></tr>
+    <tr><td>FR-3.3</td><td>稍后（Snooze 5/10/15min）、跳过、标记完成</td><td>Must</td></tr>
+    <tr><td>FR-3.4</td><td>错过补偿：休眠 / 关机 / 重启后，汇总补发错过的提醒</td><td>Must</td></tr>
+    <tr><td>FR-3.5</td><td>免打扰时段（Quiet Hours）</td><td>Should</td></tr>
+    <tr><td>FR-3.6</td><td>去重防扰：同一提醒不重复弹</td><td>Must</td></tr>
+    <tr><td rowspan="2"><strong>事项</strong></td><td>FR-4.1</td><td>一次性提醒：标题、时间、重复规则、优先级</td><td>Should</td></tr>
+    <tr><td>FR-4.2</td><td>与课表时段并列显示，不混为一谈</td><td>Should</td></tr>
+    <tr><td rowspan="2"><strong>统计</strong></td><td>FR-5.1</td><td>本周完成率、连续打卡</td><td>Must</td></tr>
+    <tr><td>FR-5.2</td><td>各科目时间分配</td><td>Could</td></tr>
+    <tr><td rowspan="4"><strong>系统</strong></td><td>FR-6.1</td><td>开机自启</td><td>Must</td></tr>
+    <tr><td>FR-6.2</td><td>托盘图标 + 右键菜单</td><td>Must</td></tr>
+    <tr><td>FR-6.3</td><td>多显示器支持（记住所在屏）</td><td>Could</td></tr>
+    <tr><td>FR-6.4</td><td>时区切换（英国 / 北京）</td><td>Should</td></tr>
+  </tbody>
+</table>
+
+<h3>1.3 非功能需求（NFR）</h3>
+<table>
+  <thead><tr><th style="width:70px">编号</th><th>指标</th></tr></thead>
+  <tbody>
+    <tr><td>NFR-1</td><td><strong>性能</strong>：空闲内存 &lt; 150MB，空闲 CPU &lt; 1%，冷启动 &lt; 3s</td></tr>
+    <tr><td>NFR-2</td><td><strong>可靠性</strong>：提醒不丢（含休眠/重启）；崩溃后可自恢复</td></tr>
+    <tr><td>NFR-3</td><td><strong>可用性</strong>：首次配置 &lt; 10 分钟，0 学习成本</td></tr>
+    <tr><td>NFR-4</td><td><strong>兼容</strong>：Windows 10 (1809+) / 11，x64；DPI 100%–200% 不糊</td></tr>
+    <tr><td>NFR-5</td><td><strong>隐私</strong>：本地优先，无需账号，不联网（除检查更新）</td></tr>
+    <tr><td>NFR-6</td><td><strong>数据</strong>：本地 SQLite，自动备份</td></tr>
+    <tr><td>NFR-7</td><td><strong>包体</strong>：安装包 &lt; 50MB</td></tr>
+    <tr><td>NFR-8</td><td><strong>无障碍</strong>：键盘可达、对比度达标</td></tr>
+  </tbody>
+</table>
+
+<h3>1.4 范围外（v1 不做）</h3>
+<p class="muted">❌ 手机端　❌ 云同步　❌ 多人共享　❌ 日历双向同步（Google/Outlook）　❌ 番茄钟计时（留给 v2）</p>
+
+<h3>1.5 MoSCoW 优先级</h3>
+<ul>
+  <li><strong>MUST</strong>：课表编辑 + 悬浮双形态 + 提醒引擎（触发/稍后/跳过/补偿）+ 托盘 + 自启 + 完成率</li>
+  <li><strong>SHOULD</strong>：阶段管理 + 免打扰 + 一次性事项 + 导入导出</li>
+  <li><strong>COULD</strong>：透明度/穿透 + 科目统计 + 多屏 + 时区切换</li>
+  <li><strong>WON'T</strong>：云 / 手机 / 日历同步</li>
+</ul>
+
+<h2>2 · 数据模型设计</h2>
+
+<h3>2.1 实体清单</h3>
+<table>
+  <thead><tr><th style="width:150px">实体</th><th style="width:110px">作用</th><th>关键字段</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Phase</strong> 阶段</td><td>课表的时间容器</td><td>id, name, startDate, endDate, isActive</td></tr>
+    <tr><td><strong>Subject</strong> 科目</td><td>颜色 / 分类锚点</td><td>id, name, color, category(study/work/life)</td></tr>
+    <tr><td><strong>ScheduleEntry</strong> 课表条目</td><td>周期性模板（非实例）</td><td>id, phaseId, dayOfWeek, startTime, endTime, subjectId, note, enabled</td></tr>
+    <tr><td><strong>Task</strong> 事项</td><td>一次性 / 重复的杂乱提醒</td><td>id, title, dueAt, repeatRule, priority, status</td></tr>
+    <tr><td><strong>ReminderRule</strong> 提醒规则</td><td>何时、以什么方式提醒</td><td>id, ownerType, ownerId, triggerType, offsetMinutes, channels</td></tr>
+    <tr><td><strong>Occurrence</strong> 提醒实例</td><td>引擎的账本</td><td>id, sourceType, sourceId, plannedAt, firedAt, status, snoozeUntil</td></tr>
+    <tr><td><strong>CompletionLog</strong> 完成记录</td><td>统计的原料</td><td>id, date, entryId, plannedMin, actualMin, status</td></tr>
+    <tr><td><strong>AppSetting</strong> 设置</td><td>单行配置</td><td>autostart, widgetPos, opacity, timezone, quietHours, leadTime, theme</td></tr>
+  </tbody>
+</table>
+
+<h3>2.2 关系</h3>
+<pre class="muted" style="background:#eef2f7;padding:12px 16px;border-radius:8px;overflow:auto;font-size:12.5px;">
+Phase 1 ──&lt; N ScheduleEntry &gt;── N ── 1 Subject
+                     │
+                     └──&lt; N ReminderRule ──&lt; N Occurrence
+Task ──&lt; N ReminderRule
+ScheduleEntry ──&lt; N CompletionLog（按日期展开）
+</pre>
+
+<h3>2.3 三个关键设计决策</h3>
+<div class="note ok">
+  <strong>① 课表存「模板」，运行时展开成「实例」</strong><br>
+  ScheduleEntry 只存 dayOfWeek（周期模板），不存具体日期。触发时由引擎按日期展开成 Occurrence。<br>
+  <span class="muted">好处：改一次课表，全局立即生效；历史记录不受影响。</span>
+</div>
+<div class="note ok">
+  <strong>② Occurrence 是系统的核心表</strong><br>
+  它同时承担三件事：去重（已 fired 不再弹）、补偿（对比 plannedAt vs now，补发错过的）、统计（完成/跳过率）。<br>
+  <span class="muted">这张表设计得好不好，决定提醒引擎的可靠性。</span>
+</div>
+<div class="note ok">
+  <strong>③ 时间用「本地墙钟时间 + 时区字段」</strong><br>
+  不存 UTC 绝对时间戳。因为场景跨越英/中两地，且要处理英国夏令时切换——存本地时间更符合「课表」语义，避免 ±1 小时错位。
+</div>
+
+<h2>3 · 软件架构设计</h2>
+
+<h3>3.1 架构风格</h3>
+<p><strong>分层 + 模块化单体（Modular Monolith）</strong>。单机桌面应用不做微服务；内部严格分层，保证可测试、可替换。</p>
+
+<h3>3.2 分层结构</h3>
+<div class="arch">
+  <div class="arch-layer">
+    <div class="arch-h"><span class="arch-n">表现层 · Presentation</span><span class="arch-note">4 个窗口</span></div>
+    <div class="arch-chips"><span class="arch-chip">悬浮组件</span><span class="arch-chip">提醒弹窗</span><span class="arch-chip">主窗口</span><span class="arch-chip">托盘</span></div>
+  </div>
+  <div class="arch-arrow"><span>▼</span><span class="ln"></span><span>绑定 / 命令</span></div>
+  <div class="arch-layer core">
+    <div class="arch-h"><span class="arch-n">应用层 · Application</span><span class="arch-core">核心：提醒引擎</span></div>
+    <div class="arch-chips"><span class="arch-chip hot">Scheduler 调度</span><span class="arch-chip">课表服务</span><span class="arch-chip">事项服务</span><span class="arch-chip">统计服务</span></div>
+  </div>
+  <div class="arch-arrow"><span>▼</span><span class="ln"></span><span>调用</span></div>
+  <div class="arch-layer">
+    <div class="arch-h"><span class="arch-n">领域层 · Domain</span><span class="arch-note">纯规则，无依赖</span></div>
+    <div class="arch-chips"><span class="arch-chip">重复规则展开</span><span class="arch-chip">去重算法</span><span class="arch-chip">错过补偿策略</span></div>
+  </div>
+  <div class="arch-arrow"><span>▼</span><span class="ln"></span><span>读写</span></div>
+  <div class="arch-layer">
+    <div class="arch-h"><span class="arch-n">基础设施层 · Infrastructure</span><span class="arch-note">外部依赖</span></div>
+    <div class="arch-chips"><span class="arch-chip">SQLite 存储</span><span class="arch-chip">Windows 通知</span><span class="arch-chip">开机自启</span><span class="arch-chip">日志</span></div>
+  </div>
+</div>
+<p class="muted">提醒引擎（Scheduler）是唯一的核心模块：向上驱动 4 个窗口，向下依赖领域规则与 SQLite。价值是——将来换 UI 框架时，只需重写表现层，引擎与领域逻辑不动。</p>
+
+<h3>3.3 进程与线程模型</h3>
+<ul>
+  <li>单进程常驻（托盘存活），关闭主窗口不结束进程</li>
+  <li>悬浮组件窗口：始终置顶、无边框</li>
+  <li>主窗口：按需创建，关闭即隐藏（不销毁）</li>
+  <li>提醒弹窗：触发时创建，自动消失</li>
+  <li>调度器跑在后台线程，不阻塞 UI</li>
+</ul>
+
+<h3>3.4 核心：提醒引擎</h3>
+<pre class="muted" style="background:#eef2f7;padding:12px 16px;border-radius:8px;overflow:auto;font-size:12.5px;">
+启动 → 从 DB 载入未来 7 天 Occurrence → 装入内存最小堆
+     → 定时器「睡到下一个触发点」（而非每秒轮询，省电）
+     → 触发：写 Occurrence 状态 → 派发通知 → 刷新悬浮组件
+     → 监听系统 resume 事件 → 做「错过补偿」扫描
+</pre>
+<p class="muted">取舍：<strong>不用</strong> Windows 任务计划程序（不自持、难管理）；<strong>用</strong>内存调度 + 唤醒补偿（可控、可测、省电）。</p>
+
+<h3>3.5 架构决策记录（ADR）</h3>
+<table>
+  <thead><tr><th style="width:70px">编号</th><th style="width:230px">决策</th><th>理由</th></tr></thead>
+  <tbody>
+    <tr><td>ADR-1</td><td>单进程多窗口（非多进程）</td><td>简单、内存可控、通信零成本</td></tr>
+    <tr><td>ADR-2</td><td>内存调度 + 唤醒补偿（非 OS 调度）</td><td>可控、支持动态课表</td></tr>
+    <tr><td>ADR-3</td><td>SQLite（非 JSON 文件）</td><td>需要查询/统计/事务，JSON 撑不住</td></tr>
+    <tr><td>ADR-4</td><td>自绘弹窗 + 系统 Toast 双通道</td><td>自绘有表现力；Toast 是免打扰时的保底</td></tr>
+    <tr><td>ADR-5</td><td>课表模型 = 模板 + 实例</td><td>见 2.3 ①</td></tr>
+    <tr><td>ADR-6</td><td>提醒触发用「事件」而非「轮询」</td><td>省电，满足 NFR-1</td></tr>
+  </tbody>
+</table>
+
+<h2>4 · 技术栈选型</h2>
+
+<h3>4.1 候选对比</h3>
+<table>
+  <thead><tr><th>方案</th><th>内存</th><th>包体</th><th>Win 原生集成</th><th>UI 自由度</th><th>结论</th></tr></thead>
+  <tbody>
+    <tr><td><strong>WPF (.NET 8)</strong></td><td>~80MB</td><td>~15MB</td><td>★★★★★</td><td>★★★</td><td><strong>首选</strong></td></tr>
+    <tr><td>Tauri (Rust+Web)</td><td>~40MB</td><td>~8MB</td><td>★★★</td><td>★★★★★</td><td>备选</td></tr>
+    <tr><td>WinUI 3</td><td>~90MB</td><td>~40MB</td><td>★★★★</td><td>★★★★</td><td>生态偏新</td></tr>
+    <tr><td>Avalonia</td><td>~80MB</td><td>~40MB</td><td>★★★</td><td>★★★</td><td>跨平台多余</td></tr>
+    <tr><td>Electron</td><td>~250MB</td><td>~150MB</td><td>★★</td><td>★★★★★</td><td>❌ 违背 NFR-1</td></tr>
+    <tr><td>JavaFX</td><td>~180MB</td><td>~80MB</td><td>★★</td><td>★★★</td><td>❌ 原生集成弱</td></tr>
+  </tbody>
+</table>
+
+<div class="note cool">
+  <strong>推荐 WPF (.NET 8)：</strong>透明无边框置顶窗口、托盘、Windows 原生 Toast 全部成熟；性能满足 NFR-1；且 Windows-only 正好不需要跨平台负担。
+</div>
+
+<h3>4.2 配套技术栈</h3>
+<table>
+  <thead><tr><th style="width:110px">关注点</th><th>选型</th></tr></thead>
+  <tbody>
+    <tr><td>运行时</td><td>.NET 8 (LTS)</td></tr>
+    <tr><td>UI 架构</td><td>MVVM（CommunityToolkit.Mvvm）</td></tr>
+    <tr><td>现代外观</td><td>HandyControl / ModernWpf（可选）</td></tr>
+    <tr><td>托盘</td><td>H.NotifyIcon.Wpf</td></tr>
+    <tr><td>通知</td><td>CommunityToolkit.WinUI.Notifications</td></tr>
+    <tr><td>存储</td><td>SQLite + EF Core（或 Dapper）</td></tr>
+    <tr><td>调度</td><td>PeriodicTimer（后台线程）</td></tr>
+    <tr><td>日志</td><td>Serilog</td></tr>
+    <tr><td>打包</td><td>Velopack / Inno Setup</td></tr>
+    <tr><td>测试</td><td>xUnit + FluentAssertions</td></tr>
+  </tbody>
+</table>
+
+<h2>5 · UI / UX 设计</h2>
+
+<h3>5.1 设计三原则</h3>
+<table>
+  <thead><tr><th style="width:110px">原则</th><th>含义</th><th>反例（必须避免）</th></tr></thead>
+  <tbody>
+    <tr><td><strong>不打扰</strong></td><td>平时几乎隐身，只在关键时刻出现</td><td>常驻大窗口挡住工作区</td></tr>
+    <tr><td><strong>一眼可读</strong></td><td>瞥一眼就知道「现在做什么、还剩多久」</td><td>需要点击才看到关键信息</td></tr>
+    <tr><td><strong>零学习成本</strong></td><td>不看说明就会用</td><td>复杂图例 / 多级菜单</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 信息架构（IA）</h3>
+<pre class="muted" style="background:#eef2f7;padding:12px 16px;border-radius:8px;overflow:auto;font-size:12.5px;">
+浮时
+├── 悬浮组件（常驻 · 最重要）
+│   ├── 收起态：当前时段 + 倒计时 + 进度 + 下一节
+│   └── 展开态：今日时间线 + 下一节
+├── 提醒弹窗（事件触发）
+│   └── 开始 / 稍后 / 跳过
+├── 主窗口（主动打开）
+│   ├── 课表（周视图网格）
+│   ├── 事项  ├── 统计  └── 设置
+└── 托盘菜单（快捷入口）
+</pre>
+<p class="muted">核心主张：<strong>把「悬浮组件」当主角，「主窗口」当配角</strong>。用户 95% 的时间只看组件，主窗口只用来改课表。</p>
+
+<h3>5.3 屏幕原型 ①：悬浮组件（双形态）</h3>
+<div class="grid2">
+  <div>
+    <div class="mock-cap">收起态 · 常驻桌面角落（默认）</div>
+    <div class="mock-stage">
+      <div class="m-card">
+        <div class="m-row"><span class="m-dot" style="background:var(--math)"></span><span class="m-name">数学一</span><span class="m-time">剩 1h12m</span></div>
+        <div class="m-bar"><i style="width:42%"></i></div>
+        <div class="m-next">下一节 · 明天 19:45　408</div>
+      </div>
+      <div class="muted" style="font-size:11.5px">悬停 → 展开；双击 → 主窗口</div>
+    </div>
+  </div>
+  <div>
+    <div class="mock-cap">展开态 · 今日时间线</div>
+    <div class="mock-stage">
+      <div class="m-expand">
+        <div class="m-ehead"><span class="m-etitle">今天 · 周三</span><span class="m-etime">19:52</span></div>
+        <div class="m-list">
+          <div class="m-item"><span class="m-t">06:45</span><span class="m-b" style="background:var(--en)"></span><span class="m-n">英语一</span><span class="m-done">已完成</span></div>
+          <div class="m-item"><span class="m-t">通勤</span><span class="m-b" style="background:var(--pol)"></span><span class="m-n">英语 + 政治</span><span class="m-done">已完成</span></div>
+          <div class="m-item now"><span class="m-t">19:45</span><span class="m-b" style="background:var(--math)"></span><span class="m-n">数学一</span><span class="m-tag">进行中</span></div>
+          <div class="m-item"><span class="m-t">21:45</span><span class="m-b" style="background:#94a3b8"></span><span class="m-n">复盘</span></div>
+        </div>
+        <div class="m-div"></div>
+        <div class="m-row" style="justify-content:space-between"><span class="muted" style="font-size:11px">下一节</span><span style="font-size:11.5px;font-weight:600">明天 19:45 · 408</span></div>
+        <div class="m-btns" style="margin-top:8px"><span class="m-btn pri">打开课表</span><span class="m-btn">暂停</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>5.4 屏幕原型 ②：提醒弹窗（两档强度）</h3>
+<div class="grid2">
+  <div>
+    <div class="mock-cap">强提醒 · 居中弹出（学习时段）</div>
+    <div class="mock-stage">
+      <div class="m-popup">
+        <span class="m-edge" style="background:var(--math)"></span>
+        <div class="m-pbody">
+          <span class="m-kick">数学一 · 强化轮</span>
+          <span class="m-ptitle">现在开始：高数强化</span>
+          <span class="m-psub">中值定理 · 定积分应用</span>
+          <span class="m-pmeta">19:45 – 21:45 · 共 2 小时</span>
+          <div class="m-div"></div>
+          <div class="m-btns"><span class="m-btn pri">开始</span><span class="m-btn">稍后 10 min</span><span class="m-btn">跳过</span></div>
+        </div>
+      </div>
+      <div class="muted" style="font-size:11.5px">30s 未操作自动收起，记为「未响应」</div>
+    </div>
+  </div>
+  <div>
+    <div class="mock-cap">轻提醒 · 角落 Toast（通勤/复盘）</div>
+    <div class="mock-stage">
+      <div class="m-toast"><span class="m-dot" style="background:var(--pol)"></span><span class="m-tt"><b>5 分钟后</b> · 408 计算机组成原理</span></div>
+      <div class="m-toast"><span class="m-dot" style="background:var(--en)"></span><span class="m-tt"><b>已完成</b> · 英语一 今日打卡</span></div>
+      <div class="muted" style="font-size:11.5px">静默滑入右下角，4 秒自动消失</div>
+    </div>
+  </div>
+</div>
+
+<h3>5.5 屏幕原型 ③：主窗口（周视图课表）</h3>
+<div class="m-win">
+  <div class="m-tb">
+    <span class="m-logo">浮时</span>
+    <span class="m-phase">阶段：强化轮</span>
+    <span class="m-sp"></span>
+    <span class="m-add">+ 添加时段</span>
+  </div>
+  <div class="m-tabs">
+    <span class="m-tab on">课表</span><span class="m-tab">事项</span><span class="m-tab">统计</span><span class="m-tab">设置</span>
+  </div>
+  <div class="m-grid">
+    <div class="m-hd"></div>
+    <div class="m-hd wk">周一</div><div class="m-hd wk">周二</div><div class="m-hd wk">周三</div><div class="m-hd wk">周四</div><div class="m-hd wk">周五</div><div class="m-hd">周六</div><div class="m-hd">周日</div>
+
+    <div class="m-tr">06:45</div>
+    <div class="m-cell en"><span class="m-dot" style="background:var(--en);display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;vertical-align:middle"></span>英语</div>
+    <div class="m-cell en">英语</div><div class="m-cell en">英语</div><div class="m-cell en">英语</div><div class="m-cell en">英语</div>
+    <div class="m-cell void">—</div><div class="m-cell en">英语</div>
+
+    <div class="m-tr">通勤</div>
+    <div class="m-cell rev">英语+政治</div><div class="m-cell rev">英语+政治</div><div class="m-cell rev">英语+政治</div><div class="m-cell rev">英语+政治</div><div class="m-cell rev">英语+政治</div>
+    <div class="m-cell void">—</div><div class="m-cell void">—</div>
+
+    <div class="m-tr">19:45</div>
+    <div class="m-cell math">数学</div><div class="m-cell cs">408</div>
+    <div class="m-cell now">数学</div>
+    <div class="m-cell cs">408</div><div class="m-cell math">数学</div><div class="m-cell math">数学</div><div class="m-cell cs">408</div>
+
+    <div class="m-tr">21:45</div>
+    <div class="m-cell rev">复盘</div><div class="m-cell rev">复盘</div><div class="m-cell rev">复盘</div><div class="m-cell rev">复盘</div><div class="m-cell rev">复盘</div><div class="m-cell rev">复盘</div><div class="m-cell rev">复盘</div>
+  </div>
+  <div class="m-legend">
+    <span class="m-lg"><span class="m-dot" style="background:var(--math)"></span>数学一</span>
+    <span class="m-lg"><span class="m-dot" style="background:var(--cs)"></span>408</span>
+    <span class="m-lg"><span class="m-dot" style="background:var(--en)"></span>英语一</span>
+    <span class="m-lg"><span class="m-dot" style="background:var(--pol)"></span>政治</span>
+  </div>
+</div>
+<p class="muted">三个关键点：① 阶段切换器在顶部（一键从强化轮切到冲刺轮，整套课表换掉）；② 当前时段高亮（与悬浮组件状态一致）；③ 四页签，课表为默认页。</p>
+
+<h3>5.6 核心交互流程（全天主循环）</h3>
+<table>
+  <thead><tr><th style="width:80px">阶段</th><th style="width:150px">触发条件</th><th>系统行为</th></tr></thead>
+  <tbody>
+    <tr><td>休眠</td><td>无临近时段</td><td>组件显示「当前 / 下一节」，静默</td></tr>
+    <tr><td>预告</td><td>距开始 ≤ 5 min</td><td>轻提醒 Toast 滑入（可关闭）</td></tr>
+    <tr><td>触发</td><td>到达开始时间</td><td>强提醒弹窗 + 声音 / 闪烁</td></tr>
+    <tr><td>响应</td><td>用户点击</td><td>开始→计时 / 稍后→推 10min / 跳过→记录为跳过</td></tr>
+    <tr><td>无响应</td><td>30s 未操作</td><td>弹窗自动收起，记为「未响应」，不重复弹</td></tr>
+    <tr><td>记录</td><td>结束时间</td><td>写 CompletionLog，更新完成率</td></tr>
+  </tbody>
+</table>
+
+<h4>三个特殊分支</h4>
+<ul>
+  <li><strong>免打扰</strong>：处于 Quiet Hours 内 → 降级为静默 Toast，不弹窗、不发声</li>
+  <li><strong>错过补偿</strong>：开机 / 唤醒时扫描 → 对「已过期但未处理」的提醒，以汇总卡片补发一次（不逐条轰炸）</li>
+  <li><strong>防重</strong>：同一 Occurrence 只弹一次；稍后提醒生成新的子 Occurrence</li>
+</ul>
+
+<h3>5.7 视觉规范</h3>
+<table>
+  <thead><tr><th style="width:100px">维度</th><th>规范</th></tr></thead>
+  <tbody>
+    <tr><td><strong>主色</strong></td><td>品牌绿，仅用于「进行中 / 当前 / 主按钮」</td></tr>
+    <tr><td><strong>科目色</strong></td><td>4 科目各一色，用于色点 + 左侧色条（不铺满背景）</td></tr>
+    <tr><td><strong>圆角</strong></td><td>控件 8px / 卡片 12px / 胶囊全圆</td></tr>
+    <tr><td><strong>字号</strong></td><td>正文 14 / 说明 12 / 标题 16（不超 16）</td></tr>
+    <tr><td><strong>间距</strong></td><td>4 / 8 / 12 / 16 / 20 / 24 六档</td></tr>
+    <tr><td><strong>深浅色</strong></td><td>同时支持亮 / 暗两套</td></tr>
+    <tr><td><strong>动效</strong></td><td>仅位移 / 透明度，80–200ms；尊重「减少动态效果」系统设置</td></tr>
+  </tbody>
+</table>
+
+<h3>5.8 边界与状态（设计必须覆盖）</h3>
+<table>
+  <thead><tr><th style="width:210px">场景</th><th>设计</th></tr></thead>
+  <tbody>
+    <tr><td>多显示器</td><td>记住「上次所在屏幕」，换屏后仍能找回</td></tr>
+    <tr><td>DPI 125% / 150%</td><td>用矢量 / 相对单位，不糊</td></tr>
+    <tr><td>全屏应用（游戏/演示）</td><td>自动进入「全屏静默」，只留 Toast</td></tr>
+    <tr><td>课表为空</td><td>组件显示引导「点击添加第一个时段」</td></tr>
+    <tr><td>跨午夜时段（23:00–01:00）</td><td>归入起始日，不拆天</td></tr>
+    <tr><td>英国夏令时切换</td><td>按本地墙钟时间走，不出现 ±1h 错位</td></tr>
+  </tbody>
+</table>
+
+<h2>6 · 组件级设计规范（定稿）</h2>
+<table>
+  <thead><tr><th style="width:150px">组件</th><th>关键规格</th></tr></thead>
+  <tbody>
+    <tr><td><strong>悬浮组件 · 收起态</strong></td><td>圆角卡片（非胶囊）；四要素：<strong>科目 + 倒计时 + 进度条 + 下一节</strong>；默认常驻右上角，可拖动；宽 ~220px</td></tr>
+    <tr><td><strong>悬浮组件 · 展开态</strong></td><td>悬停 200ms 自动展开（移开 300ms 收起）；今日时间线，当前时段高亮；底部含「下一节 + 打开课表/暂停」</td></tr>
+    <tr><td><strong>提醒弹窗</strong></td><td>三按钮（开始 / 稍后 10min / 跳过），不单设「延长」——由「稍后」覆盖；30s 无操作自动收起</td></tr>
+    <tr><td><strong>轻提醒 Toast</strong></td><td>右下角滑入，4s 自动消失；不抢焦点</td></tr>
+    <tr><td><strong>主窗口</strong></td><td>7 列 × 4 行周网格；阶段切换器置于顶部工具栏；四页签（课表/事项/统计/设置）</td></tr>
+    <tr><td><strong>托盘</strong></td><td>左键唤起主窗口；右键菜单：暂停提醒 / 打开课表 / 退出</td></tr>
+  </tbody>
+</table>
+
+<h2>7 · 设计决策记录</h2>
+<table>
+  <thead><tr><th style="width:180px">决策点</th><th>结论</th><th style="width:110px">状态</th></tr></thead>
+  <tbody>
+    <tr><td>技术栈</td><td>WPF (.NET 8)</td><td>✅ 已确认</td></tr>
+    <tr><td>悬浮组件鼠标行为</td><td>完全可交互（悬停展开、单击、拖动）</td><td>✅ 已确认</td></tr>
+    <tr><td>提醒强度默认</td><td>按科目分档（学习时段强、通勤/复盘轻）</td><td>✅ 已确认</td></tr>
+    <tr><td>产品范围</td><td>个人自用工具</td><td>✅ 已确认</td></tr>
+    <tr><td>收起态形态</td><td>圆角卡片，含「下一节」行</td><td>✅ 已确认</td></tr>
+    <tr><td>弹窗按钮</td><td>三按钮，不单设「延长」</td><td>✅ 已确认</td></tr>
+  </tbody>
+</table>
+
+<h2>8 · 后续里程碑</h2>
+<table>
+  <thead><tr><th style="width:80px">里程碑</th><th style="width:150px">目标</th><th>交付</th></tr></thead>
+  <tbody>
+    <tr><td>M1</td><td>骨架可跑</td><td>托盘常驻 + 悬浮窗口（可拖动置顶）+ 空课表</td></tr>
+    <tr><td>M2</td><td>数据与引擎</td><td>SQLite 模型 + 提醒引擎（触发/去重/补偿）</td></tr>
+    <tr><td>M3</td><td>UI 完整</td><td>主窗口课表编辑 + 强/轻提醒 + 设置</td></tr>
+    <tr><td>M4</td><td>打磨</td><td>阶段管理 + 统计 + 多屏/DPI + 打包自启</td></tr>
+  </tbody>
+</table>
+
+<div class="footer">
+  <strong>浮时 FloatTime · 软件设计文档 v1.0</strong><br>
+  本文件为设计阶段产物，未包含任何实现代码。决策基线：WPF(.NET 8) · 完全可交互 · 按科目分档 · 个人自用。<br>
+  ⚠️ 性能指标、兼容性数据建议在 M1 完成后以实测复核。
+</div>
+
+</div>
+</body>
+</html>

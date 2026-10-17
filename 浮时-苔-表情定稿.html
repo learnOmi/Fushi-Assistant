@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浮时 · 苔 · 表情定稿</title>
+<style>
+/* ============================================================
+   浮时 · 苔 · 表情定稿
+   结论：放弃 04 的单眼路线。助手要"有情绪"，就必须有两只眼。
+   这一版只做一件事——把苔的两只眼，做成一套能演十种情绪的系统。
+   ============================================================ */
+:root{
+  --bg:#F5F5F7; --surface:#FFFFFF; --surface-2:#EDEDF0;
+  --label:#1D1D1F; --label-2:#6E6E73; --label-3:#96969C;
+  --sep:#D2D2D7; --sep-2:#E8E8ED;
+  --accent:#FF7A45;
+  --stage-a:#F1F1F4; --stage-b:#DDDEE4;
+  --r-xl:28px; --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --ease:cubic-bezier(.2,0,0,1); --spring:cubic-bezier(.34,1.15,.5,1);
+}
+[data-theme="dark"]{
+  --bg:#000; --surface:#1C1C1E; --surface-2:#2C2C2E;
+  --label:#F5F5F7; --label-2:#A1A1A6; --label-3:#7C7C81;
+  --sep:#38383A; --sep-2:#2C2C2E;
+  --stage-a:#26262A; --stage-b:#131316;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);color:var(--label);font-family:var(--font);
+  font-size:16px;line-height:1.6;letter-spacing:-.005em;
+  padding:72px 32px 112px;-webkit-font-smoothing:antialiased;
+  transition:background .35s var(--ease),color .35s var(--ease);}
+.wrap{max-width:1040px;margin:0 auto;}
+
+.masthead{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;
+  padding-bottom:28px;border-bottom:1px solid var(--sep);margin-bottom:60px;}
+.masthead h1{margin:0;font-size:40px;line-height:1.08;letter-spacing:-.032em;font-weight:700;}
+.masthead .tagline{margin:10px 0 0;color:var(--label-2);font-size:15px;letter-spacing:0;max-width:62ch;}
+.ghost{border:1px solid var(--sep);background:var(--surface);color:var(--label);
+  font-family:var(--font);font-size:14px;font-weight:500;border-radius:980px;padding:9px 18px;
+  cursor:pointer;transition:transform .12s var(--ease),border-color .16s var(--ease);white-space:nowrap;}
+.ghost:hover{border-color:var(--label-3);} .ghost:active{transform:scale(.96);}
+
+.section{margin-bottom:76px;}
+.section > header{display:flex;align-items:baseline;gap:14px;margin-bottom:10px;}
+.num{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--label-3);font-variant-numeric:tabular-nums;}
+.section h2{margin:0;font-size:26px;line-height:1.25;letter-spacing:-.022em;font-weight:650;}
+.lede{margin:0 0 26px;color:var(--label-2);font-size:16px;max-width:74ch;letter-spacing:0;}
+.lede b{color:var(--label);font-weight:620;}
+
+/* ---------- 决定卡 ---------- */
+.verdict{display:grid;grid-template-columns:260px 1fr;gap:34px;align-items:center;
+  border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  padding:30px 34px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.verdict .vstage{border-radius:var(--r-md);background:linear-gradient(165deg,var(--stage-a),var(--stage-b));
+  display:flex;align-items:center;justify-content:center;height:230px;position:relative;}
+.verdict .vstage::before{content:"";position:absolute;inset:0;border-radius:var(--r-md);
+  background:radial-gradient(62% 50% at 50% 30%,rgba(255,255,255,.5),rgba(255,255,255,0) 72%);}
+[data-theme="dark"] .verdict .vstage::before{background:radial-gradient(62% 50% at 50% 30%,rgba(255,255,255,.07),rgba(255,255,255,0) 72%);}
+.verdict .vstage .art{width:186px;height:186px;overflow:visible;position:relative;}
+.verdict h3{margin:0 0 10px;font-size:19px;font-weight:660;letter-spacing:-.016em;}
+.verdict p{margin:0 0 12px;font-size:14px;color:var(--label-2);line-height:1.72;letter-spacing:0;}
+.verdict ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--label-2);line-height:1.85;letter-spacing:0;}
+.verdict li::marker{color:var(--label-3);}
+.verdict b{color:var(--label);font-weight:620;}
+.kill{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#B4642A;
+  background:rgba(180,100,42,.09);border-radius:980px;padding:5px 12px;margin-bottom:12px;}
+
+/* ---------- 零件 ---------- */
+.parts{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.ppanel{border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  padding:20px 18px 22px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.ppanel h4{margin:0 0 3px;font-size:14px;font-weight:640;letter-spacing:-.008em;}
+.ppanel p{margin:0 0 12px;font-size:12px;color:var(--label-2);line-height:1.56;letter-spacing:0;min-height:50px;}
+.ppanel .pstage{border-radius:var(--r-md);background:linear-gradient(165deg,var(--stage-a),var(--stage-b));
+  display:flex;align-items:center;justify-content:center;height:138px;}
+.ppanel .art{width:120px;height:120px;overflow:visible;}
+
+/* ---------- 表情网格 ---------- */
+.emogrid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+.ecard{border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  overflow:hidden;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);
+  transition:box-shadow .2s var(--ease),transform .2s var(--ease);}
+.ecard:hover{box-shadow:0 16px 40px -16px rgba(0,0,0,.24);transform:translateY(-2px);}
+.estage{height:158px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(165deg,var(--stage-a),var(--stage-b));position:relative;}
+.estage::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(60% 50% at 50% 34%,rgba(255,255,255,.5),rgba(255,255,255,0) 72%);}
+[data-theme="dark"] .estage::before{background:radial-gradient(60% 50% at 50% 34%,rgba(255,255,255,.08),rgba(255,255,255,0) 72%);}
+.estage .art{width:112px;height:112px;overflow:visible;position:relative;}
+.ecap{padding:12px 14px 15px;}
+.ecap h5{margin:0 0 3px;font-size:13.5px;font-weight:640;letter-spacing:-.006em;}
+.ecap p{margin:0;font-size:11.5px;color:var(--label-2);line-height:1.5;letter-spacing:0;}
+.ecap .mood{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;
+  padding:2px 8px;border-radius:980px;background:var(--surface-2);color:var(--label-2);margin-bottom:7px;}
+
+/* ---------- 尺寸 & 底色 ---------- */
+.sizes{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;
+  border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  padding:22px 26px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.sizes .cell{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.sizes .cell span{font-size:10px;color:var(--label-3);font-variant-numeric:tabular-nums;}
+.sizes .art{overflow:visible;}
+.sz16{width:16px;height:16px;} .sz24{width:24px;height:24px;} .sz32{width:32px;height:32px;}
+.sz48{width:48px;height:48px;} .sz64{width:64px;height:64px;}
+
+/* ---------- 桌面情境 ---------- */
+.desk{border-radius:var(--r-lg);overflow:hidden;border:.5px solid var(--sep-2);
+  box-shadow:0 20px 50px -24px rgba(0,0,0,.4);}
+.desk .wall{position:relative;height:460px;background:#20143a center/cover no-repeat;padding:26px;}
+.wall::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,10,24,.10),rgba(8,10,24,.42));}
+.wall > *{position:relative;z-index:1;}
+
+.glass{background:linear-gradient(150deg,rgba(255,255,255,.20),rgba(255,255,255,.07));
+  -webkit-backdrop-filter:blur(26px) saturate(170%);backdrop-filter:blur(26px) saturate(170%);
+  border:.5px solid rgba(255,255,255,.36);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.42),0 22px 44px -16px rgba(6,8,22,.5);
+  color:#fff;border-radius:20px;}
+
+.widget{position:absolute;top:26px;left:26px;width:250px;padding:16px 16px 15px;display:flex;gap:13px;align-items:center;}
+.widget .art{width:54px;height:54px;flex:0 0 54px;overflow:visible;}
+.widget .wtxt{min-width:0;}
+.widget .wk{font-size:10px;font-weight:700;letter-spacing:.08em;opacity:.72;}
+.widget .wn{font-size:15px;font-weight:640;letter-spacing:-.01em;margin:2px 0 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.widget .wt{font-size:12px;opacity:.82;font-variant-numeric:tabular-nums;}
+
+.toast{position:absolute;right:26px;bottom:26px;width:296px;padding:14px 16px;display:flex;gap:12px;align-items:center;}
+.toast .art{width:36px;height:36px;flex:0 0 36px;overflow:visible;}
+.toast .tt{font-size:13px;font-weight:600;letter-spacing:-.005em;}
+.toast .ts{font-size:11.5px;opacity:.78;margin-top:2px;}
+
+.center-pop{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:340px;
+  padding:26px 26px 22px;text-align:center;}
+.center-pop .art{width:88px;height:88px;overflow:visible;margin:0 auto 10px;display:block;}
+.center-pop .cpk{font-size:11px;font-weight:700;letter-spacing:.1em;opacity:.7;}
+.center-pop .cpn{font-size:22px;font-weight:680;letter-spacing:-.02em;margin:6px 0 4px;}
+.center-pop .cpt{font-size:13px;opacity:.82;font-variant-numeric:tabular-nums;}
+.center-pop .cpbtns{display:flex;gap:9px;margin-top:18px;}
+.center-pop .cpbtns button{flex:1;border:0;border-radius:12px;padding:10px 0;font-family:var(--font);
+  font-size:13px;font-weight:600;cursor:pointer;transition:transform .12s var(--ease);}
+.center-pop .cpbtns button:active{transform:scale(.97);}
+.cpb-1{background:#fff;color:#101022;} .cpb-2{background:rgba(255,255,255,.16);color:#fff;}
+
+/* ---------- 动效节奏 ---------- */
+.motiongrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.mrow{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:16px 20px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);display:grid;grid-template-columns:132px 1fr;gap:16px;}
+.mrow .mk{font-size:13px;font-weight:640;letter-spacing:-.006em;}
+.mrow .mk b{display:block;font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.06em;margin-bottom:3px;}
+.mrow .mv{font-size:12.5px;color:var(--label-2);line-height:1.6;letter-spacing:0;}
+.mrow .mv code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;
+  background:var(--surface-2);padding:1px 6px;border-radius:6px;color:var(--label);}
+
+.next{border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  padding:24px 26px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.next h3{margin:0 0 8px;font-size:16px;font-weight:650;letter-spacing:-.01em;}
+.next p{margin:0;font-size:14px;color:var(--label-2);line-height:1.72;letter-spacing:0;}
+.next b{color:var(--label);font-weight:620;}
+
+.foot{padding-top:28px;border-top:1px solid var(--sep);color:var(--label-3);font-size:12px;
+  letter-spacing:0;line-height:1.8;}
+
+@media (max-width:1000px){
+  .parts,.emogrid{grid-template-columns:repeat(2,1fr);}
+  .verdict,.motiongrid{grid-template-columns:1fr;}
+  body{padding:36px 18px 72px;}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.001ms!important;}
+}
+
+/* ============================================================
+   苔 · 角色渲染系统（沿用 03，只把"表情"扩成十种）
+   ============================================================ */
+.ch{position:relative;display:inline-flex;}
+.ch svg.art{display:block;}
+.ch .face{transform-box:view-box;transform-origin:60px 60px;
+  transform:translate(var(--fx,0px),var(--fy,0px)) scale(var(--fs,1));}
+.ch .face .fx{transform-box:fill-box;transform-origin:center;
+  transition:transform .3s var(--spring),opacity .22s var(--ease);}
+.ch .face .eyeg{transform-box:fill-box;transform-origin:center;
+  transition:transform .3s var(--spring);}
+.ch .face .brow{transform-box:fill-box;transform-origin:center;
+  transition:transform .3s var(--spring);}
+
+.ch .face .eye{fill:var(--fb);}
+.ch .face .eye-sh{fill:var(--fb2);opacity:.5;}
+.ch .face .hl{fill:var(--hl);opacity:.85;}
+.ch .face .crescents path{fill:none;stroke:var(--fb);stroke-width:3.6;stroke-linecap:round;}
+.ch .face .mouths path{fill:none;stroke:var(--fb);stroke-width:2.6;stroke-linecap:round;}
+.ch .face .m-o{fill:var(--fb);stroke:none;}
+.ch .face .brow{fill:none;stroke:var(--fb);stroke-width:2.4;stroke-linecap:round;opacity:.62;}
+.ch .halo-state{opacity:0;transition:opacity .3s var(--spring);}
+
+/* 基础态（低特异度，方便状态覆盖） */
+.ch .face :where(.crescents){opacity:0;}
+.ch .face :where(.m-flat,.m-o,.m-wide){opacity:0;}
+.ch .face .m-soft{opacity:.32;}
+.ch .face .eyes{opacity:1;transition:transform .3s var(--spring),opacity .18s var(--ease);}
+
+/* ---- 十种情绪 ---- */
+/* 眨眼 */
+.ch[data-e="blink"] .eyes{transform:scaleY(.08);}
+/* 专注：上睑下压，视线收窄 */
+.ch[data-e="focus"] .eyes{transform:scaleY(.62) translateY(2px);}
+.ch[data-e="focus"] .brows{transform:translateY(4px) scaleY(.86);}
+/* 思考：两眼里往上瞟 */
+.ch[data-e="think"] .eyes{transform:translate(3.5px,-3px);}
+.ch[data-e="think"] .brow-r{transform:translateY(-3px);}
+/* 疑惑：单眼微眯 + 一侧眉抬 */
+.ch[data-e="curious"] .eyeg-r{transform:scaleY(.62);}
+.ch[data-e="curious"] .brow-l{transform:translateY(-5px);}
+/* 困倦：眼睑垂到一半 */
+.ch[data-e="sleep"] .eyes{transform:scaleY(.30) translateY(3.5px);}
+.ch[data-e="sleep"] .brows{transform:translateY(3px) scaleY(.9);}
+/* 开心 / 完成：两眼弯成上弧 */
+.ch[data-e="happy"] .eyes,.ch[data-e="done"] .eyes{opacity:0;}
+.ch[data-e="happy"] .crescents,.ch[data-e="done"] .crescents{opacity:1;}
+.ch[data-e="happy"] .brows{transform:translateY(-3px);}
+.ch[data-e="done"] .brows{transform:translateY(-2px) scaleY(.94);}
+.ch[data-e="done"] .m-soft{opacity:0;} .ch[data-e="done"] .m-wide{opacity:1;}
+/* 惊讶 */
+.ch[data-e="surprise"] .eyes{transform:scale(1.14);}
+.ch[data-e="surprise"] .brows{transform:translateY(-7px);}
+.ch[data-e="surprise"] .m-soft{opacity:0;} .ch[data-e="surprise"] .m-o{opacity:1;}
+/* 临期：睁大 + 暖色光环 */
+.ch[data-e="soon"] .eyes{transform:scale(1.08);}
+.ch[data-e="soon"] .brows{transform:translateY(-4px);}
+.ch[data-e="soon"] .halo-state{opacity:.55;fill:#FFAE1F;}
+.ch[data-e="done"] .halo-state{opacity:.42;fill:#2FCF7A;}
+
+/* 苔玉的材质与面部适配 */
+.ch-moss{--fb:#123018; --fb2:#4E8A44; --hl:#F0FFEC; --fs:.98; --fy:6px;}
+</style>
+</head>
+<body data-theme="light">
+
+<!-- ============ 共享 defs ============ -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+<defs>
+  <filter id="fB1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1"/></filter>
+  <filter id="fB2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>
+  <filter id="fB4" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="4"/></filter>
+  <filter id="fB5" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5"/></filter>
+  <filter id="fB8" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="8"/></filter>
+
+  <radialGradient id="gMoss" cx="34%" cy="24%" r="88%">
+    <stop offset="0%" stop-color="#B4DC9A"/><stop offset="42%" stop-color="#7CB466"/><stop offset="78%" stop-color="#4C8442"/><stop offset="100%" stop-color="#2E5A2B"/>
+  </radialGradient>
+
+  <!-- 苔玉本体（与 03 完全一致，保证"还是那个苔"） -->
+  <clipPath id="c-moss"><circle cx="60" cy="70" r="38"/></clipPath>
+  <symbol id="b-moss" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="108" rx="25" ry="5" fill="rgba(24,36,22,.12)" filter="url(#fB5)"/>
+    <path d="M60 32 C60 23 62 16 68 11" stroke="#3E7E3A" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M67 12 C74 6 85 7 89 15 C80 21 70 20 67 12Z" fill="#7FC169"/>
+    <path d="M63 19 C57 12 47 11 42 18 C50 25 60 25 63 19Z" fill="#9AD483"/>
+    <circle cx="60" cy="70" r="38" fill="url(#gMoss)"/>
+    <g clip-path="url(#c-moss)">
+      <ellipse cx="45" cy="46" rx="17" ry="11" transform="rotate(-24 45 46)" fill="rgba(255,255,255,.34)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="104" rx="34" ry="18" fill="rgba(22,52,22,.30)" filter="url(#fB5)"/>
+    </g>
+    <g clip-path="url(#c-moss)" opacity=".42">
+      <circle cx="38" cy="52" r="2.6" fill="#8FC77A"/><circle cx="80" cy="58" r="2.2" fill="#67A254"/>
+      <circle cx="52" cy="94" r="2.4" fill="#5E9A4E"/><circle cx="72" cy="90" r="2" fill="#8FC77A"/>
+      <circle cx="34" cy="76" r="2.2" fill="#5E9A4E"/><circle cx="88" cy="74" r="2.4" fill="#8FC77A"/>
+      <circle cx="46" cy="35" r="2.2" fill="#67A254"/><circle cx="78" cy="35" r="2" fill="#67A254"/>
+    </g>
+  </symbol>
+</defs>
+</svg>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>浮时 · 苔 · 表情定稿</h1>
+      <p class="tagline">放弃 04 的单眼路线。一个要提醒你、陪你的助手，必须靠两只眼睛表达情绪——这一版把苔的两只眼做成一整套情绪系统。</p>
+    </div>
+    <button class="ghost" id="themeBtn">切换外观</button>
+  </div>
+
+  <!-- ============ 01 决定 ============ -->
+  <section class="section">
+    <header><span class="num">01</span><h2>决定：回到苔，让两只眼说话</h2></header>
+    <p class="lede">你是对的——问题从来不在"换成什么形状"，而在<b>这张脸能不能有情绪</b>。BT 那一脉的好看，靠的恰恰是"没有表情"，这跟助手要陪你这件事是矛盾的。</p>
+    <div class="verdict">
+      <div class="vstage"><span class="ch ch-moss" data-e="idle" id="hero"><svg class="art" viewBox="0 0 120 120"></svg></span></div>
+      <div>
+        <span class="kill">✕ 作废：04 单眼 · 磁白 · 冷科技</span>
+        <h3>苔 · 苔玉 —— 定为最终助手形象</h3>
+        <p>一颗养在桌上的苔藓球。哑光、一体一笔、低饱和绿，正好是"自律"与"不打扰的陪伴"。它本来就有两只眼，之前是我把方向带偏了。</p>
+        <ul>
+          <li><b>两只眼</b>是它的情绪引擎：睁、眯、弯、闭，全靠这一对</li>
+          <li><b>眉做辅助</b>、<b>嘴是最后手段</b>——一整套表情里嘴只出现两次</li>
+          <li>其余全部不动：只有脸的"开合"在变，身体始终是那颗安静的球</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 02 零件 ============ -->
+  <section class="section">
+    <header><span class="num">02</span><h2>一只眼，四个零件，两层可动</h2></header>
+    <p class="lede">两只眼里没有任何"贴纸"零件。每只眼都是四种材质叠出来的，其中<b>只有两块能动</b>（眼睑开合、眉的升降），其余全部静止。这就是它看起来"有厚度"却不廉价的原因。</p>
+    <div class="parts" id="parts"></div>
+  </section>
+
+  <!-- ============ 03 十种情绪 ============ -->
+  <section class="section">
+    <header><span class="num">03</span><h2>十个情绪，全由两只眼完成</h2></header>
+    <p class="lede">下面十张脸，<b>身体一模一样，只有两只眼在变</b>。这就是"用两只眼表情绪"的完整证据：不需要多一条手臂、多一个零件。</p>
+    <div class="emogrid" id="emogrid"></div>
+  </section>
+
+  <!-- ============ 04 尺寸 ============ -->
+  <section class="section">
+    <header><span class="num">04</span><h2>缩到桌面角落，眼睛还得站得住</h2></header>
+    <p class="lede">悬浮组件常驻时只有几十像素。眼睛的深浅对比必须先保证在小尺寸可读。</p>
+    <div class="sizes" id="sizeRow"></div>
+  </section>
+
+  <!-- ============ 05 桌面情境 ============ -->
+  <section class="section">
+    <header><span class="num">05</span><h2>它出现在桌面上的三个位置</h2></header>
+    <p class="lede">同一个苔，三种强度：<b>角落常驻</b>（待机／专注）、<b>轻提醒 Toast</b>（临期）、<b>强提醒弹窗</b>（开课）。表情由状态自动切换。</p>
+    <div class="desk">
+      <div class="wall" id="wall" style="background-image:url('assets/wallpaper.jpg')">
+        <div class="glass widget">
+          <span class="ch ch-moss" data-e="focus"><svg class="art" viewBox="0 0 120 120"></svg></span>
+          <div class="wtxt"><div class="wk">正在专注</div><div class="wn">高等数学 · 第 7 讲</div><div class="wt">剩余 46 分钟</div></div>
+        </div>
+        <div class="glass center-pop">
+          <span class="ch ch-moss" data-e="soon"><svg class="art" viewBox="0 0 120 120"></svg></span>
+          <div class="cpk">即将开始</div>
+          <div class="cpn">数据结构 · 上机课</div>
+          <div class="cpt">5 分钟后 · 实验楼 A-312</div>
+          <div class="cpbtns"><button class="cpb-1">知道了</button><button class="cpb-2">再等 5 分钟</button></div>
+        </div>
+        <div class="glass toast">
+          <span class="ch ch-moss" data-e="done"><svg class="art" viewBox="0 0 120 120"></svg></span>
+          <div><div class="tt">完成打卡</div><div class="ts">今天 3 个任务，全部拿下</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 06 动效 ============ -->
+  <section class="section">
+    <header><span class="num">06</span><h2>动效节奏：短、准、一次性</h2></header>
+    <p class="lede">它平时几乎不动。所有"活"都集中在眨眼与换情绪两个瞬间，且绝不来回晃。</p>
+    <div class="motiongrid">
+      <div class="mrow"><div class="mk"><b>眨眼</b>自发动作</div><div class="mv">每 <code>4–6s</code> 一次，闭 <code>80ms</code>、睁 <code>min-height 140ms</code> 回弹。是"活着"的唯一常驻信号。</div></div>
+      <div class="mrow"><div class="mk"><b>换情绪</b>状态切换</div><div class="mv">两眼与眉共 <code>300–420ms</code> 弹簧曲线 <code>cubic-bezier(.34,1.15,.5,1)</code>，一次性到位。</div></div>
+      <div class="mrow"><div class="mk"><b>视线游移</b>注意力</div><div class="mv">待机时 <code>600ms</code> 缓慢平移 <code>≤3px</code> 后停住，然后长时间静止。</div></div>
+      <div class="mrow"><div class="mk"><b>状态光环</b>临期／完成</div><div class="mv">暖色／绿色光环 <code>260ms</code> 淡入，值状态色，不呼吸、不闪烁。</div></div>
+      <div class="mrow"><div class="mk"><b>禁止</b>减分项</div><div class="mv">常驻往复呼吸、持续脉动、晃动、旋转、循环弹跳。</div></div>
+      <div class="mrow"><div class="mk"><b>无障碍</b>react</div><div class="mv">识别 <code>prefers-reduced-motion</code> 时，眨眼与所有过渡 <code>→ 0</code>，只保留瞬时切换。</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 07 下一步 ============ -->
+  <section class="section">
+    <header><span class="num">07</span><h2>下一步</h2></header>
+    <div class="next">
+      <h3>如果这个方向你认可</h3>
+      <p>我就把<b>这套苔 + 十个表情</b>接回 <b>v4 原型</b>：替换第 02 节的助手形象，重画角落常驻窗、Toast 与强提醒弹窗三处，并让表情随课程状态自动切换（待机→专注→临期→完成）。确认后再进入 M1 骨架实现（托盘常驻 + 可拖动置顶悬浮窗 + 空课表）。</p>
+    </div>
+  </section>
+
+  <div class="foot">
+    浮时 · 苔 · 表情定稿　·　单一角色 + 两眼看世界　·　规则对标 Apple HIG（Materials / Motion）与角色 IP 设计通则<br>
+    本页为设计稿，非产品代码。身体未改动，唯一变量是"两只眼"。
+  </div>
+</div>
+
+<script>
+(function(){
+  // 每只眼 = 四个零件（主体 / 透光层 / 柔边高光），单独成组以便单眼微调
+  function eyeg(side){
+    var l = side === 'l';
+    var cx = l ? 45 : 75, sh = l ? 46.4 : 76.4, hx = l ? 40.8 : 70.8;
+    return '<g class="eyeg eyeg-' + side + '">' +
+      '<ellipse class="eye" cx="' + cx + '" cy="52" rx="9.4" ry="11.4"/>' +
+      '<ellipse class="eye-sh" cx="' + sh + '" cy="56.4" rx="5.8" ry="4.8"/>' +
+      '<ellipse class="hl" cx="' + hx + '" cy="46.6" rx="3" ry="2.2" filter="url(#fB1)"/>' +
+    '</g>';
+  }
+
+  var FACE =
+    '<g class="face">' +
+      '<g class="brows fx">' +
+        '<path class="brow brow-l" d="M36 37 Q45 33 54 36"/>' +
+        '<path class="brow brow-r" d="M66 36 Q75 33 84 37"/>' +
+      '</g>' +
+      '<g class="eyes fx">' + eyeg('l') + eyeg('r') + '</g>' +
+      '<g class="crescents fx">' +
+        '<path d="M36 53 Q45 43 54 53"/>' +
+        '<path d="M66 53 Q75 43 84 53"/>' +
+      '</g>' +
+      '<g class="mouths fx">' +
+        '<path class="m-soft" d="M54.5 68 Q60 71.5 65.5 68"/>' +
+        '<path class="m-flat" d="M55 69 H65"/>' +
+        '<ellipse class="m-o" cx="60" cy="70" rx="3.2" ry="4"/>' +
+        '<path class="m-wide" d="M52 67 Q60 76 68 67"/>' +
+      '</g>' +
+    '</g>';
+
+  var HALO = '<circle class="halo-state" cx="60" cy="64" r="44" fill="#FFAE1F" filter="url(#fB8)"/>';
+
+  function chInner(){
+    return '<svg class="art" viewBox="0 0 120 120">' + HALO +
+      '<use href="#b-moss"/>' + FACE + '</svg>';
+  }
+  function ch(state, extra){
+    return '<span class="ch ch-moss' + (extra ? ' ' + extra : '') + '" data-e="' + state + '">' + chInner() + '</span>';
+  }
+
+  // ---- 02 零件 ----
+  var PARTS = [
+    ['① 眼主体', '哑光墨绿椭圆。它是"脸"的重量来源，不是黑点。', 'idle'],
+    ['② 透光层', '同色系浅一档，压在眼球下半。眼睛因此有"往里看"的深度。', 'idle'],
+    ['③ 柔边高光', '一枚带 1px 模糊的白高光，位置偏上偏左。禁止硬边圆点。', 'idle'],
+    ['④ 眼睑 · 弯月', '换情绪时把眼主体换成上弧。开心、完成都靠这一条。', 'happy']
+  ];
+  document.getElementById('parts').innerHTML = PARTS.map(function(p){
+    return '<div class="ppanel"><h4>' + p[0] + '</h4><p>' + p[1] + '</p>' +
+      '<div class="pstage">' + ch(p[2]) + '</div></div>';
+  }).join('');
+
+  // ---- 03 十种情绪 ----
+  var EMO = [
+    ['idle','待机','平静','睁眼直视，什么都不做'],
+    ['blink','眨眼','自发','每 4–6 秒一次，闭 80ms'],
+    ['focus','专注','工作中','上睑下压，视线收窄'],
+    ['think','思考','回忆中','两眼里往上瞟'],
+    ['curious','疑惑','没听懂','单眼微眯 + 一侧眉抬'],
+    ['sleep','困倦','熬夜后','眼睑垂到一半'],
+    ['happy','开心','被夸了','两眼弯成上弧'],
+    ['surprise','惊讶','有变化','两眼睁大，眉上扬'],
+    ['soon','临期','要上课了','眼放大 + 暖色光环'],
+    ['done','完成','打卡成功','弯眼 + 绿色光环']
+  ];
+  document.getElementById('emogrid').innerHTML = EMO.map(function(e){
+    return '<div class="ecard"><div class="estage">' + ch(e[0]) + '</div>' +
+      '<div class="ecap"><span class="mood">' + e[2] + '</span>' +
+      '<h5>' + e[1] + '</h5><p>' + e[3] + '</p></div></div>';
+  }).join('');
+
+  // ---- 04 尺寸 ----
+  var sizes = [64,48,32,24,16];
+  document.getElementById('sizeRow').innerHTML = sizes.map(function(s){
+    return '<div class="cell">' + ch('idle', 'sz' + s) + '<span>' + s + 'px</span></div>';
+  }).join('') + '<span style="flex:1"></span>';
+
+  // ---- 补脸：所有 .ch svg.art 都注入同一张脸 ----
+  document.querySelectorAll('.ch svg.art').forEach(function(svg){
+    if(!svg.querySelector('.face')) svg.insertAdjacentHTML('beforeend', FACE);
+    if(!svg.querySelector('.halo-state')) svg.insertAdjacentHTML('afterbegin', HALO);
+  });
+
+  // ---- 主角自动眨眼（"活着"的唯一常驻信号）----
+  var hero = document.getElementById('hero');
+  if(hero && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    (function loop(){
+      var wait = 4000 + Math.random() * 2200;
+      setTimeout(function(){
+        hero.dataset.e = 'blink';
+        setTimeout(function(){ hero.dataset.e = 'idle'; loop(); }, 90);
+      }, wait);
+    })();
+  }
+
+  // ---- 主题 ----
+  var body = document.body;
+  document.getElementById('themeBtn').addEventListener('click', function(){
+    body.dataset.theme = body.dataset.theme === 'light' ? 'dark' : 'light';
+  });
+})();
+</script>
+</body>
+</html>

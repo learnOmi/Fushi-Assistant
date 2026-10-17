@@ -1,0 +1,13 @@
+# .NET
+bin/
+obj/
+out/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+*.binlog
+artifacts/
+TestResults/
+*.log

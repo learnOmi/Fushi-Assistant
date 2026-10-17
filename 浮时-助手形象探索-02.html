@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浮时 · 助手形象探索 02</title>
+<style>
+/* ============================================================
+   浮时 · 形象探索 02
+   对标：Apple HIG（Layers / Materials / Motion）+ 角色 IP 设计法则
+   外壳仍是 Liquid Glass，本页只解决"住在里面那个东西"
+   ============================================================ */
+:root{
+  --bg:#F5F5F7; --surface:#FFFFFF; --surface-2:#EDEDF0;
+  --label:#1D1D1F; --label-2:#6E6E73; --label-3:#96969C;
+  --sep:#D2D2D7; --sep-2:#E8E8ED;
+  --accent:#FF7A45;
+  --stage-a:#F1F1F4; --stage-b:#DDDEE4;
+  --r-xl:28px; --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --ease:cubic-bezier(.2,0,0,1); --spring:cubic-bezier(.34,1.15,.5,1);
+}
+[data-theme="dark"]{
+  --bg:#000; --surface:#1C1C1E; --surface-2:#2C2C2E;
+  --label:#F5F5F7; --label-2:#A1A1A6; --label-3:#7C7C81;
+  --sep:#38383A; --sep-2:#2C2C2E;
+  --stage-a:#26262A; --stage-b:#131316;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);color:var(--label);font-family:var(--font);
+  font-size:16px;line-height:1.6;letter-spacing:-.005em;
+  padding:72px 32px 112px;-webkit-font-smoothing:antialiased;
+  transition:background .35s var(--ease),color .35s var(--ease);}
+.wrap{max-width:1040px;margin:0 auto;}
+
+.masthead{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;
+  padding-bottom:28px;border-bottom:1px solid var(--sep);margin-bottom:60px;}
+.masthead h1{margin:0;font-size:40px;line-height:1.08;letter-spacing:-.032em;font-weight:700;}
+.masthead .tagline{margin:10px 0 0;color:var(--label-2);font-size:15px;letter-spacing:0;}
+.ghost{border:1px solid var(--sep);background:var(--surface);color:var(--label);
+  font-family:var(--font);font-size:14px;font-weight:500;border-radius:980px;padding:9px 18px;
+  cursor:pointer;transition:transform .12s var(--ease),border-color .16s var(--ease);}
+.ghost:hover{border-color:var(--label-3);} .ghost:active{transform:scale(.96);}
+
+.section{margin-bottom:76px;}
+.section > header{display:flex;align-items:baseline;gap:14px;margin-bottom:10px;}
+.num{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--label-3);font-variant-numeric:tabular-nums;}
+.section h2{margin:0;font-size:26px;line-height:1.25;letter-spacing:-.022em;font-weight:650;}
+.lede{margin:0 0 26px;color:var(--label-2);font-size:16px;max-width:74ch;letter-spacing:0;}
+.lede b{color:var(--label);font-weight:620;}
+
+/* ---------- 规则清单 ---------- */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.rule{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:18px 20px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.rule .rn{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--accent);}
+.rule h3{margin:5px 0 6px;font-size:14.5px;font-weight:640;letter-spacing:-.008em;}
+.rule p{margin:0;font-size:13px;color:var(--label-2);line-height:1.62;letter-spacing:0;}
+.rule .src{display:block;margin-top:9px;font-size:11px;color:var(--label-3);letter-spacing:0;}
+
+/* ---------- 建造系统 ---------- */
+.build{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.bpanel{border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  padding:22px 20px 24px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.bpanel h3{margin:0 0 4px;font-size:15px;font-weight:640;letter-spacing:-.01em;}
+.bpanel p{margin:0 0 14px;font-size:12.5px;color:var(--label-2);line-height:1.6;letter-spacing:0;min-height:40px;}
+.bstage{border-radius:var(--r-md);background:linear-gradient(165deg,var(--stage-a),var(--stage-b));
+  display:flex;align-items:center;justify-content:center;padding:12px;height:196px;position:relative;}
+.bstage svg{width:170px;height:170px;overflow:visible;}
+
+/* ---------- 形象卡片 ---------- */
+.grid6{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
+.concept{border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  overflow:hidden;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);
+  transition:box-shadow .2s var(--ease),transform .2s var(--ease);}
+.concept:hover{box-shadow:0 18px 44px -16px rgba(0,0,0,.24);transform:translateY(-2px);}
+.stage{position:relative;height:212px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(165deg,var(--stage-a) 0%,var(--stage-b) 100%);}
+.stage::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(64% 52% at 50% 30%,rgba(255,255,255,.55),rgba(255,255,255,0) 72%);}
+[data-theme="dark"] .stage::before{background:radial-gradient(64% 52% at 50% 30%,rgba(255,255,255,.08),rgba(255,255,255,0) 72%);}
+.stage .art{width:150px;height:150px;overflow:visible;}
+.states{display:flex;justify-content:center;gap:20px;padding:16px 16px 2px;}
+.states figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:7px;}
+.states .art{width:56px;height:56px;overflow:visible;}
+.states figcaption{font-size:10px;letter-spacing:.04em;color:var(--label-3);}
+.cbody{padding:10px 22px 22px;}
+.cbody h3{margin:0 0 4px;font-size:17px;font-weight:650;letter-spacing:-.015em;}
+.cbody .concept-line{font-size:13px;color:var(--label-2);margin:0 0 16px;letter-spacing:0;line-height:1.6;}
+.spec2 .r{display:grid;grid-template-columns:62px 1fr;gap:12px;padding:7px 0;
+  border-top:.5px solid var(--sep-2);font-size:12.5px;letter-spacing:0;line-height:1.55;}
+.spec2 .r b{color:var(--label-3);font-weight:600;font-size:11px;letter-spacing:.05em;padding-top:2px;}
+.spec2 .r span{color:var(--label-2);}
+.spec2 .r.risk span{color:#B4642A;}
+.tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;
+  padding:3px 9px;border-radius:980px;background:var(--surface-2);color:var(--label-2);margin-bottom:12px;}
+.famtag{display:inline-flex;align-items:center;gap:8px;margin:26px 0 14px;font-size:12px;font-weight:700;
+  letter-spacing:.06em;color:var(--label-3);text-transform:uppercase;}
+.famtag::after{content:"";flex:1;height:1px;background:var(--sep-2);min-width:60px;}
+
+/* ---------- 硬检验 ---------- */
+.tests{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
+.tcol{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:18px 10px;display:flex;flex-direction:column;align-items:center;gap:12px;
+  box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.tcol .nm{font-size:12px;font-weight:600;}
+.tcol .art{width:64px;height:64px;overflow:visible;}
+.t-sil .art{filter:url(#silToBlack);}
+.t-gray .art{filter:grayscale(1) contrast(1.06);}
+.sizerow{display:flex;align-items:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap;}
+.sizerow .cell{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.sizerow .cell span{font-size:10px;color:var(--label-3);font-variant-numeric:tabular-nums;}
+.sz16{width:16px;height:16px;} .sz24{width:24px;height:24px;} .sz32{width:32px;height:32px;}
+.sz48{width:48px;height:48px;} .sz64{width:64px;height:64px;}
+.sizerow .art{overflow:visible;}
+
+/* ---------- 面部系统大图 ---------- */
+.facenote{display:grid;grid-template-columns:300px 1fr;gap:34px;align-items:center;
+  border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  padding:34px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.facenote ul{margin:0;padding-left:18px;font-size:14px;color:var(--label-2);line-height:1.9;letter-spacing:0;}
+.facenote li::marker{color:var(--label-3);}
+.facenote b{color:var(--label);font-weight:620;}
+.facestage{display:flex;justify-content:center;align-items:center;
+  border-radius:var(--r-md);background:linear-gradient(165deg,var(--stage-a),var(--stage-b));padding:14px;}
+.facestage .art{width:220px;height:220px;overflow:visible;}
+
+/* ---------- 结论 ---------- */
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.pickcard{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:20px 22px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.pickcard h3{margin:0 0 6px;font-size:15px;font-weight:640;}
+.pickcard p{margin:0;font-size:13px;color:var(--label-2);line-height:1.66;letter-spacing:0;}
+
+.foot{padding-top:28px;border-top:1px solid var(--sep);color:var(--label-3);font-size:12px;
+  letter-spacing:0;line-height:1.8;}
+
+@media (max-width:1000px){
+  .grid6,.rules,.build,.pick{grid-template-columns:1fr;}
+  .tests{grid-template-columns:repeat(3,1fr);}
+  .facenote{grid-template-columns:1fr;}
+  body{padding:36px 18px 72px;}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.001ms!important;}
+}
+
+/* ============================================================
+   角色渲染系统
+   ============================================================ */
+.ch{position:relative;display:inline-flex;}
+.ch svg.art{display:block;}
+/* 统一光向：左上 35°。所有高光、内阴影、接触影都服从它 */
+.ch .art .contact{fill:rgba(28,30,40,.16);filter:url(#fB5);}
+.ch .art .spec{fill:rgba(255,255,255,.6);filter:url(#fB4);}
+.ch .art .spec2{fill:rgba(255,255,255,.34);filter:url(#fB5);}
+
+/* 面部：注入到每个 svg 里，统一坐标 120×120 */
+.ch .face{transform-box:view-box;transform-origin:60px 60px;
+  transform:translate(var(--fx,0px),var(--fy,0px)) scale(var(--fs,1));}
+.ch .face .fx{transform-box:fill-box;transform-origin:center;
+  transition:transform .3s var(--spring),opacity .22s var(--ease);}
+.ch .face .eye{fill:var(--fb);}
+.ch .face .eye-sh{fill:var(--fb2);opacity:.5;}
+.ch .face .hl{fill:var(--hl);opacity:.85;}
+.ch .face .crescents path{fill:none;stroke:var(--fb);stroke-width:3.4;stroke-linecap:round;}
+.ch .face .mouths path{fill:none;stroke:var(--fb);stroke-width:2.6;stroke-linecap:round;}
+.ch .face .m-o{fill:var(--fb);stroke:none;}
+.ch .face .brow{fill:none;stroke:var(--fb);stroke-width:2.4;stroke-linecap:round;opacity:.7;}
+.ch .face .crescents{opacity:0;}
+.ch .face .mouths path,.ch .face .m-o{opacity:0;}
+
+/* 待机：几乎不笑，眉毛极淡 */
+.ch .face .m-soft{opacity:.3;}
+.ch .face .brows{opacity:.62;}
+/* 专注：眼睑压低、眉下压、抿嘴 */
+.ch[data-s="focus"] .eyes{transform:scaleY(.56) translateY(3px);}
+.ch[data-s="focus"] .brows{transform:translateY(4px) scaleY(.86);}
+.ch[data-s="focus"] .m-soft{opacity:0;} .ch[data-s="focus"] .m-flat{opacity:1;}
+/* 临期：睁大、眉扬起、小圆嘴 */
+.ch[data-s="soon"] .eyes{transform:scale(1.06);}
+.ch[data-s="soon"] .brows{transform:translateY(-4px);}
+.ch[data-s="soon"] .m-soft{opacity:0;} .ch[data-s="soon"] .m-o{opacity:1;}
+/* 完成：月牙眼、眉舒展、浅笑 */
+.ch[data-s="done"] .eyes{opacity:0;}
+.ch[data-s="done"] .crescents{opacity:1;}
+.ch[data-s="done"] .brows{transform:translateY(-2px) scaleY(.94);}
+.ch[data-s="done"] .m-soft{opacity:0;} .ch[data-s="done"] .m-wide{opacity:1;}
+
+/* ---------- 各形象的材质与面部取色 ---------- */
+.ch-dew   {--fb:#173A5E; --fb2:#5A8FC6; --hl:#F2FAFF; --fs:.86; --fy:9px;}
+.ch-sand  {--fb:#54330F; --fb2:#A9793A; --hl:#FFF6E0; --fs:.8;  --fy:-12px;}
+.ch-star  {--fb:#2B2436; --fb2:#6E6482; --hl:#FFFFFF; --fs:.88; --fy:0px;}
+.ch-fly   {--fb:#2B2110; --fb2:#8A6A2A; --hl:#FFF3D0; --fs:.78; --fy:-8px;}
+.ch-owl   {--fb:#4A3418; --fb2:#9A7A44; --hl:#FFF9EC; --fs:1.02; --fy:-3px;}
+.ch-moss  {--fb:#123018; --fb2:#4E8A44; --hl:#F0FFEC; --fs:.98; --fy:6px;}
+/* 鸮的喙代替嘴 */
+.ch-owl .face .mouths{display:none;}
+/* 萤的浅色面盘，让深色眼睛有对比 */
+.ch-fly .face{--fb:#2B2110;}
+</style>
+</head>
+<body data-theme="light">
+
+<!-- ============ 共享 defs：材质渐变 + 模糊滤镜 + 6 个身体 ============ -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+<defs>
+  <filter id="fB1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1"/></filter>
+  <filter id="fB2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>
+  <filter id="fB4" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="4"/></filter>
+  <filter id="fB5" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5"/></filter>
+  <filter id="fPaper" x="-40%" y="-40%" width="180%" height="180%">
+    <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#5A5140" flood-opacity=".38"/>
+  </filter>
+  <!-- 剪影测试：把任何有覆盖的像素压成不透明黑，半透材质不再"漏灰" -->
+  <filter id="silToBlack" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 4 0"/>
+    <feComponentTransfer><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+  </filter>
+
+  <linearGradient id="gDew" x1="0" y1="0" x2=".35" y2="1">
+    <stop offset="0%" stop-color="#FFFFFF" stop-opacity=".98"/>
+    <stop offset="34%" stop-color="#DEEFFF" stop-opacity=".8"/>
+    <stop offset="70%" stop-color="#9CC2E8" stop-opacity=".62"/>
+    <stop offset="100%" stop-color="#5E8BC4" stop-opacity=".58"/>
+  </linearGradient>
+  <linearGradient id="gGlass" x1="0" y1="0" x2=".3" y2="1">
+    <stop offset="0%" stop-color="#FFFFFF" stop-opacity=".88"/>
+    <stop offset="52%" stop-color="#D2E0F0" stop-opacity=".6"/>
+    <stop offset="100%" stop-color="#93A8C2" stop-opacity=".52"/>
+  </linearGradient>
+  <linearGradient id="gSand" x1="0" y1="0" x2=".3" y2="1">
+    <stop offset="0%" stop-color="#F7D89A"/><stop offset="55%" stop-color="#E3A94F"/><stop offset="100%" stop-color="#B77A2C"/>
+  </linearGradient>
+  <linearGradient id="gBrass" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#E4CE9A"/><stop offset="45%" stop-color="#BFA162"/><stop offset="100%" stop-color="#8A6E3C"/>
+  </linearGradient>
+  <linearGradient id="gPaper1" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#FFFDF8"/><stop offset="100%" stop-color="#EDE5D3"/>
+  </linearGradient>
+  <linearGradient id="gPaper2" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#E6DCC7"/><stop offset="100%" stop-color="#CDC0A3"/>
+  </linearGradient>
+  <linearGradient id="gFlyBody" x1="0" y1="0" x2=".3" y2="1">
+    <stop offset="0%" stop-color="#544A38"/><stop offset="55%" stop-color="#2C2619"/><stop offset="100%" stop-color="#14110A"/>
+  </linearGradient>
+  <linearGradient id="gFlyHead" x1="0" y1="0" x2=".3" y2="1">
+    <stop offset="0%" stop-color="#62563E"/><stop offset="55%" stop-color="#38301F"/><stop offset="100%" stop-color="#1D1910"/>
+  </linearGradient>
+  <radialGradient id="gFlyGlow" cx="50%" cy="52%" r="55%">
+    <stop offset="0%" stop-color="#FFE7A6" stop-opacity=".95"/>
+    <stop offset="42%" stop-color="#FFC24D" stop-opacity=".7"/>
+    <stop offset="100%" stop-color="#FF9A1F" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="gOwl" x1="0" y1="0" x2=".34" y2="1">
+    <stop offset="0%" stop-color="#FCF5E8"/><stop offset="48%" stop-color="#E6D6BA"/><stop offset="100%" stop-color="#C0AA8B"/>
+  </linearGradient>
+  <radialGradient id="gMoss" cx="34%" cy="26%" r="86%">
+    <stop offset="0%" stop-color="#B9DF9E"/><stop offset="42%" stop-color="#7CB466"/><stop offset="78%" stop-color="#4C8442"/><stop offset="100%" stop-color="#2E5A2B"/>
+  </radialGradient>
+
+  <!-- ① 露 · 液滴 -->
+  <symbol id="b-dew" viewBox="0 0 120 120">
+    <ellipse fill="rgba(28,30,40,.10)" filter="url(#fB5)" cx="60" cy="104" rx="23" ry="5"/>
+    <path d="M60 14 C75 39 93 57 93 76 A33 33 0 0 1 27 76 C27 57 45 39 60 14Z" fill="url(#gDew)"/>
+    <path d="M60 14 C75 39 93 57 93 76 A33 33 0 0 1 27 76 C27 57 45 39 60 14Z" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.2"/>
+    <path d="M60 31 C71 51 84 64 84 76 A24 24 0 0 1 36 76 C36 64 49 51 60 31Z" fill="none" stroke="rgba(255,255,255,.38)" stroke-width="1.1"/>
+    <ellipse fill="rgba(255,255,255,.55)" filter="url(#fB4)" cx="46" cy="60" rx="10" ry="16" transform="rotate(-24 46 60)"/>
+    <ellipse fill="rgba(255,255,255,.34)" filter="url(#fB5)" cx="74" cy="92" rx="9" ry="4.5"/>
+    <path d="M40 44 C33 56 30 66 30 76" stroke="rgba(255,255,255,.75)" stroke-width="2.4" stroke-linecap="round" fill="none" filter="url(#fB2)"/>
+  </symbol>
+
+  <!-- ② 沙 · 沙漏 -->
+  <symbol id="b-sand" viewBox="0 0 120 120">
+    <ellipse fill="rgba(28,30,40,.10)" filter="url(#fB5)" cx="60" cy="113" rx="26" ry="4.5"/>
+    <path d="M28 20 H92 C92 38 82 50 66 62 C82 74 92 82 92 100 H28 C28 82 38 74 54 62 C38 50 28 38 28 20Z"
+      fill="url(#gGlass)" stroke="rgba(116,140,172,.42)" stroke-width="1.2"/>
+    <ellipse cx="60" cy="62" rx="7" ry="3" fill="rgba(92,112,142,.22)" filter="url(#fB2)"/>
+    <path d="M31 22 H89 C89 36 79 47 64 59 L56 59 C41 47 31 36 31 22Z" fill="url(#gSand)"/>
+    <path d="M38 100 C40 88 51 84 60 84 C69 84 80 88 82 100Z" fill="url(#gSand)"/>
+    <path d="M60 59 V84" stroke="#E3A94F" stroke-width="1.5" opacity=".8"/>
+    <path d="M37 26 C34 35 33 43 35 50" stroke="rgba(255,255,255,.9)" stroke-width="2.4" stroke-linecap="round" fill="none" filter="url(#fB2)"/>
+    <path d="M37 94 C34 86 33 79 35 72" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round" fill="none" filter="url(#fB2)"/>
+    <rect x="22" y="12" width="76" height="10" rx="5" fill="url(#gBrass)"/>
+    <rect x="22" y="100" width="76" height="10" rx="5" fill="url(#gBrass)"/>
+    <rect x="25" y="13.5" width="70" height="2.4" rx="1.2" fill="rgba(255,255,255,.5)"/>
+  </symbol>
+
+  <!-- ③ 星 · 折纸星 -->
+  <symbol id="b-star" viewBox="0 0 120 120">
+    <ellipse fill="rgba(28,30,40,.10)" filter="url(#fB5)" cx="60" cy="108" rx="24" ry="4.5"/>
+    <g filter="url(#fPaper)">
+      <path d="M60 60 60 10 74.9 45.1Z" fill="url(#gPaper1)"/>
+      <path d="M60 60 74.9 45.1 110 60Z" fill="url(#gPaper2)"/>
+      <path d="M60 60 110 60 74.9 74.9Z" fill="url(#gPaper1)"/>
+      <path d="M60 60 74.9 74.9 60 110Z" fill="url(#gPaper2)"/>
+      <path d="M60 60 60 110 45.1 74.9Z" fill="url(#gPaper1)"/>
+      <path d="M60 60 45.1 74.9 10 60Z" fill="url(#gPaper2)"/>
+      <path d="M60 60 10 60 45.1 45.1Z" fill="url(#gPaper1)"/>
+      <path d="M60 60 45.1 45.1 60 10Z" fill="url(#gPaper2)"/>
+    </g>
+    <g stroke="rgba(90,80,58,.14)" stroke-width=".9" fill="none">
+      <path d="M60 10 V110 M10 60 H110 M45.1 45.1 L74.9 74.9 M74.9 45.1 L45.1 74.9"/>
+    </g>
+    <ellipse fill="rgba(255,255,255,.34)" filter="url(#fB5)" cx="47" cy="34" rx="13" ry="7" transform="rotate(-38 47 34)" opacity=".7"/>
+  </symbol>
+
+  <!-- ④ 萤 · 萤火 -->
+  <symbol id="b-fly" viewBox="0 0 120 120">
+    <ellipse fill="rgba(28,30,40,.10)" filter="url(#fB5)" cx="60" cy="107" rx="18" ry="4"/>
+    <ellipse cx="60" cy="80" rx="30" ry="27" fill="url(#gFlyGlow)"/>
+    <ellipse cx="38" cy="56" rx="18" ry="10" fill="rgba(255,255,255,.42)" stroke="rgba(255,255,255,.55)" stroke-width="1" transform="rotate(-28 38 56)"/>
+    <ellipse cx="82" cy="56" rx="18" ry="10" fill="rgba(255,255,255,.42)" stroke="rgba(255,255,255,.55)" stroke-width="1" transform="rotate(28 82 56)"/>
+    <ellipse cx="60" cy="80" rx="21" ry="23" fill="url(#gFlyBody)"/>
+    <ellipse cx="60" cy="86" rx="14" ry="14" fill="#FFD272"/>
+    <ellipse cx="60" cy="86" rx="14" ry="14" fill="url(#gFlyGlow)" opacity=".85"/>
+    <ellipse fill="rgba(255,255,255,.34)" filter="url(#fB5)" cx="53" cy="88" rx="5.5" ry="3.6" opacity=".45"/>
+    <circle cx="60" cy="44" r="26" fill="url(#gFlyHead)"/>
+    <ellipse cx="60" cy="45" rx="23" ry="18" fill="#F5E9CF"/>
+    <ellipse cx="46" cy="31" rx="9" ry="6" fill="rgba(255,255,255,.55)" transform="rotate(-28 46 31)" filter="url(#fB4)"/>
+    <path d="M46 24 C42 16 36 12 30 10" stroke="#332C1E" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M74 24 C78 16 84 12 90 10" stroke="#332C1E" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <circle cx="30" cy="10" r="2.6" fill="#FFD98A"/><circle cx="90" cy="10" r="2.6" fill="#FFD98A"/>
+  </symbol>
+
+  <!-- ⑤ 鸮 · 猫头鹰 -->
+  <symbol id="b-owl" viewBox="0 0 120 120">
+    <ellipse fill="rgba(28,30,40,.10)" filter="url(#fB5)" cx="60" cy="106" rx="27" ry="5"/>
+    <path d="M33 42 C28 27 32 18 41 13 C45 24 45 35 43 43Z" fill="url(#gOwl)"/>
+    <path d="M87 42 C92 27 88 18 79 13 C75 24 75 35 77 43Z" fill="url(#gOwl)"/>
+    <path d="M60 16 C84 16 96 38 96 62 C96 88 80 102 60 102 C40 102 24 88 24 62 C24 38 36 16 60 16Z" fill="url(#gOwl)"/>
+    <ellipse cx="60" cy="78" rx="22" ry="21" fill="rgba(255,255,255,.34)"/>
+    <ellipse cx="60" cy="50" rx="30" ry="26" fill="rgba(255,255,255,.22)"/>
+    <ellipse fill="rgba(255,255,255,.55)" filter="url(#fB4)" cx="45" cy="32" rx="18" ry="11" transform="rotate(-26 45 32)"/>
+    <path d="M24 80 A38 30 0 0 0 96 80 A46 24 0 0 1 24 80Z" fill="rgba(120,95,55,.26)" filter="url(#fB4)"/>
+    <path d="M60 61 L66.5 71.5 L60 76.5 L53.5 71.5Z" fill="#E0A24A"/>
+    <path d="M60 62 L63.5 71.5 L60 75Z" fill="rgba(255,255,255,.3)"/>
+  </symbol>
+
+  <!-- ⑥ 苔 · 苔玉 -->
+  <symbol id="b-moss" viewBox="0 0 120 120">
+    <ellipse fill="rgba(28,30,40,.10)" filter="url(#fB5)" cx="60" cy="106" rx="25" ry="5"/>
+    <path d="M60 32 C60 23 62 16 68 11" stroke="#3E7E3A" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M67 12 C74 6 85 7 89 15 C80 21 70 20 67 12Z" fill="#7FC169"/>
+    <path d="M63 19 C57 12 47 11 42 18 C50 25 60 25 63 19Z" fill="#9AD483"/>
+    <circle cx="60" cy="70" r="38" fill="url(#gMoss)"/>
+    <g opacity=".45">
+      <circle cx="38" cy="52" r="2.6" fill="#8FC77A"/><circle cx="80" cy="58" r="2.2" fill="#67A254"/>
+      <circle cx="52" cy="94" r="2.4" fill="#5E9A4E"/><circle cx="72" cy="90" r="2" fill="#8FC77A"/>
+      <circle cx="34" cy="76" r="2.2" fill="#5E9A4E"/><circle cx="88" cy="74" r="2.4" fill="#8FC77A"/>
+      <circle cx="60" cy="34" r="2" fill="#9AD483"/><circle cx="46" cy="35" r="2.2" fill="#67A254"/>
+      <circle cx="78" cy="35" r="2" fill="#67A254"/>
+    </g>
+    <ellipse fill="rgba(255,255,255,.55)" filter="url(#fB4)" cx="45" cy="46" rx="17" ry="11" transform="rotate(-24 45 46)" opacity=".55"/>
+    <path d="M25 86 A38 38 0 0 0 95 86 A42 30 0 0 1 25 86Z" fill="rgba(20,50,20,.3)" filter="url(#fB4)"/>
+  </symbol>
+</defs>
+</svg>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>浮时 · 助手形象探索 02</h1>
+      <p class="tagline">外壳不动，重做角色。这次先立<a href="https://developer.apple.com/design/human-interface-guidelines/" style="color:inherit">规范</a>，再画形象　·　两族六个，等你选</p>
+    </div>
+    <button class="ghost" id="themeBtn">切换外观</button>
+  </div>
+
+  <!-- ============ 01 规范 ============ -->
+  <section class="section">
+    <header><span class="num">01</span><h2>先把"顶尖"翻译成规则</h2></header>
+    <p class="lede">"好看"不能靠感觉反复试。我读了 Apple 人机界面指南的 <b>Layers / Materials / Motion</b> 三节，和成熟角色 IP 的公开设计方法，抽出八条能直接执行的规则——下面六个形象全部按这八条画。</p>
+    <div class="rules">
+      <div class="rule"><span class="rn">R1</span><h3>图层，不是平面</h3>
+        <p>形象由"底层 + 前层"叠出来，靠透明与叠压制造深度；不是一笔平涂。</p>
+        <span class="src">来源：Apple HIG · App icons / Layer design</span></div>
+      <div class="rule"><span class="rn">R2</span><h3>边缘干净，细节靠块面</h3>
+        <p>轮廓要清晰利落，别用羽毛边；避免极细的线和尖角——小尺寸会碎掉。</p>
+        <span class="src">来源：Apple HIG · "Prefer clearly defined edges" / "avoid extremely thin line weights"</span></div>
+      <div class="rule"><span class="rn">R3</span><h3>一个核心想法</h3>
+        <p>用最少的形状表达一件事。图标越简单，越容易被一眼记住。</p>
+        <span class="src">来源：Apple HIG · App icons / Design</span></div>
+      <div class="rule"><span class="rn">R4</span><h3>材质决定高光</h3>
+        <p>镜面高光、折射、半透明能让元素"活"起来——但要克制，只给少数元素。</p>
+        <span class="src">来源：Apple HIG · Liquid Glass / "use sparingly"</span></div>
+      <div class="rule"><span class="rn">R5</span><h3>光从同一个地方来</h3>
+        <p>统一光源方向（左上约 35°）。高光、内阴影、接触影三者必须同向，否则立刻显假。</p>
+        <span class="src">来源：角色设计常规 · 光照一致性</span></div>
+      <div class="rule"><span class="rn">R6</span><h3>表情从眼睛来，不从嘴来</h3>
+        <p>眼睛 + 眼睑 + 眉决定神情；嘴是最后一道、最小的手段。眼距要拉开、位置上移。</p>
+        <span class="src">来源：角色 IP 设计法则 · 面部可读性</span></div>
+      <div class="rule"><span class="rn">R7</span><h3>剪影测试</h3>
+        <p>把形象填成纯黑，还能认出来，才算成立。剪影不过关的形状，细节再多也没用。</p>
+        <span class="src">来源：角色 IP / 图标设计通则</span></div>
+      <div class="rule"><span class="rn">R8</span><h3>动效只在有意义时发生</h3>
+        <p>不做常驻往复动画。平静待机，状态一变才给一次性、短促、精确的反馈。</p>
+        <span class="src">来源：Apple HIG · Motion / Best practices</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 02 建造系统 ============ -->
+  <section class="section">
+    <header><span class="num">02</span><h2>建造系统：三个统一</h2></header>
+    <p class="lede">先把三件"公器"定死——<b>形状网格</b>、<b>光照分层</b>、<b>面部系统</b>。六个形象只是把不同的材质和轮廓套进同一套系统，这样它们看起来才像一家人。</p>
+    <div class="build">
+      <div class="bpanel">
+        <h3>形状网格</h3>
+        <p>120 画布，主形占 80%。关键线取整，光向固定在左上 35°。</p>
+        <div class="bstage">
+          <svg viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="48" fill="none" stroke="var(--sep)" stroke-width=".8" stroke-dasharray="3 4"/>
+            <rect x="18" y="18" width="84" height="84" rx="20" fill="none" stroke="var(--sep)" stroke-width=".8" stroke-dasharray="3 4"/>
+            <path d="M60 4 V116 M4 60 H116" stroke="var(--sep)" stroke-width=".8"/>
+            <circle cx="60" cy="60" r="1.8" fill="var(--label-3)"/>
+            <path d="M6 6 L34 34" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M34 34 l-9 -3 l3 9Z" fill="var(--accent)"/>
+          </svg>
+        </div>
+      </div>
+      <div class="bpanel">
+        <h3>光照分层</h3>
+        <p>一个体积要有五层：底色 → 顶部受光 → 环境暗部 → 镜面高光 → 接触影。</p>
+        <div class="bstage">
+          <svg viewBox="0 0 120 120">
+            <ellipse cx="60" cy="104" rx="28" ry="6" fill="rgba(28,30,40,.18)" filter="url(#fB5)"/>
+            <circle cx="60" cy="58" r="38" fill="var(--surface-2)"/>
+            <path d="M22 58 A38 38 0 0 0 98 58 A40 26 0 0 1 22 58Z" fill="rgba(28,30,40,.22)" filter="url(#fB4)"/>
+            <ellipse cx="46" cy="40" rx="17" ry="11" fill="rgba(255,255,255,.72)" transform="rotate(-28 46 40)" filter="url(#fB4)"/>
+            <circle cx="60" cy="58" r="38" fill="none" stroke="var(--sep)" stroke-width=".8"/>
+            <path d="M4 4 L30 30" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M30 30 l-9 -3 l3 9Z" fill="var(--accent)"/>
+          </svg>
+        </div>
+      </div>
+      <div class="bpanel">
+        <h3>面部系统</h3>
+        <p>三层眼睛（主体 + 透光 + 柔高光）、下拉眼睑、淡眉。颜色从材质里取，不贴黑。</p>
+        <div class="bstage">
+          <svg viewBox="0 0 120 120">
+            <rect x="16" y="16" width="88" height="88" rx="24" fill="var(--surface-2)"/>
+            <g class="face" style="--fb:#1D1D1F;--fb2:#6E6E73;--hl:#FFFFFF">
+              <g class="brows" opacity=".62">
+                <path d="M36 37 Q45 33 54 36" fill="none" stroke="#1D1D1F" stroke-width="2.4" stroke-linecap="round"/>
+                <path d="M66 36 Q75 33 84 37" fill="none" stroke="#1D1D1F" stroke-width="2.4" stroke-linecap="round"/>
+              </g>
+              <g class="eyes">
+                <ellipse cx="45" cy="52" rx="9.4" ry="11.4" fill="#1D1D1F"/>
+                <ellipse cx="75" cy="52" rx="9.4" ry="11.4" fill="#1D1D1F"/>
+                <ellipse cx="46.4" cy="56.4" rx="5.8" ry="4.8" fill="#6E6E73" opacity=".5"/>
+                <ellipse cx="76.4" cy="56.4" rx="5.8" ry="4.8" fill="#6E6E73" opacity=".5"/>
+                <ellipse cx="40.8" cy="46.6" rx="3" ry="2.2" fill="#fff" opacity=".85" filter="url(#fB1)"/>
+                <ellipse cx="70.8" cy="46.6" rx="3" ry="2.2" fill="#fff" opacity=".85" filter="url(#fB1)"/>
+              </g>
+              <path d="M54.5 68 Q60 71.5 65.5 68" fill="none" stroke="#1D1D1F" stroke-width="2.6" stroke-linecap="round" opacity=".3"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 六个方案 ============ -->
+  <section class="section">
+    <header><span class="num">03</span><h2>六个新方案</h2></header>
+    <p class="lede">分成两族：<b>器物</b>（像 macOS 图标，一个核心想法、几何精炼）和<b>生灵</b>（像成熟 IP，有生物感与亲和力）。每张卡的大图是待机态，下面一排是四个状态。</p>
+
+    <div class="famtag">家族 A · 器物 —— 一小段可以被握住的比喻</div>
+    <div class="grid6">
+
+      <!-- A1 露 -->
+      <div class="concept">
+        <div class="stage"><span class="ch ch-dew" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-dew"/></svg></span></div>
+        <div class="states">
+          <figure><span class="ch ch-dew" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-dew"/></svg></span><figcaption>待机</figcaption></figure>
+          <figure><span class="ch ch-dew" data-s="focus"><svg class="art" viewBox="0 0 120 120"><use href="#b-dew"/></svg></span><figcaption>专注</figcaption></figure>
+          <figure><span class="ch ch-dew" data-s="soon"><svg class="art" viewBox="0 0 120 120"><use href="#b-dew"/></svg></span><figcaption>临期</figcaption></figure>
+          <figure><span class="ch ch-dew" data-s="done"><svg class="art" viewBox="0 0 120 120"><use href="#b-dew"/></svg></span><figcaption>完成</figcaption></figure>
+        </div>
+        <div class="cbody">
+          <span class="tag">方案 A</span>
+          <h3>露 · 液滴</h3>
+          <p class="concept-line">一滴悬着的水。半透、折射、内部有自己的光——它本身就是"液态玻璃"的原型。</p>
+          <div class="spec2">
+            <div class="r"><b>轮廓</b><span>上尖下圆的水滴，唯一的"垂坠"剪影</span></div>
+            <div class="r"><b>材质</b><span>玻璃：内折射边 + 顶部软高光 + 底部回光，高光弥散不刺眼</span></div>
+            <div class="r"><b>优势</b><span>与 v4 的 Liquid Glass 外壳同源，最不需要"说服"；深色桌面上最通透</span></div>
+            <div class="r risk"><b>风险</b><span>玻璃在浅色背景上容易"化掉"；需要靠边缘折射线拉住</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- A2 沙 -->
+      <div class="concept">
+        <div class="stage"><span class="ch ch-sand" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-sand"/></svg></span></div>
+        <div class="states">
+          <figure><span class="ch ch-sand" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-sand"/></svg></span><figcaption>待机</figcaption></figure>
+          <figure><span class="ch ch-sand" data-s="focus"><svg class="art" viewBox="0 0 120 120"><use href="#b-sand"/></svg></span><figcaption>专注</figcaption></figure>
+          <figure><span class="ch ch-sand" data-s="soon"><svg class="art" viewBox="0 0 120 120"><use href="#b-sand"/></svg></span><figcaption>临期</figcaption></figure>
+          <figure><span class="ch ch-sand" data-s="done"><svg class="art" viewBox="0 0 120 120"><use href="#b-sand"/></svg></span><figcaption>完成</figcaption></figure>
+        </div>
+        <div class="cbody">
+          <span class="tag">方案 B</span>
+          <h3>沙 · 沙漏</h3>
+          <p class="concept-line">一只黄铜框的玻璃沙漏。时间在里面下落，这件事本身就能被看见。</p>
+          <div class="spec2">
+            <div class="r"><b>轮廓</b><span>上下两腔 + 腰颈，剪影是中轴对称的"8"，远处也能认出</span></div>
+            <div class="r"><b>材质</b><span>三材质同框：玻璃（半透）+ 砂（不透明暖色）+ 黄铜（镜面条高光）</span></div>
+            <div class="r"><b>状态</b><span>沙子是天然的进度条：完成时下腔堆满，是唯一的正反馈</span></div>
+            <div class="r risk"><b>风险</b><span>结构最复杂，小尺寸下腰颈会糊；已放大上腔以保证脸站得住</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- A3 星 -->
+      <div class="concept">
+        <div class="stage"><span class="ch ch-star" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-star"/></svg></span></div>
+        <div class="states">
+          <figure><span class="ch ch-star" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-star"/></svg></span><figcaption>待机</figcaption></figure>
+          <figure><span class="ch ch-star" data-s="focus"><svg class="art" viewBox="0 0 120 120"><use href="#b-star"/></svg></span><figcaption>专注</figcaption></figure>
+          <figure><span class="ch ch-star" data-s="soon"><svg class="art" viewBox="0 0 120 120"><use href="#b-star"/></svg></span><figcaption>临期</figcaption></figure>
+          <figure><span class="ch ch-star" data-s="done"><svg class="art" viewBox="0 0 120 120"><use href="#b-star"/></svg></span><figcaption>完成</figcaption></figure>
+        </div>
+        <div class="cbody">
+          <span class="tag">方案 C</span>
+          <h3>星 · 折纸星</h3>
+          <p class="concept-line">一颗用纸折出来的八角星。有折面、有棱线——它是"计划"最直白的形状。</p>
+          <div class="spec2">
+            <div class="r"><b>轮廓</b><span>八角星对称剪影，唯一全直线外形，辨识度最高</span></div>
+            <div class="r"><b>材质</b><span>纸：八个折面靠明暗两档交替，没有镜面反射，只有一枚软高光</span></div>
+            <div class="r"><b>优势</b><span>放大到桌面摆件也立得住；折面本身就是"层次"，天生不俗</span></div>
+            <div class="r risk"><b>风险</b><span>纸的质感很吃投影像素；已用一层定向投影把它"抬"起来</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="famtag">家族 B · 生灵 —— 也可以用"活的东西"来陪</div>
+    <div class="grid6">
+
+      <!-- B1 萤 -->
+      <div class="concept">
+        <div class="stage"><span class="ch ch-fly" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-fly"/></svg></span></div>
+        <div class="states">
+          <figure><span class="ch ch-fly" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-fly"/></svg></span><figcaption>待机</figcaption></figure>
+          <figure><span class="ch ch-fly" data-s="focus"><svg class="art" viewBox="0 0 120 120"><use href="#b-fly"/></svg></span><figcaption>专注</figcaption></figure>
+          <figure><span class="ch ch-fly" data-s="soon"><svg class="art" viewBox="0 0 120 120"><use href="#b-fly"/></svg></span><figcaption>临期</figcaption></figure>
+          <figure><span class="ch ch-fly" data-s="done"><svg class="art" viewBox="0 0 120 120"><use href="#b-fly"/></svg></span><figcaption>完成</figcaption></figure>
+        </div>
+        <div class="cbody">
+          <span class="tag">方案 D</span>
+          <h3>萤 · 萤火</h3>
+          <p class="concept-line">一只停在桌角的萤火虫。腹部那点光，是"该开始了"的温柔提示。</p>
+          <div class="spec2">
+            <div class="r"><b>轮廓</b><span>圆头 + 圆腹 + 一对半透翅，剪影有"薄"的部位，很轻</span></div>
+            <div class="r"><b>材质</b><span>深色甲壳（哑光）+ 半透翅 + 自发光腹部——三材质对比最丰富</span></div>
+            <div class="r"><b>状态</b><span>腹部亮度就是状态：临期最亮，完成时转暖金，一眼可读</span></div>
+            <div class="r risk"><b>风险</b><span>发光在小尺寸上会糊成一团；已限制光晕半径并保留清晰甲壳边</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B2 鸮 -->
+      <div class="concept">
+        <div class="stage"><span class="ch ch-owl" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-owl"/></svg></span></div>
+        <div class="states">
+          <figure><span class="ch ch-owl" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-owl"/></svg></span><figcaption>待机</figcaption></figure>
+          <figure><span class="ch ch-owl" data-s="focus"><svg class="art" viewBox="0 0 120 120"><use href="#b-owl"/></svg></span><figcaption>专注</figcaption></figure>
+          <figure><span class="ch ch-owl" data-s="soon"><svg class="art" viewBox="0 0 120 120"><use href="#b-owl"/></svg></span><figcaption>临期</figcaption></figure>
+          <figure><span class="ch ch-owl" data-s="done"><svg class="art" viewBox="0 0 120 120"><use href="#b-owl"/></svg></span><figcaption>完成</figcaption></figure>
+        </div>
+        <div class="cbody">
+          <span class="tag">方案 E</span>
+          <h3>鸮 · 猫头鹰</h3>
+          <p class="concept-line">一只安静的猫头鹰。夜里不睡、守着时间——这是陪伴感最强的一版。</p>
+          <div class="spec2">
+            <div class="r"><b>轮廓</b><span>蛋形身体 + 两只耳羽，剪影顶部有"破口"，一眼区分于球</span></div>
+            <div class="r"><b>材质</b><span>哑光绒羽：宽而弱的高光、明显的底部暗部，没有镜面</span></div>
+            <div class="r"><b>优势</b><span>面部圆盘 + 大眼，天然亲和；四种表情最好读</span></div>
+            <div class="r risk"><b>风险</b><span>动物形象最容易被做"幼稚"；用哑光灰米色 + 奔跑/不做腮红压住</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B3 苔 -->
+      <div class="concept">
+        <div class="stage"><span class="ch ch-moss" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-moss"/></svg></span></div>
+        <div class="states">
+          <figure><span class="ch ch-moss" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-moss"/></svg></span><figcaption>待机</figcaption></figure>
+          <figure><span class="ch ch-moss" data-s="focus"><svg class="art" viewBox="0 0 120 120"><use href="#b-moss"/></svg></span><figcaption>专注</figcaption></figure>
+          <figure><span class="ch ch-moss" data-s="soon"><svg class="art" viewBox="0 0 120 120"><use href="#b-moss"/></svg></span><figcaption>临期</figcaption></figure>
+          <figure><span class="ch ch-moss" data-s="done"><svg class="art" viewBox="0 0 120 120"><use href="#b-moss"/></svg></span><figcaption>完成</figcaption></figure>
+        </div>
+        <div class="cbody">
+          <span class="tag">方案 F</span>
+          <h3>苔 · 苔玉</h3>
+          <p class="concept-line">一颗养在桌上的苔藓球。它长得慢，但一直在长——正好对应"坚持"。</p>
+          <div class="spec2">
+            <div class="r"><b>轮廓</b><span>圆球 + 顶部一小丛新叶，剪影有"长出去的一笔"，安静但不呆</span></div>
+            <div class="r"><b>材质</b><span>苔绒：无镜面、靠细碎的明暗斑与上缘柔光表现体积，最耐看</span></div>
+            <div class="r"><b>优势</b><span>质地最容易显"高级"；绿色在灰白系统里是天然的一小点生气</span></div>
+            <div class="r risk"><b>风险</b><span>绿容易跑偏成"廉价卡通绿"；已把饱和度压到 55% 左右</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 04 硬检验 ============ -->
+  <section class="section">
+    <header><span class="num">04</span><h2>三项硬检验</h2></header>
+    <p class="lede">不用喜好判断，用三个可证伪的测试淘汰：<b>剪影</b>（填黑还认得出吗）、<b>灰度</b>（去掉颜色还成立吗）、<b>尺寸</b>（16px 还看得清吗）。</p>
+
+    <div class="tests t-sil">
+      <div class="tcol"><span class="nm">露</span><span class="ch ch-dew" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-dew"/></svg></span></div>
+      <div class="tcol"><span class="nm">沙</span><span class="ch ch-sand" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-sand"/></svg></span></div>
+      <div class="tcol"><span class="nm">星</span><span class="ch ch-star" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-star"/></svg></span></div>
+      <div class="tcol"><span class="nm">萤</span><span class="ch ch-fly" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-fly"/></svg></span></div>
+      <div class="tcol"><span class="nm">鸮</span><span class="ch ch-owl" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-owl"/></svg></span></div>
+      <div class="tcol"><span class="nm">苔</span><span class="ch ch-moss" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-moss"/></svg></span></div>
+    </div>
+
+    <div class="tests t-gray" style="margin-top:14px">
+      <div class="tcol"><span class="nm">露</span><span class="ch ch-dew" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-dew"/></svg></span></div>
+      <div class="tcol"><span class="nm">沙</span><span class="ch ch-sand" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-sand"/></svg></span></div>
+      <div class="tcol"><span class="nm">星</span><span class="ch ch-star" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-star"/></svg></span></div>
+      <div class="tcol"><span class="nm">萤</span><span class="ch ch-fly" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-fly"/></svg></span></div>
+      <div class="tcol"><span class="nm">鸮</span><span class="ch ch-owl" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-owl"/></svg></span></div>
+      <div class="tcol"><span class="nm">苔</span><span class="ch ch-moss" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-moss"/></svg></span></div>
+    </div>
+
+    <div class="sizerow">
+      <div class="cell"><span class="ch ch-dew" data-s="idle"><svg class="art sz64" viewBox="0 0 120 120"><use href="#b-dew"/></svg></span><span>64</span></div>
+      <div class="cell"><span class="ch ch-dew" data-s="idle"><svg class="art sz48" viewBox="0 0 120 120"><use href="#b-dew"/></svg></span><span>48</span></div>
+      <div class="cell"><span class="ch ch-dew" data-s="idle"><svg class="art sz32" viewBox="0 0 120 120"><use href="#b-dew"/></svg></span><span>32</span></div>
+      <div class="cell"><span class="ch ch-dew" data-s="idle"><svg class="art sz24" viewBox="0 0 120 120"><use href="#b-dew"/></svg></span><span>24</span></div>
+      <div class="cell"><span class="ch ch-dew" data-s="idle"><svg class="art sz16" viewBox="0 0 120 120"><use href="#b-dew"/></svg></span><span>16</span></div>
+      <span style="flex:1"></span>
+      <div class="cell"><span class="ch ch-star" data-s="idle"><svg class="art sz64" viewBox="0 0 120 120"><use href="#b-star"/></svg></span><span>64</span></div>
+      <div class="cell"><span class="ch ch-star" data-s="idle"><svg class="art sz48" viewBox="0 0 120 120"><use href="#b-star"/></svg></span><span>48</span></div>
+      <div class="cell"><span class="ch ch-star" data-s="idle"><svg class="art sz32" viewBox="0 0 120 120"><use href="#b-star"/></svg></span><span>32</span></div>
+      <div class="cell"><span class="ch ch-star" data-s="idle"><svg class="art sz24" viewBox="0 0 120 120"><use href="#b-star"/></svg></span><span>24</span></div>
+      <div class="cell"><span class="ch ch-star" data-s="idle"><svg class="art sz16" viewBox="0 0 120 120"><use href="#b-star"/></svg></span><span>16</span></div>
+      <span style="flex:1"></span>
+      <div class="cell"><span class="ch ch-owl" data-s="idle"><svg class="art sz64" viewBox="0 0 120 120"><use href="#b-owl"/></svg></span><span>64</span></div>
+      <div class="cell"><span class="ch ch-owl" data-s="idle"><svg class="art sz48" viewBox="0 0 120 120"><use href="#b-owl"/></svg></span><span>48</span></div>
+      <div class="cell"><span class="ch ch-owl" data-s="idle"><svg class="art sz32" viewBox="0 0 120 120"><use href="#b-owl"/></svg></span><span>32</span></div>
+      <div class="cell"><span class="ch ch-owl" data-s="idle"><svg class="art sz24" viewBox="0 0 120 120"><use href="#b-owl"/></svg></span><span>24</span></div>
+      <div class="cell"><span class="ch ch-owl" data-s="idle"><svg class="art sz16" viewBox="0 0 120 120"><use href="#b-owl"/></svg></span><span>16</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 05 面部系统详图 ============ -->
+  <section class="section">
+    <header><span class="num">05</span><h2>面部系统：这次到底改了什么</h2></header>
+    <p class="lede">廉价感的根子在脸。这一版把上一版"黑点 + 白圆点 + 弧线嘴"整个拆掉重建。</p>
+    <div class="facenote">
+      <div class="facestage">
+        <span class="ch ch-owl" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-owl"/></svg></span>
+      </div>
+      <div>
+        <ul>
+          <li><b>眼睛是三层，不是两点。</b>主体深色椭圆 + 下方同色系的"透光层" + 一枚柔边高光（带 1px 模糊）。看起来是"有厚度的眼睛"，而不是贴纸。</li>
+          <li><b>眼睛的颜色从材质里取。</b>露是深蓝、沙是焦褐、星是墨、鸮是赭——五官长在角色身上，不是统一的黑色。</li>
+          <li><b>眼距拉开、位置上移。</b>这是"成年角色"的比例。上一版小而低的眼睛，是婴幼儿插画的语言。</li>
+          <li><b>表情由眼睑承担。</b>专注 = 眼睑压低（<code>scaleY(.56)</code>），临期 = 睁大，完成 = 换成月牙。眼睛不做缩小，只做开合。</li>
+          <li><b>眉只做辅助。</b>2.4px 圆头、62% 不透明度，随状态上下移动 4px，负责"思考"和"惊讶"两种语气。</li>
+          <li><b>嘴是最后手段。</b>待机只有一道 30% 的淡痕；只有"临期"和"完成"才出现嘴，且只有 2.6px。</li>
+          <li><b>明令禁止：</b>纯白圆点高光、粗弧线嘴、腮红、黑色五官。这四样是上一版廉价感的直接来源。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 06 结论 ============ -->
+  <section class="section">
+    <header><span class="num">06</span><h2>我的建议</h2></header>
+    <div class="pick">
+      <div class="pickcard">
+        <h3>如果要"最像浮时"：选 A · 露</h3>
+        <p>它和已经定稿的 Liquid Glass 外壳同源，气质完全一致，且是六个里唯一"本身就是材质"的方案。代价是浅色背景下需要靠折射线拉住轮廓。</p>
+      </div>
+      <div class="pickcard">
+        <h3>如果要"最讨喜、最好做动效"：选 E · 鸮</h3>
+        <p>面部圆盘大、四种表情最易读，做眨眼和眼神游移的收益最高。代价是要严格控制材质，别掉进"卡通可爱"。</p>
+      </div>
+      <div class="pickcard">
+        <h3>如果要"最稳、最不过时"：选 C · 星</h3>
+        <p>全直线对称剪影，剪影与尺寸两项测试都是满分，放大到桌面摆件也不俗。代价是个性偏中性，需要靠动效补性格。</p>
+      </div>
+      <div class="pickcard">
+        <h3>也可以两两组合</h3>
+        <p>比如"露的材质 + 鸮的轮廓"，或"星做托盘图标、鸮做悬浮窗主形象"。告诉我你的倾向，我来做组合稿。</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    浮时 · 助手形象探索 02　·　规范对标 Apple HIG（Layers / Materials / Motion）与角色 IP 设计通则<br>
+    本页为设计稿，非产品代码。定下方向后，我会把它接回 v4 原型，重画第 02 节与提醒弹窗，再进入骨架实现。
+  </div>
+</div>
+
+<script>
+(function(){
+  var FACE =
+    '<g class="face">' +
+      '<g class="brows fx">' +
+        '<path class="brow" d="M36 37 Q45 33 54 36"/>' +
+        '<path class="brow" d="M66 36 Q75 33 84 37"/>' +
+      '</g>' +
+      '<g class="eyes fx">' +
+        '<ellipse class="eye" cx="45" cy="52" rx="9.4" ry="11.4"/>' +
+        '<ellipse class="eye" cx="75" cy="52" rx="9.4" ry="11.4"/>' +
+        '<ellipse class="eye-sh" cx="46.4" cy="56.4" rx="5.8" ry="4.8"/>' +
+        '<ellipse class="eye-sh" cx="76.4" cy="56.4" rx="5.8" ry="4.8"/>' +
+        '<ellipse class="hl" cx="40.8" cy="46.6" rx="3" ry="2.2" filter="url(#fB1)"/>' +
+        '<ellipse class="hl" cx="70.8" cy="46.6" rx="3" ry="2.2" filter="url(#fB1)"/>' +
+      '</g>' +
+      '<g class="crescents fx">' +
+        '<path d="M36 53 Q45 43 54 53"/>' +
+        '<path d="M66 53 Q75 43 84 53"/>' +
+      '</g>' +
+      '<g class="mouths fx">' +
+        '<path class="m-soft" d="M54.5 68 Q60 71.5 65.5 68"/>' +
+        '<path class="m-flat" d="M55 69 H65"/>' +
+        '<ellipse class="m-o" cx="60" cy="70" rx="3.2" ry="4"/>' +
+        '<path class="m-wide" d="M52 67 Q60 76 68 67"/>' +
+      '</g>' +
+    '</g>';
+
+  document.querySelectorAll('.ch svg.art').forEach(function(svg){
+    svg.insertAdjacentHTML('beforeend', FACE);
+  });
+
+  var body = document.body;
+  document.getElementById('themeBtn').addEventListener('click', function(){
+    body.dataset.theme = body.dataset.theme === 'light' ? 'dark' : 'light';
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<Window x:Class="FuShi.UI.WidgetWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:FuShi.UI"
+        Title="浮时" Width="252" SizeToContent="Height"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" ShowActivated="False"
+        ResizeMode="NoResize"
+        MouseLeftButtonDown="OnGrab">
+    <Border x:Name="Root" CornerRadius="32" Background="{StaticResource SurfaceBrush}"
+            BorderThickness="1" BorderBrush="#26FFFFFF" Padding="10,9,12,9">
+        <StackPanel>
+            <!-- 药丸态：团子 + 下一件事 -->
+            <StackPanel x:Name="Pill" Orientation="Horizontal" Background="Transparent">
+                <local:BotView x:Name="Bot" Width="44" Height="44" Margin="2,0,0,0" Mood="Idle"/>
+                <StackPanel VerticalAlignment="Center" Margin="12,0,4,1">
+                    <TextBlock x:Name="TitleText" Text="今天没有课" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{StaticResource LabelBrush}"/>
+                    <TextBlock x:Name="SubText" Text="团子待命中" FontSize="11.5"
+                               Foreground="{StaticResource Label2Brush}" Margin="0,1,0,0"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- 展开态：M1 为空课表态 -->
+            <Border x:Name="Expanded" Visibility="Collapsed" Margin="2,10,0,2" CornerRadius="18"
+                    Background="#1FFFFFFF" Padding="14,12,14,14">
+                <StackPanel>
+                    <TextBlock x:Name="DateText" FontSize="12" FontWeight="SemiBold"
+                               Foreground="{StaticResource Label2Brush}"/>
+                    <TextBlock Text="今天没有课" FontSize="20" FontWeight="Bold"
+                               Foreground="{StaticResource LabelBrush}" Margin="0,6,0,2"/>
+                    <TextBlock Text="团子陪你安心自习。课程与提醒管理将在后续版本提供。"
+                               FontSize="12" Foreground="{StaticResource Label2Brush}"
+                               TextWrapping="Wrap" LineHeight="19" Margin="0,2,0,0"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Border>
+</Window>

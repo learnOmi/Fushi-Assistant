@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浮时 · 助手形象探索 04</title>
+<style>
+/* ============================================================
+   浮时 · 形象探索 04 —— 科技极简系
+   参照：BT-7274 / ASTRO BOT / EVE 这一脉
+   一个发光的圆眼 + 极简几何体 + 哑光白 + 一点点光
+   ============================================================ */
+:root{
+  --bg:#F5F5F7; --surface:#FFFFFF; --surface-2:#EDEDF0;
+  --label:#1D1D1F; --label-2:#6E6E73; --label-3:#96969C;
+  --sep:#D2D2D7; --sep-2:#E8E8ED;
+  --accent:#FF7A45;
+  --stage-a:#EAECEF; --stage-b:#CFD4DB;
+  --r-xl:28px; --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --ease:cubic-bezier(.2,0,0,1); --spring:cubic-bezier(.34,1.15,.5,1);
+}
+[data-theme="dark"]{
+  --bg:#000; --surface:#1C1C1E; --surface-2:#2C2C2E;
+  --label:#F5F5F7; --label-2:#A1A1A6; --label-3:#7C7C81;
+  --sep:#38383A; --sep-2:#2C2C2E;
+  --stage-a:#2A2C31; --stage-b:#141518;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);color:var(--label);font-family:var(--font);
+  font-size:16px;line-height:1.6;letter-spacing:-.005em;
+  padding:72px 32px 112px;-webkit-font-smoothing:antialiased;
+  transition:background .35s var(--ease),color .35s var(--ease);}
+.wrap{max-width:1040px;margin:0 auto;}
+
+.masthead{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;
+  padding-bottom:28px;border-bottom:1px solid var(--sep);margin-bottom:60px;}
+.masthead h1{margin:0;font-size:40px;line-height:1.08;letter-spacing:-.032em;font-weight:700;}
+.masthead .tagline{margin:10px 0 0;color:var(--label-2);font-size:15px;letter-spacing:0;}
+.ghost{border:1px solid var(--sep);background:var(--surface);color:var(--label);
+  font-family:var(--font);font-size:14px;font-weight:500;border-radius:980px;padding:9px 18px;
+  cursor:pointer;transition:transform .12s var(--ease),border-color .16s var(--ease);}
+.ghost:hover{border-color:var(--label-3);} .ghost:active{transform:scale(.96);}
+
+.section{margin-bottom:76px;}
+.section > header{display:flex;align-items:baseline;gap:14px;margin-bottom:10px;}
+.num{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--label-3);font-variant-numeric:tabular-nums;}
+.section h2{margin:0;font-size:26px;line-height:1.25;letter-spacing:-.022em;font-weight:650;}
+.lede{margin:0 0 26px;color:var(--label-2);font-size:16px;max-width:74ch;letter-spacing:0;}
+.lede b{color:var(--label);font-weight:620;}
+
+/* ---------- 规则 ---------- */
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.rule{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:18px 20px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.rule .rn{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--accent);}
+.rule h3{margin:5px 0 6px;font-size:14.5px;font-weight:640;letter-spacing:-.008em;}
+.rule p{margin:0;font-size:13px;color:var(--label-2);line-height:1.62;letter-spacing:0;}
+.rule .no{margin-top:9px;display:block;font-size:11.5px;color:#B4642A;letter-spacing:0;line-height:1.5;}
+
+/* ---------- 拆解 ---------- */
+.anat{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.apanel{border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  padding:20px 18px 22px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.apanel h4{margin:0 0 3px;font-size:14px;font-weight:640;letter-spacing:-.008em;}
+.apanel p{margin:0 0 12px;font-size:12px;color:var(--label-2);line-height:1.55;letter-spacing:0;min-height:52px;}
+.apanel .astage{border-radius:var(--r-md);background:linear-gradient(165deg,var(--stage-a),var(--stage-b));
+  display:flex;align-items:center;justify-content:center;height:132px;}
+.apanel .art{width:118px;height:118px;overflow:visible;}
+.faceset{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;}
+.faceset figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:5px;}
+.faceset figcaption{font-size:9.5px;color:var(--label-3);letter-spacing:.03em;}
+.facechip{border-radius:10px;background:linear-gradient(165deg,var(--stage-a),var(--stage-b));
+  padding:6px;display:flex;align-items:center;justify-content:center;}
+.facechip .ch{--fs:1.5;}
+.facechip .art{width:46px;height:46px;overflow:visible;}
+
+/* ---------- 形象卡片 ---------- */
+.grid6{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
+.concept{border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  overflow:hidden;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);
+  transition:box-shadow .2s var(--ease),transform .2s var(--ease);}
+.concept:hover{box-shadow:0 18px 44px -16px rgba(0,0,0,.24);transform:translateY(-2px);}
+.stage{position:relative;height:216px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(165deg,var(--stage-a) 0%,var(--stage-b) 100%);}
+.stage::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(60% 48% at 50% 34%,rgba(255,255,255,.42),rgba(255,255,255,0) 72%);}
+[data-theme="dark"] .stage::before{background:radial-gradient(60% 48% at 50% 34%,rgba(255,255,255,.07),rgba(255,255,255,0) 72%);}
+.stage .art{width:156px;height:156px;overflow:visible;}
+.states{display:flex;justify-content:center;gap:20px;padding:16px 16px 2px;}
+.states figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:7px;}
+.states .art{width:58px;height:58px;overflow:visible;}
+.states figcaption{font-size:10px;letter-spacing:.04em;color:var(--label-3);}
+.cbody{padding:10px 22px 22px;}
+.cbody h3{margin:0 0 4px;font-size:17px;font-weight:650;letter-spacing:-.015em;}
+.cbody .concept-line{font-size:13px;color:var(--label-2);margin:0 0 16px;letter-spacing:0;line-height:1.6;}
+.spec2 .r{display:grid;grid-template-columns:62px 1fr;gap:12px;padding:7px 0;
+  border-top:.5px solid var(--sep-2);font-size:12.5px;letter-spacing:0;line-height:1.55;}
+.spec2 .r b{color:var(--label-3);font-weight:600;font-size:11px;letter-spacing:.05em;padding-top:2px;}
+.spec2 .r span{color:var(--label-2);}
+.spec2 .r.risk span{color:#B4642A;}
+.tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;
+  padding:3px 9px;border-radius:980px;background:var(--surface-2);color:var(--label-2);margin-bottom:12px;}
+
+/* ---------- 硬检验 ---------- */
+.tests{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
+.tcol{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:18px 10px;display:flex;flex-direction:column;align-items:center;gap:12px;
+  box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.tcol .nm{font-size:12px;font-weight:600;}
+.tcol .art{width:64px;height:64px;overflow:visible;}
+.t-sil .art{filter:url(#silToBlack);}
+.t-gray .art{filter:grayscale(1) contrast(1.06);}
+.sizerow{display:flex;align-items:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap;}
+.sizerow .cell{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.sizerow .cell span{font-size:10px;color:var(--label-3);font-variant-numeric:tabular-nums;}
+.sizerow .art{overflow:visible;}
+.sz16{width:16px;height:16px;} .sz24{width:24px;height:24px;} .sz32{width:32px;height:32px;}
+.sz48{width:48px;height:48px;} .sz64{width:64px;height:64px;}
+
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.pickcard{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:20px 22px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.pickcard h3{margin:0 0 6px;font-size:15px;font-weight:640;}
+.pickcard p{margin:0;font-size:13px;color:var(--label-2);line-height:1.66;letter-spacing:0;}
+
+.foot{padding-top:28px;border-top:1px solid var(--sep);color:var(--label-3);font-size:12px;
+  letter-spacing:0;line-height:1.8;}
+
+@media (max-width:1000px){
+  .grid6,.rules,.pick{grid-template-columns:1fr;}
+  .anat{grid-template-columns:repeat(2,1fr);}
+  .tests{grid-template-columns:repeat(3,1fr);}
+  body{padding:36px 18px 72px;}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.001ms!important;}
+}
+
+/* ============================================================
+   科技极简渲染系统
+   ============================================================ */
+.ch{position:relative;display:inline-flex;}
+.ch svg.art{display:block;}
+
+/* 眼 = 一块屏幕。--glow 是它唯一的颜色，按状态变色 */
+.ch[data-s="idle"] ,.ch[data-s="focus"]{--glow:#3AA0FF;}
+.ch[data-s="soon"] {--glow:#FFAE1F;}
+.ch[data-s="done"] {--glow:#2FCF7A;}
+
+.ch .face{transform-box:view-box;transform-origin:60px 56px;
+  transform:translate(var(--fx,0px),var(--fy,0px)) scale(var(--fs,1));}
+.ch .face .fx{transform-box:fill-box;transform-origin:center;
+  transition:transform .3s var(--spring),opacity .22s var(--ease);}
+.ch .face .g-idle,.ch .face .g-focus,.ch .face .g-soon,.ch .face .g-done{opacity:0;}
+.ch[data-s="idle"] .g-idle{opacity:1;}
+.ch[data-s="focus"] .g-focus{opacity:1;}
+.ch[data-s="soon"] .g-soon{opacity:1;}
+.ch[data-s="done"] .g-done{opacity:1;}
+.ch[data-s="focus"] .iris{opacity:.14;}
+.ch[data-s="soon"] .iris{opacity:.5;}
+
+/* 每个几何体的光学器适配 */
+.ch-orb     {--fs:1;    --fy:2px;}
+.ch-capsule {--fs:.94;  --fy:2px;}
+.ch-pod     {--fs:1;    --fy:4px;}
+.ch-ring    {--fs:.92;  --fy:0px;}
+.ch-twin    {--fs:.84;  --fy:-18px;}
+.ch-disc    {--fs:.95;  --fy:-2px;}
+</style>
+</head>
+<body data-theme="light">
+
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+<defs>
+  <filter id="fB1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1"/></filter>
+  <filter id="fB2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>
+  <filter id="fB4" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="4"/></filter>
+  <filter id="fB5" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5"/></filter>
+  <filter id="fB8" x="-90%" y="-90%" width="280%" height="280%"><feGaussianBlur stdDeviation="8"/></filter>
+  <filter id="silToBlack" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 4 0"/>
+    <feComponentTransfer><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+  </filter>
+
+  <!-- 三材质：哑光白（80%）· 深色玻璃（15%）· 光（5%） -->
+  <linearGradient id="gShell" x1=".05" y1="0" x2=".55" y2="1">
+    <stop offset="0%" stop-color="#FFFFFF"/><stop offset="42%" stop-color="#EAEDF1"/><stop offset="100%" stop-color="#BCC3CB"/>
+  </linearGradient>
+  <linearGradient id="gShell2" x1=".05" y1="0" x2=".55" y2="1">
+    <stop offset="0%" stop-color="#F2F4F7"/><stop offset="46%" stop-color="#D2D7DE"/><stop offset="100%" stop-color="#A6ADB6"/>
+  </linearGradient>
+  <linearGradient id="gEdge" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#9AA2AC"/>
+  </linearGradient>
+  <radialGradient id="gLens" cx="42%" cy="36%" r="72%">
+    <stop offset="0%" stop-color="#333C45"/><stop offset="58%" stop-color="#1B2026"/><stop offset="100%" stop-color="#0E1114"/>
+  </radialGradient>
+
+  <!-- ① 核 · 单眼核 -->
+  <clipPath id="c-orb"><circle cx="60" cy="62" r="40"/></clipPath>
+  <symbol id="b-orb" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="110" rx="30" ry="6" fill="rgba(30,38,50,.16)" filter="url(#fB8)"/>
+    <circle cx="60" cy="62" r="40" fill="url(#gShell)" stroke="rgba(124,134,146,.34)" stroke-width="1"/>
+    <g clip-path="url(#c-orb)">
+      <ellipse cx="44" cy="38" rx="20" ry="13" transform="rotate(-28 44 38)" fill="rgba(255,255,255,.66)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="62" rx="40" ry="12.5" fill="none" stroke="rgba(34,42,54,.16)" stroke-width="1.6"/>
+      <ellipse cx="60" cy="100" rx="34" ry="16" fill="rgba(44,52,64,.20)" filter="url(#fB5)"/>
+    </g>
+    <circle cx="60" cy="98" r="2" fill="rgba(78,88,102,.45)"/>
+  </symbol>
+
+  <!-- ② 瞳 · 胶囊 -->
+  <clipPath id="c-capsule"><rect x="29" y="18" width="62" height="88" rx="31"/></clipPath>
+  <symbol id="b-capsule" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="112" rx="26" ry="5" fill="rgba(30,38,50,.16)" filter="url(#fB8)"/>
+    <rect x="29" y="18" width="62" height="88" rx="31" fill="url(#gShell)" stroke="rgba(124,134,146,.34)" stroke-width="1"/>
+    <g clip-path="url(#c-capsule)">
+      <ellipse cx="45" cy="42" rx="14" ry="24" transform="rotate(-6 45 42)" fill="rgba(255,255,255,.62)" filter="url(#fB4)"/>
+      <path d="M29 80 H91" stroke="rgba(34,42,54,.18)" stroke-width="1.4"/>
+      <ellipse cx="60" cy="103" rx="30" ry="15" fill="rgba(44,52,64,.18)" filter="url(#fB5)"/>
+    </g>
+    <circle cx="60" cy="90" r="2" fill="rgba(78,88,102,.45)"/>
+  </symbol>
+
+  <!-- ③ 舱 · 方舱 -->
+  <clipPath id="c-pod"><rect x="21" y="24" width="78" height="76" rx="24"/></clipPath>
+  <symbol id="b-pod" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="110" rx="32" ry="6" fill="rgba(30,38,50,.16)" filter="url(#fB8)"/>
+    <rect x="21" y="24" width="78" height="76" rx="24" fill="url(#gShell)" stroke="rgba(124,134,146,.34)" stroke-width="1"/>
+    <g clip-path="url(#c-pod)">
+      <ellipse cx="40" cy="42" rx="18" ry="12" transform="rotate(-24 40 42)" fill="rgba(255,255,255,.62)" filter="url(#fB4)"/>
+      <path d="M22 40 H98" stroke="rgba(34,42,54,.16)" stroke-width="1.4"/>
+      <ellipse cx="60" cy="100" rx="36" ry="16" fill="rgba(44,52,64,.20)" filter="url(#fB5)"/>
+    </g>
+    <g fill="rgba(84,94,108,.42)">
+      <circle cx="33" cy="34" r="1.8"/><circle cx="87" cy="34" r="1.8"/>
+      <circle cx="33" cy="90" r="1.8"/><circle cx="87" cy="90" r="1.8"/>
+    </g>
+    <g stroke="rgba(84,94,108,.38)" stroke-width="1.6" stroke-linecap="round">
+      <path d="M52 92 V97"/><path d="M60 92 V97"/><path d="M68 92 V97"/>
+    </g>
+  </symbol>
+
+  <!-- ④ 环 · 悬浮环 -->
+  <symbol id="b-ring" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="104" rx="34" ry="6" fill="rgba(30,38,50,.16)" filter="url(#fB8)"/>
+    <ellipse cx="60" cy="67" rx="37" ry="14" fill="none" stroke="rgba(140,150,162,.6)" stroke-width="12"/>
+    <ellipse cx="60" cy="63" rx="37" ry="14" fill="none" stroke="url(#gEdge)" stroke-width="12"/>
+    <ellipse cx="60" cy="63" rx="37" ry="14" fill="none" stroke="rgba(124,134,146,.30)" stroke-width="12.4" stroke-dasharray="0 1"/>
+    <ellipse cx="60" cy="60" rx="31" ry="10" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.6" filter="url(#fB1)"/>
+    <g stroke="rgba(70,80,94,.34)" stroke-width="1.6" stroke-linecap="round">
+      <path d="M60 46 V50"/><path d="M60 76 V80"/>
+    </g>
+  </symbol>
+
+  <!-- ⑤ 豆 · 双球 -->
+  <clipPath id="c-thd"><circle cx="60" cy="38" r="26"/></clipPath>
+  <clipPath id="c-tbd"><circle cx="60" cy="86" r="32"/></clipPath>
+  <symbol id="b-twin" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="114" rx="28" ry="5" fill="rgba(30,38,50,.16)" filter="url(#fB8)"/>
+    <circle cx="60" cy="86" r="32" fill="url(#gShell2)" stroke="rgba(124,134,146,.34)" stroke-width="1"/>
+    <g clip-path="url(#c-tbd)">
+      <ellipse cx="45" cy="68" rx="15" ry="11" transform="rotate(-26 45 68)" fill="rgba(255,255,255,.55)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="112" rx="28" ry="14" fill="rgba(44,52,64,.22)" filter="url(#fB5)"/>
+    </g>
+    <circle cx="60" cy="38" r="26" fill="url(#gShell)" stroke="rgba(124,134,146,.34)" stroke-width="1"/>
+    <g clip-path="url(#c-thd)">
+      <ellipse cx="49" cy="25" rx="13" ry="9" transform="rotate(-28 49 25)" fill="rgba(255,255,255,.66)" filter="url(#fB4)"/>
+    </g>
+    <path d="M38 60 Q60 71 82 60" fill="none" stroke="var(--glow)" stroke-width="2.2" opacity=".5" filter="url(#fB2)"/>
+  </symbol>
+
+  <!-- ⑥ 碟 · 悬浮碟 -->
+  <clipPath id="c-disc"><ellipse cx="60" cy="62" rx="46" ry="30"/></clipPath>
+  <symbol id="b-disc" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="108" rx="40" ry="6" fill="rgba(30,38,50,.16)" filter="url(#fB8)"/>
+    <ellipse cx="60" cy="78" rx="40" ry="9" fill="none" stroke="rgba(110,122,136,.32)" stroke-width="1.6"/>
+    <ellipse cx="60" cy="62" rx="46" ry="30" fill="url(#gShell)" stroke="rgba(124,134,146,.34)" stroke-width="1"/>
+    <g clip-path="url(#c-disc)">
+      <ellipse cx="42" cy="46" rx="22" ry="11" transform="rotate(-18 42 46)" fill="rgba(255,255,255,.62)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="58" rx="27" ry="23" fill="none" stroke="rgba(34,42,54,.13)" stroke-width="1.2"/>
+      <ellipse cx="60" cy="88" rx="44" ry="14" fill="rgba(44,52,64,.20)" filter="url(#fB5)"/>
+    </g>
+    <circle cx="60" cy="34" r="2.4" fill="var(--glow)"/>
+    <circle cx="60" cy="34" r="6" fill="var(--glow)" opacity=".45" filter="url(#fB4)"/>
+  </symbol>
+</defs>
+</svg>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>浮时 · 助手形象探索 04</h1>
+      <p class="tagline">换掉整个设计语言：参照 BT-7274 / ASTRO BOT / EVE 这一脉　·　一个发光的圆眼 + 极简几何体 + 哑光白</p>
+    </div>
+    <button class="ghost" id="themeBtn">切换外观</button>
+  </div>
+
+  <!-- ============ 01 规则 ============ -->
+  <section class="section">
+    <header><span class="num">01</span><h2>这一脉为什么好看：六条规则</h2></header>
+    <p class="lede">BT 那类形象的好看不是造型巧妙，是<b>克制到只剩一个焦点</b>。整张脸只有一个发光的圆，其余全是哑光白。下面六条就是它的构造法。</p>
+    <div class="rules">
+      <div class="rule"><span class="rn">T1</span><h3>一个焦点：单眼</h3>
+        <p>整张脸只有一颗圆的光学镜。一个焦点＝一眼记住，也是"机器"最简约的说法。</p>
+        <span class="no">禁止：两只眼、眉、嘴、腮红</span></div>
+      <div class="rule"><span class="rn">T2</span><h3>极简几何体</h3>
+        <p>身体只用球、胶囊、圆角方、环。没有手臂、没有腿、没有天线。</p>
+        <span class="no">禁止：底座 + 提手 + 支脚这类零件堆叠</span></div>
+      <div class="rule"><span class="rn">T3</span><h3>三材质，比例悬殊</h3>
+        <p>哑光白占约 80%、深色玻璃约 15%、发光约 5%。白多、玻璃少、光最少——这个比例是"贵"的来源。</p>
+        <span class="no">禁止：大面积发光、大面积深色、镜面金属</span></div>
+      <div class="rule"><span class="rn">T4</span><h3>悬浮，不画腿</h3>
+        <p>它没有腿。靠一团软影子和一点留白，说明它在飘——这正是"悬浮组件"该有的姿态。</p>
+        <span class="no">禁止：轮子、支架、阴影贴地</span></div>
+      <div class="rule"><span class="rn">T5</span><h3>精密感来自"缝"</h3>
+        <p>科技感不靠零件数量，靠一条均匀的分缝、四颗小钉、一条散热口。少而精。</p>
+        <span class="no">禁止：复杂机构、齿轮、裸露线缆</span></div>
+      <div class="rule"><span class="rn">T6</span><h3>眼即屏幕，小巧</h3>
+        <p>眼睛是一块屏，表情＝屏上的光形（圆点 / 细缝 / 睁大 / 弯月）。整体比例 1:1～1:1.3，绝不用细长。</p>
+        <span class="no">禁止：靠肢体语言表达情绪</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 02 拆解 ============ -->
+  <section class="section">
+    <header><span class="num">02</span><h2>拆开看：就这四件东西</h2></header>
+    <p class="lede">六个形象共用同一颗光学器，区别只在几何体。所以它们像同一条产品线的不同型号——这正是"家族感"。</p>
+    <div class="anat">
+      <div class="apanel">
+        <h4>① 光学器</h4><p>深色玻璃圆镜 + 一圈极淡虹膜环 + 左上一点玻璃高光。整张脸就是它。</p>
+        <div class="astage"><span class="ch ch-orb" data-s="idle" style="--fs:1.34;--fy:6px"><svg class="art" viewBox="0 0 120 120"><g class="face"><circle class="halo" cx="60" cy="56" r="21" fill="var(--glow)" filter="url(#fB8)" opacity=".45"/><circle class="lens" cx="60" cy="56" r="17" fill="url(#gLens)"/><circle class="lens-edge" cx="60" cy="56" r="17" fill="none" stroke="rgba(255,255,255,.30)" stroke-width="1.1"/><circle class="iris" cx="60" cy="56" r="12.6" fill="none" stroke="var(--glow)" stroke-width="1.1" opacity=".28"/><ellipse class="gloss" cx="52.5" cy="48" rx="6.5" ry="4" transform="rotate(-28 52.5 48)" fill="rgba(255,255,255,.5)" filter="url(#fB1)"/><g class="glyph fx"><g class="g-idle"><circle cx="60" cy="56" r="5.2" fill="var(--glow)"/><circle cx="60" cy="56" r="9.5" fill="none" stroke="var(--glow)" stroke-width="1.1" opacity=".35"/></g><rect class="g-focus" x="51.5" y="54" width="17" height="3.6" rx="1.8" fill="var(--glow)"/><g class="g-soon"><circle cx="60" cy="56" r="6.6" fill="var(--glow)"/><circle cx="60" cy="56" r="10.2" fill="none" stroke="var(--glow)" stroke-width="1.6" opacity=".55"/></g><path class="g-done" d="M50 58 Q60 46 70 58" fill="none" stroke="var(--glow)" stroke-width="3.2" stroke-linecap="round"/></g></g></svg></span></div>
+      </div>
+      <div class="apanel">
+        <h4>② 哑光壳体</h4><p>低对比白，一道宽而弱的柔光，一圈 1px 描边定住轮廓。不做镜面反射。</p>
+        <div class="astage"><span class="ch ch-pod" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-pod"/><g class="face"><circle class="halo" cx="60" cy="56" r="21" fill="var(--glow)" filter="url(#fB8)" opacity=".45"/><circle class="lens" cx="60" cy="56" r="17" fill="url(#gLens)"/><circle class="lens-edge" cx="60" cy="56" r="17" fill="none" stroke="rgba(255,255,255,.30)" stroke-width="1.1"/><circle class="iris" cx="60" cy="56" r="12.6" fill="none" stroke="var(--glow)" stroke-width="1.1" opacity=".28"/><ellipse class="gloss" cx="52.5" cy="48" rx="6.5" ry="4" transform="rotate(-28 52.5 48)" fill="rgba(255,255,255,.5)" filter="url(#fB1)"/><g class="glyph fx"><g class="g-idle"><circle cx="60" cy="56" r="5.2" fill="var(--glow)"/><circle cx="60" cy="56" r="9.5" fill="none" stroke="var(--glow)" stroke-width="1.1" opacity=".35"/></g><rect class="g-focus" x="51.5" y="54" width="17" height="3.6" rx="1.8" fill="var(--glow)"/><g class="g-soon"><circle cx="60" cy="56" r="6.6" fill="var(--glow)"/><circle cx="60" cy="56" r="10.2" fill="none" stroke="var(--glow)" stroke-width="1.6" opacity=".55"/></g><path class="g-done" d="M50 58 Q60 46 70 58" fill="none" stroke="var(--glow)" stroke-width="3.2" stroke-linecap="round"/></g></g></svg></span></div>
+      </div>
+      <div class="apanel">
+        <h4>③ 一条缝 + 四颗钉</h4><p>精密感全在这里。1.4px 的分缝线、四角 1.8px 小钉、底部三条散热口。</p>
+        <div class="astage"><span class="ch ch-pod" data-s="idle" style="--fs:1.34;--fy:16px"><svg class="art" viewBox="0 0 120 120"><use href="#b-pod"/></svg></span></div>
+      </div>
+      <div class="apanel">
+        <h4>④ 一团软影</h4><p>没有腿。模糊半径 8 的椭圆软影，加上下方压暗——它就在飘。</p>
+        <div class="astage"><span class="ch ch-twin" data-s="idle" style="--fs:1.3;--fy:-6px"><svg class="art" viewBox="0 0 120 120"><use href="#b-twin"/></svg></span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:22px">
+      <p class="lede" style="margin-bottom:14px">四种状态全部由同一块屏上的光形表达——这是它既科技又能"有表情"的关键：</p>
+      <div class="faceset" id="faceSet"></div>
+    </div>
+  </section>
+
+  <!-- ============ 03 六个方案 ============ -->
+  <section class="section">
+    <header><span class="num">03</span><h2>六个型号</h2></header>
+    <p class="lede">同一颗光学器，六种几何体：<b>球／胶囊／方舱／悬浮环／双球／悬浮碟</b>。都简洁、都小巧、都能飘在桌面角落。</p>
+    <div class="grid6" id="grid"></div>
+  </section>
+
+  <!-- ============ 04 硬检验 ============ -->
+  <section class="section">
+    <header><span class="num">04</span><h2>三项硬检验</h2></header>
+    <p class="lede"><b>剪影</b>（填黑还认得出）、<b>灰度</b>（去色还成立）、<b>尺寸</b>（24px 还站得住）。</p>
+    <div class="tests t-sil" id="testsSil"></div>
+    <div class="tests t-gray" id="testsGray" style="margin-top:14px"></div>
+    <div class="sizerow" id="sizeRow"></div>
+  </section>
+
+  <!-- ============ 05 建议 ============ -->
+  <section class="section">
+    <header><span class="num">05</span><h2>我的建议</h2></header>
+    <div class="pick">
+      <div class="pickcard">
+        <h3>最像 BT：舱 · 方舱</h3>
+        <p>圆角方体 + 四钉 + 散热口 + 单眼。最"设备"、最专业，表情空间也最大。</p>
+      </div>
+      <div class="pickcard">
+        <h3>最简洁：核 · 单眼核</h3>
+        <p>一颗球、一个圆。零件最少，缩到 16px 也不散。缺点是辨识度主要靠那颗眼。</p>
+      </div>
+      <div class="pickcard">
+        <h3>最可爱：豆 · 双球</h3>
+        <p>小头坐大身，颈间漏一线光。最像"伙伴"，也最适合做眨眼、点头这类小动作。</p>
+      </div>
+      <div class="pickcard">
+        <h3>最科技：环 · 悬浮环</h3>
+        <p>一圈薄环托着一颗悬空的眼。最有未来感，也最不像常见软件吉祥物。</p>
+      </div>
+    </div>
+    <p class="lede" style="margin-top:24px">也可以换色不换族——比如把眼睛的光从青蓝换成浮时橙，或用"胶囊体型 + 方舱的分缝"。告诉我你要哪个（或怎么配），我接回 v4 原型、重画第 02 节与提醒弹窗。</p>
+  </section>
+
+  <div class="foot">
+    浮时 · 助手形象探索 04 · 科技极简系　·　设计语言参照 BT-7274 / ASTRO BOT / EVE 一脉　·　规则对标 Apple HIG（Materials / Motion / App icons）<br>
+    本页为设计稿，非产品代码。
+  </div>
+</div>
+
+<script>
+(function(){
+  var FACE =
+    '<g class="face">' +
+      '<circle class="halo" cx="60" cy="56" r="21" fill="var(--glow)" filter="url(#fB8)" opacity=".45"/>' +
+      '<circle class="lens" cx="60" cy="56" r="17" fill="url(#gLens)"/>' +
+      '<circle class="lens-edge" cx="60" cy="56" r="17" fill="none" stroke="rgba(255,255,255,.30)" stroke-width="1.1"/>' +
+      '<circle class="iris" cx="60" cy="56" r="12.6" fill="none" stroke="var(--glow)" stroke-width="1.1" opacity=".28"/>' +
+      '<ellipse class="gloss" cx="52.5" cy="48" rx="6.5" ry="4" transform="rotate(-28 52.5 48)" fill="rgba(255,255,255,.5)" filter="url(#fB1)"/>' +
+      '<g class="glyph fx">' +
+        '<g class="g-idle"><circle cx="60" cy="56" r="5.2" fill="var(--glow)"/><circle cx="60" cy="56" r="9.5" fill="none" stroke="var(--glow)" stroke-width="1.1" opacity=".35"/></g>' +
+        '<rect class="g-focus" x="51.5" y="54" width="17" height="3.6" rx="1.8" fill="var(--glow)"/>' +
+        '<g class="g-soon"><circle cx="60" cy="56" r="6.6" fill="var(--glow)"/><circle cx="60" cy="56" r="10.2" fill="none" stroke="var(--glow)" stroke-width="1.6" opacity=".55"/></g>' +
+        '<path class="g-done" d="M50 58 Q60 46 70 58" fill="none" stroke="var(--glow)" stroke-width="3.2" stroke-linecap="round"/>' +
+      '</g>' +
+    '</g>';
+
+  var CHARS = [
+    { id:'orb', cls:'ch-orb', name:'核 · 单眼核', tag:'型号 1',
+      line:'一颗悬浮的单眼球。最接近 BT 的头部语言：一个圆的光学镜，就是整张脸。',
+      specs:[['几何','球体 + 一道赤道缝'],['材质','哑光白壳体 80%，深玻璃 15%'],['优势','零件最少，缩到 16px 也不散'],['风险','辨识度主要靠那颗眼，别的什么都没有']] },
+    { id:'capsule', cls:'ch-capsule', name:'瞳 · 胶囊', tag:'型号 2',
+      line:'一颗立起来的胶囊。ASTRO BOT / EVE 那一脉的比例：头身不分，就是一整条。',
+      specs:[['几何','胶囊体 + 一道腰缝'],['材质','哑光白，纵向柔光'],['优势','比例最"小可爱"，也最省画面'],['风险','竖长体在小尺寸下略窄，眼已相应缩小']] },
+    { id:'pod', cls:'ch-pod', name:'舱 · 方舱', tag:'型号 3',
+      line:'一台小方舱。四角四颗钉、一条顶盖缝、底部三条散热口——精密感全在缝上。',
+      specs:[['几何','圆角方体，四钉 + 顶缝 + 散热口'],['材质','哑光白，1px 描边定轮廓'],['优势','最像专业设备，表情空间最大'],['风险','方体最"硬"，需要靠圆角和大眼补亲和力']] },
+    { id:'ring', cls:'ch-ring', name:'环 · 悬浮环', tag:'型号 4',
+      line:'一圈薄环，中间悬着一颗眼。它没有身体，只有"它在飘"这件事。',
+      specs:[['几何','倾斜的圆环 + 悬空光学器'],['材质','哑光白环，上下两道厚度'],['优势','最科技、最不像常见软件吉祥物'],['风险','环的负空间在 24px 下容易糊，需保留环厚']] },
+    { id:'twin', cls:'ch-twin', name:'豆 · 双球', tag:'型号 5',
+      line:'一个小头坐在大身上，颈间漏出一线光。它是最像"伙伴"的一版。',
+      specs:[['几何','小球头 + 大球身，颈缝发光'],['材质','大头哑光白，身体一层灰度区分'],['优势','最可爱，最适合眨眼与点头'],['风险','两球结构在小尺寸会粘连成一团']] },
+    { id:'disc', cls:'ch-disc', name:'碟 · 悬浮碟', tag:'型号 6',
+      line:'一只压扁的飞碟，顶上一颗状态灯。最"设备"的一版，也是最稳的剪影。',
+      specs:[['几何','扁椭球 + 顶部状态灯 + 下方悬浮缘'],['材质','哑光白，弱反光'],['优势','横向剪影独一无二，飘在角落不占视线'],['风险','扁体纵深小，脸需要严格控制大小']] }
+  ];
+
+  function art(id, extra){
+    return '<svg class="art ' + (extra||'') + '" viewBox="0 0 120 120"><use href="#b-' + id + '"/>' + FACE + '</svg>';
+  }
+  function ch(id, cls, state, extra){
+    return '<span class="ch ' + cls + '" data-s="' + state + '">' + art(id, extra) + '</span>';
+  }
+
+  document.getElementById('grid').innerHTML = CHARS.map(function(c){
+    return '<div class="concept">' +
+      '<div class="stage">' + ch(c.id, c.cls, 'idle') + '</div>' +
+      '<div class="states">' +
+        '<figure>' + ch(c.id, c.cls, 'idle') + '<figcaption>待机</figcaption></figure>' +
+        '<figure>' + ch(c.id, c.cls, 'focus') + '<figcaption>专注</figcaption></figure>' +
+        '<figure>' + ch(c.id, c.cls, 'soon') + '<figcaption>临期</figcaption></figure>' +
+        '<figure>' + ch(c.id, c.cls, 'done') + '<figcaption>完成</figcaption></figure>' +
+      '</div>' +
+      '<div class="cbody">' +
+        '<span class="tag">' + c.tag + '</span>' +
+        '<h3>' + c.name + '</h3>' +
+        '<p class="concept-line">' + c.line + '</p>' +
+        '<div class="spec2">' + c.specs.map(function(s){
+          return '<div class="r' + (s[0]==='风险'?' risk':'') + '"><b>' + s[0] + '</b><span>' + s[1] + '</span></div>';
+        }).join('') + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  // 表情四态演示（同一颗眼，四种光形）
+  var STATES = [['idle','待机 · 圆点'],['focus','专注 · 细缝'],['soon','临期 · 睁大'],['done','完成 · 弯月']];
+  document.getElementById('faceSet').innerHTML = STATES.map(function(s){
+    return '<figure><div class="facechip">' + ch('orb','ch-orb',s[0]) + '</div><figcaption>' + s[1] + '</figcaption></figure>';
+  }).join('');
+
+  function testRow(el){
+    el.innerHTML = CHARS.map(function(c){
+      return '<div class="tcol"><span class="nm">' + c.name.split(' · ')[0] + '</span>' + ch(c.id, c.cls, 'idle') + '</div>';
+    }).join('');
+  }
+  testRow(document.getElementById('testsSil'));
+  testRow(document.getElementById('testsGray'));
+
+  var sizes = [64,48,32,24,16];
+  document.getElementById('sizeRow').innerHTML = [CHARS[0],CHARS[2],CHARS[4]].map(function(c){
+    return sizes.map(function(s){
+      return '<div class="cell">' + ch(c.id, c.cls, 'idle', 'sz'+s) + '<span>'+s+'</span></div>';
+    }).join('');
+  }).join('<span style="flex:1"></span>');
+
+  document.querySelectorAll('.ch svg.art').forEach(function(svg){
+    if(!svg.querySelector('.face')) svg.insertAdjacentHTML('beforeend', FACE);
+  });
+
+  var body = document.body;
+  document.getElementById('themeBtn').addEventListener('click', function(){
+    body.dataset.theme = body.dataset.theme === 'light' ? 'dark' : 'light';
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浮时 · 助手形象探索 03</title>
+<style>
+/* ============================================================
+   浮时 · 形象探索 03 —— 苔玉系
+   把"苔玉为什么对"固化成家族规则，再按规则重做 6 个
+   ============================================================ */
+:root{
+  --bg:#F5F5F7; --surface:#FFFFFF; --surface-2:#EDEDF0;
+  --label:#1D1D1F; --label-2:#6E6E73; --label-3:#96969C;
+  --sep:#D2D2D7; --sep-2:#E8E8ED;
+  --accent:#FF7A45;
+  --stage-a:#F1F1F4; --stage-b:#DDDEE4;
+  --r-xl:28px; --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --ease:cubic-bezier(.2,0,0,1); --spring:cubic-bezier(.34,1.15,.5,1);
+}
+[data-theme="dark"]{
+  --bg:#000; --surface:#1C1C1E; --surface-2:#2C2C2E;
+  --label:#F5F5F7; --label-2:#A1A1A6; --label-3:#7C7C81;
+  --sep:#38383A; --sep-2:#2C2C2E;
+  --stage-a:#26262A; --stage-b:#131316;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);color:var(--label);font-family:var(--font);
+  font-size:16px;line-height:1.6;letter-spacing:-.005em;
+  padding:72px 32px 112px;-webkit-font-smoothing:antialiased;
+  transition:background .35s var(--ease),color .35s var(--ease);}
+.wrap{max-width:1040px;margin:0 auto;}
+
+.masthead{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;
+  padding-bottom:28px;border-bottom:1px solid var(--sep);margin-bottom:60px;}
+.masthead h1{margin:0;font-size:40px;line-height:1.08;letter-spacing:-.032em;font-weight:700;}
+.masthead .tagline{margin:10px 0 0;color:var(--label-2);font-size:15px;letter-spacing:0;}
+.ghost{border:1px solid var(--sep);background:var(--surface);color:var(--label);
+  font-family:var(--font);font-size:14px;font-weight:500;border-radius:980px;padding:9px 18px;
+  cursor:pointer;transition:transform .12s var(--ease),border-color .16s var(--ease);}
+.ghost:hover{border-color:var(--label-3);} .ghost:active{transform:scale(.96);}
+
+.section{margin-bottom:76px;}
+.section > header{display:flex;align-items:baseline;gap:14px;margin-bottom:10px;}
+.num{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--label-3);font-variant-numeric:tabular-nums;}
+.section h2{margin:0;font-size:26px;line-height:1.25;letter-spacing:-.022em;font-weight:650;}
+.lede{margin:0 0 26px;color:var(--label-2);font-size:16px;max-width:74ch;letter-spacing:0;}
+.lede b{color:var(--label);font-weight:620;}
+
+/* ---------- 家族规则 ---------- */
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.rule{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:18px 20px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.rule .rn{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--accent);}
+.rule h3{margin:5px 0 6px;font-size:14.5px;font-weight:640;letter-spacing:-.008em;}
+.rule p{margin:0;font-size:13px;color:var(--label-2);line-height:1.62;letter-spacing:0;}
+.rule .no{margin-top:9px;display:block;font-size:11.5px;color:#B4642A;letter-spacing:0;line-height:1.5;}
+
+/* ---------- 锚点 ---------- */
+.anchor{display:grid;grid-template-columns:190px 1fr;gap:28px;align-items:center;
+  border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  padding:26px 30px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.anchor .astage{border-radius:var(--r-md);background:linear-gradient(165deg,var(--stage-a),var(--stage-b));
+  display:flex;align-items:center;justify-content:center;height:168px;}
+.anchor .art{width:132px;height:132px;overflow:visible;}
+.anchor h3{margin:0 0 8px;font-size:17px;font-weight:650;letter-spacing:-.012em;}
+.anchor p{margin:0 0 10px;font-size:13.5px;color:var(--label-2);line-height:1.66;letter-spacing:0;}
+.anchor ul{margin:0;padding-left:17px;font-size:13px;color:var(--label-2);line-height:1.8;letter-spacing:0;}
+.anchor li::marker{color:var(--label-3);}
+.anchor b{color:var(--label);font-weight:620;}
+
+/* ---------- 形象卡片 ---------- */
+.grid6{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
+.concept{border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  overflow:hidden;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);
+  transition:box-shadow .2s var(--ease),transform .2s var(--ease);}
+.concept:hover{box-shadow:0 18px 44px -16px rgba(0,0,0,.24);transform:translateY(-2px);}
+.stage{position:relative;height:212px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(165deg,var(--stage-a) 0%,var(--stage-b) 100%);}
+.stage::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(64% 52% at 50% 30%,rgba(255,255,255,.55),rgba(255,255,255,0) 72%);}
+[data-theme="dark"] .stage::before{background:radial-gradient(64% 52% at 50% 30%,rgba(255,255,255,.08),rgba(255,255,255,0) 72%);}
+.stage .art{width:152px;height:152px;overflow:visible;}
+.states{display:flex;justify-content:center;gap:20px;padding:16px 16px 2px;}
+.states figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:7px;}
+.states .art{width:58px;height:58px;overflow:visible;}
+.states figcaption{font-size:10px;letter-spacing:.04em;color:var(--label-3);}
+.cbody{padding:10px 22px 22px;}
+.cbody h3{margin:0 0 4px;font-size:17px;font-weight:650;letter-spacing:-.015em;}
+.cbody .concept-line{font-size:13px;color:var(--label-2);margin:0 0 16px;letter-spacing:0;line-height:1.6;}
+.spec2 .r{display:grid;grid-template-columns:62px 1fr;gap:12px;padding:7px 0;
+  border-top:.5px solid var(--sep-2);font-size:12.5px;letter-spacing:0;line-height:1.55;}
+.spec2 .r b{color:var(--label-3);font-weight:600;font-size:11px;letter-spacing:.05em;padding-top:2px;}
+.spec2 .r span{color:var(--label-2);}
+.spec2 .r.risk span{color:#B4642A;}
+.tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;
+  padding:3px 9px;border-radius:980px;background:var(--surface-2);color:var(--label-2);margin-bottom:12px;}
+
+/* ---------- 硬检验 ---------- */
+.tests{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
+.tcol{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:18px 10px;display:flex;flex-direction:column;align-items:center;gap:12px;
+  box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.tcol .nm{font-size:12px;font-weight:600;}
+.tcol .art{width:64px;height:64px;overflow:visible;}
+.t-sil .art{filter:url(#silToBlack);}
+.t-gray .art{filter:grayscale(1) contrast(1.06);}
+.sizerow{display:flex;align-items:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap;}
+.sizerow .cell{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.sizerow .cell span{font-size:10px;color:var(--label-3);font-variant-numeric:tabular-nums;}
+.sizerow .art{overflow:visible;}
+.sz16{width:16px;height:16px;} .sz24{width:24px;height:24px;} .sz32{width:32px;height:32px;}
+.sz48{width:48px;height:48px;} .sz64{width:64px;height:64px;}
+
+/* ---------- 面部系统 ---------- */
+.facenote{display:grid;grid-template-columns:300px 1fr;gap:34px;align-items:center;
+  border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  padding:34px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.facenote ul{margin:0;padding-left:18px;font-size:14px;color:var(--label-2);line-height:1.9;letter-spacing:0;}
+.facenote li::marker{color:var(--label-3);}
+.facenote b{color:var(--label);font-weight:620;}
+.facestage{display:flex;justify-content:center;align-items:center;
+  border-radius:var(--r-md);background:linear-gradient(165deg,var(--stage-a),var(--stage-b));padding:14px;}
+.facestage .art{width:210px;height:210px;overflow:visible;}
+
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.pickcard{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:20px 22px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.pickcard h3{margin:0 0 6px;font-size:15px;font-weight:640;}
+.pickcard p{margin:0;font-size:13px;color:var(--label-2);line-height:1.66;letter-spacing:0;}
+
+.foot{padding-top:28px;border-top:1px solid var(--sep);color:var(--label-3);font-size:12px;
+  letter-spacing:0;line-height:1.8;}
+
+@media (max-width:1000px){
+  .grid6,.rules,.pick{grid-template-columns:1fr;}
+  .tests{grid-template-columns:repeat(3,1fr);}
+  .facenote,.anchor{grid-template-columns:1fr;}
+  body{padding:36px 18px 72px;}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.001ms!important;}
+}
+
+/* ============================================================
+   角色渲染系统（与探索 02 同一套，未改）
+   ============================================================ */
+.ch{position:relative;display:inline-flex;}
+.ch svg.art{display:block;}
+
+/* 面部：统一坐标 120×120，靠 --fs / --fy 适配每个身体 */
+.ch .face{transform-box:view-box;transform-origin:60px 60px;
+  transform:translate(var(--fx,0px),var(--fy,0px)) scale(var(--fs,1));}
+.ch .face .fx{transform-box:fill-box;transform-origin:center;
+  transition:transform .3s var(--spring),opacity .22s var(--ease);}
+.ch .face .eye{fill:var(--fb);}
+.ch .face .eye-sh{fill:var(--fb2);opacity:.5;}
+.ch .face .hl{fill:var(--hl);opacity:.85;}
+.ch .face .crescents path{fill:none;stroke:var(--fb);stroke-width:3.4;stroke-linecap:round;}
+.ch .face .mouths path{fill:none;stroke:var(--fb);stroke-width:2.6;stroke-linecap:round;}
+.ch .face .m-o{fill:var(--fb);stroke:none;}
+.ch .face .brow{fill:none;stroke:var(--fb);stroke-width:2.4;stroke-linecap:round;opacity:.7;}
+.ch .face .crescents{opacity:0;}
+.ch .face .mouths path,.ch .face .m-o{opacity:0;}
+.ch .face .m-soft{opacity:.3;}
+.ch .face .brows{opacity:.62;}
+.ch[data-s="focus"] .eyes{transform:scaleY(.56) translateY(3px);}
+.ch[data-s="focus"] .brows{transform:translateY(4px) scaleY(.86);}
+.ch[data-s="focus"] .m-soft{opacity:0;} .ch[data-s="focus"] .m-flat{opacity:1;}
+.ch[data-s="soon"] .eyes{transform:scale(1.06);}
+.ch[data-s="soon"] .brows{transform:translateY(-4px);}
+.ch[data-s="soon"] .m-soft{opacity:0;} .ch[data-s="soon"] .m-o{opacity:1;}
+.ch[data-s="done"] .eyes{opacity:0;}
+.ch[data-s="done"] .crescents{opacity:1;}
+.ch[data-s="done"] .brows{transform:translateY(-2px) scaleY(.94);}
+.ch[data-s="done"] .m-soft{opacity:0;} .ch[data-s="done"] .m-wide{opacity:1;}
+
+/* 各形象的材质取色 + 面部适配 */
+.ch-moss   {--fb:#123018; --fb2:#4E8A44; --hl:#F0FFEC; --fs:.98; --fy:6px;}
+.ch-shoot  {--fb:#26370F; --fb2:#6C8842; --hl:#F4FBEA; --fs:.72; --fx:5px; --fy:-2px;}
+.ch-cocoon {--fb:#4A3B22; --fb2:#94805A; --hl:#FFFBF0; --fs:.78; --fy:-3px;}
+.ch-cone   {--fb:#33210F; --fb2:#7A5A33; --hl:#FFF4DF; --fs:.86; --fy:-6px;}
+.ch-cap    {--fb:#33291C; --fb2:#7A6A52; --hl:#FFF8EE; --fs:.88; --fy:-10px;}
+.ch-pebble {--fb:#2A3038; --fb2:#6E7A88; --hl:#F8FBFF; --fs:.9;  --fy:12px;}
+</style>
+</head>
+<body data-theme="light">
+
+<!-- ============ 共享 defs ============ -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+<defs>
+  <filter id="fB1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1"/></filter>
+  <filter id="fB2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>
+  <filter id="fB4" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="4"/></filter>
+  <filter id="fB5" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5"/></filter>
+  <filter id="fB8" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="8"/></filter>
+  <filter id="silToBlack" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 4 0"/>
+    <feComponentTransfer><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+  </filter>
+
+  <!-- 材质：全部哑光（渐变跨度窄、高光宽而弱），无一枚镜面点 -->
+  <radialGradient id="gMoss" cx="34%" cy="24%" r="88%">
+    <stop offset="0%" stop-color="#B4DC9A"/><stop offset="42%" stop-color="#7CB466"/><stop offset="78%" stop-color="#4C8442"/><stop offset="100%" stop-color="#2E5A2B"/>
+  </radialGradient>
+  <linearGradient id="gShoot" x1=".1" y1="0" x2=".5" y2="1">
+    <stop offset="0%" stop-color="#D6E0B4"/><stop offset="46%" stop-color="#A8BC80"/><stop offset="100%" stop-color="#61794A"/>
+  </linearGradient>
+  <linearGradient id="gCocoon" x1=".1" y1="0" x2=".6" y2="1">
+    <stop offset="0%" stop-color="#FDF9F1"/><stop offset="46%" stop-color="#EFE4D0"/><stop offset="100%" stop-color="#C6B598"/>
+  </linearGradient>
+  <linearGradient id="gCone" x1=".1" y1="0" x2=".55" y2="1">
+    <stop offset="0%" stop-color="#C29D6D"/><stop offset="48%" stop-color="#8F6B44"/><stop offset="100%" stop-color="#584128"/>
+  </linearGradient>
+  <linearGradient id="gCap" x1=".1" y1="0" x2=".55" y2="1">
+    <stop offset="0%" stop-color="#CFC0A8"/><stop offset="48%" stop-color="#A69073"/><stop offset="100%" stop-color="#7A6951"/>
+  </linearGradient>
+  <linearGradient id="gStalk" x1=".2" y1="0" x2=".7" y2="1">
+    <stop offset="0%" stop-color="#E6DCCA"/><stop offset="55%" stop-color="#C2B49C"/><stop offset="100%" stop-color="#9C8E77"/>
+  </linearGradient>
+  <linearGradient id="gPebble" x1=".1" y1="0" x2=".6" y2="1">
+    <stop offset="0%" stop-color="#DEDFE2"/><stop offset="48%" stop-color="#B5B8BE"/><stop offset="100%" stop-color="#868B93"/>
+  </linearGradient>
+
+  <!-- ① 苔玉（锚点，沿用上一版已验证的绘制） -->
+  <clipPath id="c-moss"><circle cx="60" cy="70" r="38"/></clipPath>
+  <symbol id="b-moss" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="108" rx="25" ry="5" fill="rgba(24,36,22,.12)" filter="url(#fB5)"/>
+    <path d="M60 32 C60 23 62 16 68 11" stroke="#3E7E3A" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M67 12 C74 6 85 7 89 15 C80 21 70 20 67 12Z" fill="#7FC169"/>
+    <path d="M63 19 C57 12 47 11 42 18 C50 25 60 25 63 19Z" fill="#9AD483"/>
+    <circle cx="60" cy="70" r="38" fill="url(#gMoss)"/>
+    <g clip-path="url(#c-moss)">
+      <ellipse cx="45" cy="46" rx="17" ry="11" transform="rotate(-24 45 46)" fill="rgba(255,255,255,.34)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="104" rx="34" ry="18" fill="rgba(22,52,22,.30)" filter="url(#fB5)"/>
+    </g>
+    <g clip-path="url(#c-moss)" opacity=".42">
+      <circle cx="38" cy="52" r="2.6" fill="#8FC77A"/><circle cx="80" cy="58" r="2.2" fill="#67A254"/>
+      <circle cx="52" cy="94" r="2.4" fill="#5E9A4E"/><circle cx="72" cy="90" r="2" fill="#8FC77A"/>
+      <circle cx="34" cy="76" r="2.2" fill="#5E9A4E"/><circle cx="88" cy="74" r="2.4" fill="#8FC77A"/>
+      <circle cx="46" cy="35" r="2.2" fill="#67A254"/><circle cx="78" cy="35" r="2" fill="#67A254"/>
+    </g>
+  </symbol>
+
+  <!-- ② 笋 · 春笋 -->
+  <clipPath id="c-shoot"><path d="M64 22 C46 36 32 62 30 90 C30 102 42 108 60 108 C78 108 90 102 90 90 C88 62 82 36 64 22Z"/></clipPath>
+  <symbol id="b-shoot" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="111" rx="26" ry="4.5" fill="rgba(28,34,20,.12)" filter="url(#fB5)"/>
+    <path d="M64 22 C46 36 32 62 30 90 C30 102 42 108 60 108 C78 108 90 102 90 90 C88 62 82 36 64 22Z" fill="url(#gShoot)"/>
+    <g clip-path="url(#c-shoot)">
+      <ellipse cx="47" cy="56" rx="10" ry="27" transform="rotate(-10 47 56)" fill="rgba(255,255,255,.30)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="107" rx="34" ry="16" fill="rgba(30,42,18,.30)" filter="url(#fB5)"/>
+    </g>
+    <g clip-path="url(#c-shoot)" fill="none" stroke="rgba(58,70,38,.30)" stroke-width="2.2" stroke-linecap="round">
+      <path d="M35 88 C48 95 72 95 86 87"/>
+      <path d="M40 69 C51 75 69 75 81 67"/>
+      <path d="M47 51 C55 57 67 57 75 49"/>
+    </g>
+    <path d="M45 33 C37 49 33 69 32 88" stroke="rgba(255,255,255,.42)" stroke-width="2.4" stroke-linecap="round" fill="none" filter="url(#fB2)"/>
+  </symbol>
+
+  <!-- ③ 茧 · 蚕茧 -->
+  <clipPath id="c-cocoon"><path d="M60 14 C74 26 84 50 84 70 C84 94 74 106 60 106 C46 106 36 94 36 70 C36 50 46 26 60 14Z"/></clipPath>
+  <symbol id="b-cocoon" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="110" rx="22" ry="4" fill="rgba(46,40,28,.12)" filter="url(#fB5)"/>
+    <path d="M60 15 C58 7 50 3 41 3" stroke="#C7B48E" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    <path d="M60 14 C74 26 84 50 84 70 C84 94 74 106 60 106 C46 106 36 94 36 70 C36 50 46 26 60 14Z" fill="url(#gCocoon)"/>
+    <g clip-path="url(#c-cocoon)">
+      <ellipse cx="47" cy="48" rx="11" ry="25" transform="rotate(-10 47 48)" fill="rgba(255,255,255,.42)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="105" rx="30" ry="15" fill="rgba(74,60,38,.26)" filter="url(#fB5)"/>
+    </g>
+    <g clip-path="url(#c-cocoon)" fill="none" stroke="rgba(126,110,82,.20)" stroke-width="1.2">
+      <path d="M52 30 C50 55 50 80 52 100"/>
+      <path d="M68 30 C70 55 70 80 68 100"/>
+      <path d="M44 44 C42 62 42 82 44 98"/>
+      <path d="M76 44 C78 62 78 82 76 98"/>
+    </g>
+  </symbol>
+
+  <!-- ④ 松 · 松果 -->
+  <clipPath id="c-cone"><path d="M60 16 C82 26 92 52 92 74 C92 96 78 108 60 108 C42 108 28 96 28 74 C28 52 38 26 60 16Z"/></clipPath>
+  <symbol id="b-cone" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="111" rx="26" ry="5" fill="rgba(48,34,18,.12)" filter="url(#fB5)"/>
+    <path d="M60 16 C82 26 92 52 92 74 C92 96 78 108 60 108 C42 108 28 96 28 74 C28 52 38 26 60 16Z" fill="url(#gCone)"/>
+    <g clip-path="url(#c-cone)">
+      <ellipse cx="46" cy="44" rx="14" ry="21" transform="rotate(-16 46 44)" fill="rgba(255,255,255,.28)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="104" rx="34" ry="17" fill="rgba(44,28,12,.32)" filter="url(#fB5)"/>
+    </g>
+    <!-- 鳞片：只在脸以下的区域，上段留给脸 -->
+    <g clip-path="url(#c-cone)">
+      <g>
+        <ellipse cx="36" cy="78" rx="12" ry="8.5" fill="#A47C4E"/><ellipse cx="58" cy="78" rx="12" ry="8.5" fill="#956F45"/>
+        <ellipse cx="80" cy="78" rx="12" ry="8.5" fill="#A47C4E"/>
+        <ellipse cx="44" cy="91" rx="12" ry="8.5" fill="#956F45"/><ellipse cx="66" cy="91" rx="12" ry="8.5" fill="#A47C4E"/>
+        <ellipse cx="34" cy="91" rx="11" ry="8" fill="#8A6740"/><ellipse cx="78" cy="91" rx="11" ry="8" fill="#8A6740"/>
+        <ellipse cx="52" cy="102" rx="11.5" ry="8" fill="#8A6740"/><ellipse cx="72" cy="102" rx="11.5" ry="8" fill="#956F45"/>
+      </g>
+      <g fill="rgba(255,255,255,.20)">
+        <ellipse cx="36" cy="75" rx="10" ry="3.6"/><ellipse cx="58" cy="75" rx="10" ry="3.6"/><ellipse cx="80" cy="75" rx="10" ry="3.6"/>
+        <ellipse cx="44" cy="88" rx="10" ry="3.6"/><ellipse cx="66" cy="88" rx="10" ry="3.6"/>
+        <ellipse cx="52" cy="99" rx="9.5" ry="3.3"/><ellipse cx="72" cy="99" rx="9.5" ry="3.3"/>
+      </g>
+      <g fill="none" stroke="rgba(60,42,20,.30)" stroke-width="1.4">
+        <path d="M34 83 C46 89 74 89 84 81"/>
+        <path d="M38 96 C50 101 72 101 80 94"/>
+      </g>
+    </g>
+  </symbol>
+
+  <!-- ⑤ 菇 · 素菇 -->
+  <clipPath id="c-cap"><path d="M22 68 C22 42 38 24 60 24 C82 24 98 42 98 68 C98 72 94 74 90 74 C70 78 50 78 30 74 C26 74 22 72 22 68Z"/></clipPath>
+  <symbol id="b-cap" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="112" rx="30" ry="5" fill="rgba(40,34,24,.12)" filter="url(#fB5)"/>
+    <path d="M45 70 C45 90 42 100 38 110 C52 113 68 113 82 110 C78 100 75 90 75 70Z" fill="url(#gStalk)"/>
+    <path d="M54 76 C53 92 52 102 50 109" stroke="rgba(255,255,255,.35)" stroke-width="3" stroke-linecap="round" fill="none" filter="url(#fB2)"/>
+    <path d="M22 68 C22 42 38 24 60 24 C82 24 98 42 98 68 C98 72 94 74 90 74 C70 78 50 78 30 74 C26 74 22 72 22 68Z" fill="url(#gCap)"/>
+    <g clip-path="url(#c-cap)">
+      <ellipse cx="43" cy="43" rx="17" ry="11" transform="rotate(-24 43 43)" fill="rgba(255,255,255,.30)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="76" rx="42" ry="12" fill="rgba(48,38,26,.28)" filter="url(#fB5)"/>
+    </g>
+    <path d="M30 73 C50 78 70 78 90 73" stroke="rgba(58,46,32,.34)" stroke-width="2.6" fill="none" stroke-linecap="round" filter="url(#fB2)"/>
+    <path d="M24 62 C23 44 36 28 52 25" stroke="rgba(255,255,255,.34)" stroke-width="2.6" stroke-linecap="round" fill="none" filter="url(#fB2)"/>
+  </symbol>
+
+  <!-- ⑥ 卵 · 苔痕石 -->
+  <clipPath id="c-pebble"><path d="M14 78 C16 60 36 48 60 47 C86 46 107 60 106 78 C105 95 85 105 60 105 C35 105 15 95 14 78Z"/></clipPath>
+  <symbol id="b-pebble" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="109" rx="38" ry="5" fill="rgba(32,36,44,.12)" filter="url(#fB5)"/>
+    <path d="M14 78 C16 60 36 48 60 47 C86 46 107 60 106 78 C105 95 85 105 60 105 C35 105 15 95 14 78Z" fill="url(#gPebble)"/>
+    <g clip-path="url(#c-pebble)">
+      <ellipse cx="43" cy="66" rx="19" ry="10" transform="rotate(-16 43 66)" fill="rgba(255,255,255,.36)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="103" rx="44" ry="16" fill="rgba(38,44,54,.26)" filter="url(#fB5)"/>
+      <!-- 一笔苔痕：沿顶脊生长 -->
+      <path d="M22 69 C36 56 54 49 72 48" stroke="#7FA867" stroke-width="5" stroke-linecap="round" fill="none" opacity=".85" filter="url(#fB2)"/>
+      <path d="M28 65 C40 55 56 50 70 49" stroke="#9CC884" stroke-width="2" stroke-linecap="round" fill="none" opacity=".7" filter="url(#fB2)"/>
+      <g opacity=".8">
+        <circle cx="34" cy="63" r="2.6" fill="#8FC77A"/><circle cx="50" cy="55" r="2.2" fill="#7FA867"/>
+        <circle cx="64" cy="51" r="2.4" fill="#8FC77A"/><circle cx="43" cy="58" r="1.8" fill="#A6D48E"/>
+      </g>
+    </g>
+    <path d="M20 86 C26 95 40 101 58 102" stroke="rgba(255,255,255,.26)" stroke-width="2.4" stroke-linecap="round" fill="none" filter="url(#fB2)"/>
+  </symbol>
+</defs>
+</svg>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>浮时 · 助手形象探索 03</h1>
+      <p class="tagline">把"苔玉为什么更高级"固化成家族规则，再按同一套规则重做六个　·　只有轮廓与材质不同</p>
+    </div>
+    <button class="ghost" id="themeBtn">切换外观</button>
+  </div>
+
+  <!-- ============ 01 家族规则 ============ -->
+  <section class="section">
+    <header><span class="num">01</span><h2>先把苔玉赢在哪，写成规则</h2></header>
+    <p class="lede">你选苔玉是对的，但它赢得不靠运气。我把它拆成六条可复用的规则——这一页的六个新形象，<b>违反任何一条就作废</b>。</p>
+    <div class="rules">
+      <div class="rule"><span class="rn">G1</span><h3>哑光，不要镜面</h3>
+        <p>质感来自"宽而弱"的受光和大面积暗部，不是一枚亮点。哑光是陶瓷、纸、绒的语言。</p>
+        <span class="no">禁止：玻璃折射、金属条状高光、辉光边缘、白色高光点</span></div>
+      <div class="rule"><span class="rn">G2</span><h3>一体一团，最多一笔</h3>
+        <p>一个主团块，加一笔"活着"或"有方向"的细节。部件越多，接缝越多，越像拼出来的。</p>
+        <span class="no">禁止：底座 + 提手 + 天线 + 支脚这类多部件组合</span></div>
+      <div class="rule"><span class="rn">G3</span><h3>不借现成符号</h3>
+        <p>钟表、星标、徽章、动物吉祥物都是别人的词。用生僻一点的自然物，才不像"别人的东西"。</p>
+        <span class="no">禁止：沙漏、星形、灯具、已知 IP 造型</span></div>
+      <div class="rule"><span class="rn">G4</span><h3>脸长在身上</h3>
+        <p>五官落在一整块连续曲面上，不是塞进一个窗口、也不是顶着一块面盘。</p>
+        <span class="no">禁止：为放脸而额外加的面板、开口、凹槽</span></div>
+      <div class="rule"><span class="rn">G5</span><h3>不对称，但重心稳</h3>
+        <p>有一点倾斜或偏坠，才有"正面"和朝向；整体重心仍要落得住，才静得下来。</p>
+        <span class="no">禁止：左右完全对称、正圆、正方形</span></div>
+      <div class="rule"><span class="rn">G6</span><h3>低饱和的自然色</h3>
+        <p>颜色压到 40–60% 饱和，从材质里长出来；它是灰白界面里唯一一点活气。</p>
+        <span class="no">禁止：系统蓝、强调橙、纯黑纯白、高饱和卡通色</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 02 锚点 ============ -->
+  <section class="section">
+    <header><span class="num">02</span><h2>锚点：苔 · 苔玉</h2></header>
+    <p class="lede">保留它作为家族基准。下面六个都用它的规则画，所以七个放在一起像一家人——这正是"IP"该有的样子。</p>
+    <div class="anchor">
+      <div class="astage"><span class="ch ch-moss" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-moss"/></svg></span></div>
+      <div>
+        <h3>苔 · 苔玉　<span style="font-weight:500;color:var(--label-3);font-size:13px">家族基准</span></h3>
+        <p>一颗养在桌上的苔藓球。它在角落安静地长，不用人管——这恰好就是"自律"与"不打扰的陪伴"。</p>
+        <ul>
+          <li><b>哑光</b>：无镜面、靠细碎明暗斑与上缘柔光表现体积</li>
+          <li><b>一体一笔</b>：球是体量，顶上一丛新叶是方向</li>
+          <li><b>低饱和绿</b>：不借任何符号，也没有符号包袱</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 六个新方案 ============ -->
+  <section class="section">
+    <header><span class="num">03</span><h2>六个同族新方案</h2></header>
+    <p class="lede">全部哑光、全部一体一笔、全部低饱和自然色。剪影彼此拉开：<b>锥（笋）／梭（茧）／鳞卵（松果）／伞（菇）／扁石（卵）</b>，加上基准的<b>球（苔玉）</b>。</p>
+    <div class="grid6" id="grid"></div>
+  </section>
+
+  <!-- ============ 04 硬检验 ============ -->
+  <section class="section">
+    <header><span class="num">04</span><h2>三项硬检验</h2></header>
+    <p class="lede">同一套可证伪的测试：<b>剪影</b>（填黑还认得出）、<b>灰度</b>（去色还成立）、<b>尺寸</b>（24px 还站得住）。</p>
+    <div class="tests t-sil" id="testsSil"></div>
+    <div class="tests t-gray" id="testsGray" style="margin-top:14px"></div>
+    <div class="sizerow" id="sizeRow"></div>
+  </section>
+
+  <!-- ============ 05 面部 ============ -->
+  <section class="section">
+    <header><span class="num">05</span><h2>共用的那张脸</h2></header>
+    <p class="lede">脸沿用探索 02 那套（三层眼睛、表情靠眼睑、眉做辅助、嘴是最后手段）。这一版只调了<b>适配</b>：每个身体的曲面宽窄不同，脸的大小与高度逐一匹配，绝不溢出轮廓。</p>
+    <div class="facenote">
+      <div class="facestage"><span class="ch ch-cone" data-s="idle"><svg class="art" viewBox="0 0 120 120"><use href="#b-cone"/></svg></span></div>
+      <div>
+        <ul>
+          <li><b>眼睛三层</b>：深色主体 + 同色系透光层 + 一枚柔边高光（带 1px 模糊），有厚度，不是贴纸。</li>
+          <li><b>颜色从材质里取</b>：苔玉是墨绿、笋是草绿、茧是焦褐、松果是深棕、菇是褐、卵石是石青。</li>
+          <li><b>表情靠眼睑</b>：专注＝眼睑压低，临期＝睁大，完成＝换月牙；眼睛只做开合，不做缩小。</li>
+          <li><b>眉只做辅助</b>：2.4px 圆头、62% 不透明，随状态上下 4px，负责"思考"与"惊讶"。</li>
+          <li><b>嘴是最后手段</b>：待机只有一道 30% 淡痕；只有临期与完成才出现嘴，且 2.6px。</li>
+          <li><b>仍然禁止</b>：白色圆点高光、粗弧线嘴、腮红、纯黑五官。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 06 建议 ============ -->
+  <section class="section">
+    <header><span class="num">06</span><h2>我的建议</h2></header>
+    <div class="pick">
+      <div class="pickcard">
+        <h3>最像苔玉：笋 · 春笋</h3>
+        <p>同为"向上生长"，哑光草绿，剪影比球更有冲劲。若要的是"陪你长起来"，它就是苔玉的姊妹版。</p>
+      </div>
+      <div class="pickcard">
+        <h3>最安静：卵 · 苔痕石</h3>
+        <p>一块石头加一笔苔痕。比苔玉更沉、更不打扰，适合长时间摆在桌面角落而不抢注意力。</p>
+      </div>
+      <div class="pickcard">
+        <h3>最意外：茧 · 蚕茧</h3>
+        <p>语义最准——蓄力、蜕变、还没到时间。一根丝是它的"一笔"，气质最不像常见软件吉祥物。</p>
+      </div>
+      <div class="pickcard">
+        <h3>最好做动效：菇 · 素菇</h3>
+        <p>伞与柄是上下两块，落座时的"轻轻一顿"最有物理感；面部在伞上，表情也最舒展。</p>
+      </div>
+    </div>
+    <p class="lede" style="margin-top:24px">七个是同族，也可以<b>换脸不换族</b>——比如把苔玉的绿给茧、把卵石的石青给笋。告诉我你要哪一个（或怎么配），我接回 v4 原型、重画第 02 节与提醒弹窗。</p>
+  </section>
+
+  <div class="foot">
+    浮时 · 助手形象探索 03 · 苔玉系　·　规则对标 Apple HIG（Layers / Materials / Motion）与角色 IP 设计通则<br>
+    本页为设计稿，非产品代码。哑光材质与家族一致性是本页唯一目标。
+  </div>
+</div>
+
+<script>
+(function(){
+  var FACE =
+    '<g class="face">' +
+      '<g class="brows fx">' +
+        '<path class="brow" d="M36 37 Q45 33 54 36"/>' +
+        '<path class="brow" d="M66 36 Q75 33 84 37"/>' +
+      '</g>' +
+      '<g class="eyes fx">' +
+        '<ellipse class="eye" cx="45" cy="52" rx="9.4" ry="11.4"/>' +
+        '<ellipse class="eye" cx="75" cy="52" rx="9.4" ry="11.4"/>' +
+        '<ellipse class="eye-sh" cx="46.4" cy="56.4" rx="5.8" ry="4.8"/>' +
+        '<ellipse class="eye-sh" cx="76.4" cy="56.4" rx="5.8" ry="4.8"/>' +
+        '<ellipse class="hl" cx="40.8" cy="46.6" rx="3" ry="2.2" filter="url(#fB1)"/>' +
+        '<ellipse class="hl" cx="70.8" cy="46.6" rx="3" ry="2.2" filter="url(#fB1)"/>' +
+      '</g>' +
+      '<g class="crescents fx">' +
+        '<path d="M36 53 Q45 43 54 53"/>' +
+        '<path d="M66 53 Q75 43 84 53"/>' +
+      '</g>' +
+      '<g class="mouths fx">' +
+        '<path class="m-soft" d="M54.5 68 Q60 71.5 65.5 68"/>' +
+        '<path class="m-flat" d="M55 69 H65"/>' +
+        '<ellipse class="m-o" cx="60" cy="70" rx="3.2" ry="4"/>' +
+        '<path class="m-wide" d="M52 67 Q60 76 68 67"/>' +
+      '</g>' +
+    '</g>';
+
+  // 六个新方案：只有轮廓与材质不同，其余完全一致
+  var CHARS = [
+    {
+      id:'moss', cls:'ch-moss', name:'苔 · 苔玉', tag:'基准', anchor:true,
+      line:'一颗养在桌上的苔藓球，安静地长，不用人管。',
+      specs:[['剪影','球 + 一丛新叶'],['材质','哑光苔绒，无镜面'],['语义','坚持 / 不打扰的陪伴'],['风险','存在感最弱；靠动作补性格']]
+    },
+    {
+      id:'shoot', cls:'ch-shoot', name:'笋 · 春笋', tag:'方案 1',
+      line:'一株刚顶开土的春笋。它什么也没做，只是在往上。',
+      specs:[['剪影','上尖下圆，锥形剪影'],['材质','哑光笋衣，三道笋箨横纹'],['语义','破土 / 开始'],['风险','锥形偏窄，脸已下移放大以保证可读']]
+    },
+    {
+      id:'cocoon', cls:'ch-cocoon', name:'茧 · 蚕茧', tag:'方案 2',
+      line:'一只还不到时候的茧。里面在发生变化。',
+      specs:[['剪影','竖直纺锤 + 顶上一根丝'],['材质','哑光丝质，极浅的纵向丝纹'],['语义','蓄力 / 蜕变'],['风险','象牙色在浅底上偏淡，靠底部沉影拉住']]
+    },
+    {
+      id:'cone', cls:'ch-cone', name:'松 · 松果', tag:'方案 3',
+      line:'一颗收好的松果。把一年的东西，一层层叠起来。',
+      specs:[['剪影','鳞片卵形，边缘有齿'],['材质','哑光木质，鳞片只长在脸以下'],['语义','积累 / 收藏'],['风险','鳞片小尺寸会糊；上段保持光滑以保证脸干净']]
+    },
+    {
+      id:'cap', cls:'ch-cap', name:'菇 · 素菇', tag:'方案 4',
+      line:'一朵素色的伞菌。它替底下的东西挡一会儿风。',
+      specs:[['剪影','伞 + 柄，家族里唯一的 T 形'],['材质','哑光陶土色伞面 + 浅米色柄'],['语义','遮护 / 陪伴'],['风险','菇类最容易滑向可爱；用陶土色、无斑点压住']]
+    },
+    {
+      id:'pebble', cls:'ch-pebble', name:'卵 · 苔痕石', tag:'方案 5',
+      line:'一块河边的石头，顶上生了一道苔。它已经在这儿很多年了。',
+      specs:[['剪影','扁宽石形，家族里唯一的横向'],['材质','哑光石面 + 一道柔绿苔痕'],['语义','沉稳 / 长久'],['风险','最静也最容易"没存在感"；苔痕是它唯一的活气']]
+    }
+  ];
+
+  function art(id, extra){
+    return '<svg class="art ' + (extra||'') + '" viewBox="0 0 120 120"><use href="#b-' + id + '"/>' + FACE + '</svg>';
+  }
+  function ch(id, cls, state, extra){
+    return '<span class="ch ' + cls + '" data-s="' + state + '">' + art(id, extra) + '</span>';
+  }
+
+  // ---- 卡片 ----
+  var grid = document.getElementById('grid');
+  grid.innerHTML = CHARS.filter(function(c){ return !c.anchor; }).map(function(c){
+    return '<div class="concept">' +
+      '<div class="stage">' + ch(c.id, c.cls, 'idle') + '</div>' +
+      '<div class="states">' +
+        '<figure>' + ch(c.id, c.cls, 'idle') + '<figcaption>待机</figcaption></figure>' +
+        '<figure>' + ch(c.id, c.cls, 'focus') + '<figcaption>专注</figcaption></figure>' +
+        '<figure>' + ch(c.id, c.cls, 'soon') + '<figcaption>临期</figcaption></figure>' +
+        '<figure>' + ch(c.id, c.cls, 'done') + '<figcaption>完成</figcaption></figure>' +
+      '</div>' +
+      '<div class="cbody">' +
+        '<span class="tag">' + c.tag + '</span>' +
+        '<h3>' + c.name + '</h3>' +
+        '<p class="concept-line">' + c.line + '</p>' +
+        '<div class="spec2">' + c.specs.map(function(s){
+          var risk = s[0] === '风险';
+          return '<div class="r' + (risk ? ' risk' : '') + '"><b>' + s[0] + '</b><span>' + s[1] + '</span></div>';
+        }).join('') + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  // ---- 硬检验 ----
+  function testRow(el){
+    el.innerHTML = CHARS.map(function(c){
+      var nm = c.name.split(' · ')[0];
+      return '<div class="tcol"><span class="nm">' + nm + '</span>' + ch(c.id, c.cls, 'idle') + '</div>';
+    }).join('');
+  }
+  testRow(document.getElementById('testsSil'));
+  testRow(document.getElementById('testsGray'));
+
+  var sizes = [64,48,32,24,16];
+  var groups = [CHARS[0], CHARS[1], CHARS[3]]; // 苔玉 / 笋 / 松果
+  document.getElementById('sizeRow').innerHTML = groups.map(function(c){
+    return sizes.map(function(s){
+      return '<div class="cell">' + ch(c.id, c.cls, 'idle', 'sz' + s) + '<span>' + s + '</span></div>';
+    }).join('');
+  }).join('<span style="flex:1"></span>');
+
+  // ---- 锚点卡等手写的 .art 也补上同一张脸 ----
+  document.querySelectorAll('.ch svg.art').forEach(function(svg){
+    if(!svg.querySelector('.face')) svg.insertAdjacentHTML('beforeend', FACE);
+  });
+
+  // ---- 主题 ----
+  var body = document.body;
+  document.getElementById('themeBtn').addEventListener('click', function(){
+    body.dataset.theme = body.dataset.theme === 'light' ? 'dark' : 'light';
+  });
+})();
+</script>
+</body>
+</html>

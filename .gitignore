@@ -1,0 +1,36 @@
+# ============================================================
+#  浮时 FloatTime · 仓库根 .gitignore
+#  原则：只收录「浮时」项目的代码与设计文档，个人隐私文件一律排除
+# ============================================================
+
+# ---------- 隐私文件：绝不入库 ----------
+# 简历 / 成绩单（含真实姓名、联系方式、院校）
+Tong_Xie_Resume*.pdf
+Transcript_English_Translation.pdf
+# 简历与成绩单的生成脚本，同样含个人信息
+build_resume.py
+build_transcript.py
+# 个人升学与备考规划
+硕士升学三线作战手册.html
+考研三线周课表.html
+
+# ---------- .NET 构建产物 ----------
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+artifacts/
+TestResults/
+*.user
+*.suo
+*.binlog
+*.log
+
+# ---------- IDE / 编辑器 ----------
+.vs/
+.vscode/
+.idea/
+
+# ---------- 系统杂项 ----------
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/

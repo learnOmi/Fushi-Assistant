@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浮时 · 助手形象探索 05</title>
+<style>
+/* ============================================================
+   浮时 · 形象探索 05 —— 黑丸 · 双眼屏系
+   基准：用户提供的图片（黑色圆润头部 + 两只竖椭圆发光眼 + 无嘴无眉）
+   情绪全部由两只眼的形状完成；眼是它唯一的表情，也是唯一的光源。
+   ============================================================ */
+:root{
+  --bg:#F5F5F7; --surface:#FFFFFF; --surface-2:#EDEDF0;
+  --label:#1D1D1F; --label-2:#6E6E73; --label-3:#96969C;
+  --sep:#D2D2D7; --sep-2:#E8E8ED;
+  --accent:#FF7A45;
+  --stage-a:#EDEFF2; --stage-b:#CFD4DB;
+  --r-xl:28px; --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --ease:cubic-bezier(.2,0,0,1); --spring:cubic-bezier(.34,1.15,.5,1);
+}
+[data-theme="dark"]{
+  --bg:#000; --surface:#1C1C1E; --surface-2:#2C2C2E;
+  --label:#F5F5F7; --label-2:#A1A1A6; --label-3:#7C7C81;
+  --sep:#38383A; --sep-2:#2C2C2E;
+  --stage-a:#2A2C31; --stage-b:#141518;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);color:var(--label);font-family:var(--font);
+  font-size:16px;line-height:1.6;letter-spacing:-.005em;
+  padding:72px 32px 112px;-webkit-font-smoothing:antialiased;
+  transition:background .35s var(--ease),color .35s var(--ease);}
+.wrap{max-width:1040px;margin:0 auto;}
+
+.masthead{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;
+  padding-bottom:28px;border-bottom:1px solid var(--sep);margin-bottom:60px;}
+.masthead h1{margin:0;font-size:40px;line-height:1.08;letter-spacing:-.032em;font-weight:700;}
+.masthead .tagline{margin:10px 0 0;color:var(--label-2);font-size:15px;letter-spacing:0;max-width:66ch;}
+.ghost{border:1px solid var(--sep);background:var(--surface);color:var(--label);
+  font-family:var(--font);font-size:14px;font-weight:500;border-radius:980px;padding:9px 18px;
+  cursor:pointer;transition:transform .12s var(--ease),border-color .16s var(--ease);white-space:nowrap;}
+.ghost:hover{border-color:var(--label-3);} .ghost:active{transform:scale(.96);}
+
+.section{margin-bottom:76px;}
+.section > header{display:flex;align-items:baseline;gap:14px;margin-bottom:10px;}
+.num{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--label-3);font-variant-numeric:tabular-nums;}
+.section h2{margin:0;font-size:26px;line-height:1.25;letter-spacing:-.022em;font-weight:650;}
+.lede{margin:0 0 26px;color:var(--label-2);font-size:16px;max-width:74ch;letter-spacing:0;}
+.lede b{color:var(--label);font-weight:620;}
+
+/* ---------- 基准卡 ---------- */
+.anchor{display:grid;grid-template-columns:280px 1fr;gap:34px;align-items:center;
+  border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  padding:28px 32px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.anchor .astage{border-radius:var(--r-md);background:linear-gradient(165deg,var(--stage-a),var(--stage-b));
+  display:flex;align-items:center;justify-content:center;height:236px;position:relative;}
+.anchor .astage::before{content:"";position:absolute;inset:0;border-radius:var(--r-md);
+  background:radial-gradient(62% 50% at 50% 30%,rgba(255,255,255,.5),rgba(255,255,255,0) 72%);}
+[data-theme="dark"] .anchor .astage::before{background:radial-gradient(62% 50% at 50% 30%,rgba(255,255,255,.07),rgba(255,255,255,0) 72%);}
+.anchor .astage .art{width:200px;height:200px;overflow:visible;position:relative;}
+.anchor h3{margin:0 0 10px;font-size:19px;font-weight:660;letter-spacing:-.016em;}
+.anchor p{margin:0 0 12px;font-size:14px;color:var(--label-2);line-height:1.72;letter-spacing:0;}
+.anchor ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--label-2);line-height:1.85;letter-spacing:0;}
+.anchor li::marker{color:var(--label-3);}
+.anchor b{color:var(--label);font-weight:620;}
+.base{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#2F7D45;
+  background:rgba(47,125,69,.10);border-radius:980px;padding:5px 12px;margin-bottom:12px;}
+
+/* ---------- 双眼屏规则 ---------- */
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.rule{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:18px 20px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.rule .rn{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--accent);}
+.rule h3{margin:5px 0 6px;font-size:14.5px;font-weight:640;letter-spacing:-.008em;}
+.rule p{margin:0;font-size:13px;color:var(--label-2);line-height:1.62;letter-spacing:0;}
+.rule .no{margin-top:9px;display:block;font-size:11.5px;color:#B4642A;letter-spacing:0;line-height:1.5;}
+
+/* ---------- 表情网格 ---------- */
+.emogrid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+.ecard{border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  overflow:hidden;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);
+  transition:box-shadow .2s var(--ease),transform .2s var(--ease);}
+.ecard:hover{box-shadow:0 16px 40px -16px rgba(0,0,0,.24);transform:translateY(-2px);}
+.estage{height:150px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(165deg,var(--stage-a),var(--stage-b));position:relative;}
+.estage::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(60% 50% at 50% 34%,rgba(255,255,255,.5),rgba(255,255,255,0) 72%);}
+[data-theme="dark"] .estage::before{background:radial-gradient(60% 50% at 50% 34%,rgba(255,255,255,.08),rgba(255,255,255,0) 72%);}
+.estage .art{width:112px;height:112px;overflow:visible;position:relative;}
+.ecap{padding:12px 14px 15px;}
+.ecap h5{margin:0 0 3px;font-size:13.5px;font-weight:640;letter-spacing:-.006em;}
+.ecap p{margin:0;font-size:11.5px;color:var(--label-2);line-height:1.5;letter-spacing:0;}
+.ecap .mood{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.06em;
+  padding:2px 8px;border-radius:980px;background:var(--surface-2);color:var(--label-2);margin-bottom:7px;}
+
+/* ---------- 型号卡片 ---------- */
+.grid5{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
+.concept{border:.5px solid var(--sep-2);border-radius:var(--r-lg);background:var(--surface);
+  overflow:hidden;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);
+  transition:box-shadow .2s var(--ease),transform .2s var(--ease);}
+.concept:hover{box-shadow:0 18px 44px -16px rgba(0,0,0,.24);transform:translateY(-2px);}
+.stage{position:relative;height:210px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(165deg,var(--stage-a) 0%,var(--stage-b) 100%);}
+.stage::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(60% 48% at 50% 34%,rgba(255,255,255,.42),rgba(255,255,255,0) 72%);}
+[data-theme="dark"] .stage::before{background:radial-gradient(60% 48% at 50% 34%,rgba(255,255,255,.07),rgba(255,255,255,0) 72%);}
+.stage .art{width:154px;height:154px;overflow:visible;position:relative;}
+.states{display:flex;justify-content:center;gap:20px;padding:16px 16px 2px;}
+.states figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:7px;}
+.states .art{width:58px;height:58px;overflow:visible;}
+.states figcaption{font-size:10px;letter-spacing:.04em;color:var(--label-3);}
+.cbody{padding:10px 22px 22px;}
+.cbody h3{margin:0 0 4px;font-size:17px;font-weight:650;letter-spacing:-.015em;}
+.cbody .concept-line{font-size:13px;color:var(--label-2);margin:0 0 16px;letter-spacing:0;line-height:1.6;}
+.spec2 .r{display:grid;grid-template-columns:62px 1fr;gap:12px;padding:7px 0;
+  border-top:.5px solid var(--sep-2);font-size:12.5px;letter-spacing:0;line-height:1.55;}
+.spec2 .r b{color:var(--label-3);font-weight:600;font-size:11px;letter-spacing:.05em;padding-top:2px;}
+.spec2 .r span{color:var(--label-2);}
+.spec2 .r.risk span{color:#B4642A;}
+.tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;
+  padding:3px 9px;border-radius:980px;background:var(--surface-2);color:var(--label-2);margin-bottom:12px;}
+
+/* ---------- 硬检验 ---------- */
+.tests{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+.tcol{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:18px 10px;display:flex;flex-direction:column;align-items:center;gap:12px;
+  box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.tcol .nm{font-size:12px;font-weight:600;}
+.tcol .art{width:64px;height:64px;overflow:visible;}
+.t-sil .art{filter:url(#silToBlack);}
+.t-gray .art{filter:grayscale(1) contrast(1.06);}
+.sizerow{display:flex;align-items:flex-end;gap:12px;margin-top:16px;flex-wrap:wrap;}
+.sizerow .cell{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.sizerow .cell span{font-size:10px;color:var(--label-3);font-variant-numeric:tabular-nums;}
+.sizerow .art{overflow:visible;}
+.sz16{width:16px;height:16px;} .sz24{width:24px;height:24px;} .sz32{width:32px;height:32px;}
+.sz48{width:48px;height:48px;} .sz64{width:64px;height:64px;}
+
+/* ---------- 桌面情境 ---------- */
+.desk{border-radius:var(--r-lg);overflow:hidden;border:.5px solid var(--sep-2);
+  box-shadow:0 20px 50px -24px rgba(0,0,0,.4);}
+.desk .wall{position:relative;height:460px;background:#20143a center/cover no-repeat;padding:26px;}
+.wall::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,10,24,.10),rgba(8,10,24,.42));}
+.wall > *{position:relative;z-index:1;}
+
+.glass{background:linear-gradient(150deg,rgba(255,255,255,.20),rgba(255,255,255,.07));
+  -webkit-backdrop-filter:blur(26px) saturate(170%);backdrop-filter:blur(26px) saturate(170%);
+  border:.5px solid rgba(255,255,255,.36);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.42),0 22px 44px -16px rgba(6,8,22,.5);
+  color:#fff;border-radius:20px;}
+
+.widget{position:absolute;top:26px;left:26px;width:252px;padding:16px 16px 15px;display:flex;gap:13px;align-items:center;}
+.widget .art{width:54px;height:54px;flex:0 0 54px;overflow:visible;}
+.widget .wtxt{min-width:0;}
+.widget .wk{font-size:10px;font-weight:700;letter-spacing:.08em;opacity:.72;}
+.widget .wn{font-size:15px;font-weight:640;letter-spacing:-.01em;margin:2px 0 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.widget .wt{font-size:12px;opacity:.82;font-variant-numeric:tabular-nums;}
+
+.toast{position:absolute;right:26px;bottom:26px;width:296px;padding:14px 16px;display:flex;gap:12px;align-items:center;}
+.toast .art{width:36px;height:36px;flex:0 0 36px;overflow:visible;}
+.toast .tt{font-size:13px;font-weight:600;letter-spacing:-.005em;}
+.toast .ts{font-size:11.5px;opacity:.78;margin-top:2px;}
+
+.center-pop{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:340px;
+  padding:26px 26px 22px;text-align:center;}
+.center-pop .art{width:86px;height:86px;overflow:visible;margin:0 auto 10px;display:block;}
+.center-pop .cpk{font-size:11px;font-weight:700;letter-spacing:.1em;opacity:.7;}
+.center-pop .cpn{font-size:22px;font-weight:680;letter-spacing:-.02em;margin:6px 0 4px;}
+.center-pop .cpt{font-size:13px;opacity:.82;font-variant-numeric:tabular-nums;}
+.center-pop .cpbtns{display:flex;gap:9px;margin-top:18px;}
+.center-pop .cpbtns button{flex:1;border:0;border-radius:12px;padding:10px 0;font-family:var(--font);
+  font-size:13px;font-weight:600;cursor:pointer;transition:transform .12s var(--ease);}
+.center-pop .cpbtns button:active{transform:scale(.97);}
+.cpb-1{background:#fff;color:#101022;} .cpb-2{background:rgba(255,255,255,.16);color:#fff;}
+
+/* ---------- 建议 ---------- */
+.pick{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.pickcard{border:.5px solid var(--sep-2);border-radius:var(--r-md);background:var(--surface);
+  padding:20px 22px;box-shadow:0 1px 3px -1px rgba(0,0,0,.06);}
+.pickcard h3{margin:0 0 6px;font-size:15px;font-weight:640;}
+.pickcard p{margin:0;font-size:13px;color:var(--label-2);line-height:1.66;letter-spacing:0;}
+
+.foot{padding-top:28px;border-top:1px solid var(--sep);color:var(--label-3);font-size:12px;
+  letter-spacing:0;line-height:1.8;}
+
+@media (max-width:1000px){
+  .emogrid,.rules{grid-template-columns:repeat(2,1fr);}
+  .grid5,.pick,.anchor{grid-template-columns:1fr;}
+  .tests{grid-template-columns:repeat(3,1fr);}
+  body{padding:36px 18px 72px;}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.001ms!important;}
+}
+
+/* ============================================================
+   黑丸 · 渲染系统
+   身体：深黑壳体（亮面 / 哑光两种）　脸：两只发光竖椭圆眼
+   ============================================================ */
+.ch{position:relative;display:inline-flex;}
+.ch svg.art{display:block;}
+.ch .face{transform-box:view-box;transform-origin:60px 60px;
+  transform:translate(var(--fx,0px),var(--fy,0px)) scale(var(--fs,1));}
+
+/* 眼是屏幕，状态改变它的光色 */
+.ch{--glow:#CFE9FF;}
+.ch[data-e="soon"]{--glow:#FFC46A;}
+.ch[data-e="done"]{--glow:#7DEBAA;}
+
+.ch .face .eyeg{transform-box:fill-box;transform-origin:center;
+  transition:transform .26s var(--spring);}
+.ch .face .ovals,.ch .face .arcs,.ch .face .sur{transition:opacity .18s var(--ease);}
+.ch .face .eye{fill:var(--glow);}
+.ch .face .eye-deep{fill:rgba(6,14,30,.18);}
+.ch .face .eye-lit{fill:#FFFFFF;}
+.ch .face .halo{fill:var(--glow);}
+.ch .face :where(.arcs path){fill:none;stroke:var(--glow);stroke-width:4.8;stroke-linecap:round;}
+.ch .face :where(.sur circle){fill:var(--glow);}
+.ch .face :where(.arcs),.ch .face :where(.sur){opacity:0;}
+
+/* ---- 情绪 = 两只眼的形状 ---- */
+.ch[data-e="blink"] .eyeg{transform:scaleY(.08);}
+.ch[data-e="focus"] .eyeg{transform:scaleY(.58);}
+.ch[data-e="think"] .eyeg{transform:translate(3px,-3px) scaleY(.94);}
+.ch[data-e="sleep"] .eyeg{transform:scaleY(.28) translateY(4px);}
+.ch[data-e="curious"] .eyeg-l{transform:scaleY(.5) translateY(2px);}
+.ch[data-e="soon"] .eyeg{transform:scale(1.1);}
+.ch[data-e="happy"] .ovals,.ch[data-e="done"] .ovals{opacity:0;}
+.ch[data-e="happy"] .arcs,.ch[data-e="done"] .arcs{opacity:1;}
+.ch[data-e="surprise"] .ovals{opacity:0;}
+.ch[data-e="surprise"] .sur{opacity:1;}
+
+/* 各型号的面部适配 */
+.v-loaf{--fs:1;   --fy:1px;}
+.v-pod {--fs:1;   --fy:0px;}
+.v-caps{--fs:.94; --fy:-4px;}
+.v-ball{--fs:1;   --fy:-2px;}
+.v-disc{--fs:.9;  --fy:-8px;}
+</style>
+</head>
+<body data-theme="light">
+
+<!-- ============ 共享 defs ============ -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+<defs>
+  <filter id="fB1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1"/></filter>
+  <filter id="fB2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>
+  <filter id="fB4" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="4"/></filter>
+  <filter id="fB5" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5"/></filter>
+  <filter id="fB8" x="-90%" y="-90%" width="280%" height="280%"><feGaussianBlur stdDeviation="8"/></filter>
+  <filter id="silToBlack" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 4 0"/>
+    <feComponentTransfer><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+  </filter>
+
+  <!-- 两种黑：亮面（原图质感）与哑光（深空灰） -->
+  <radialGradient id="gGloss" cx="36%" cy="20%" r="105%">
+    <stop offset="0%" stop-color="#4E565E"/><stop offset="40%" stop-color="#262B31"/>
+    <stop offset="76%" stop-color="#12151A"/><stop offset="100%" stop-color="#0B0D11"/>
+  </radialGradient>
+  <linearGradient id="gMatte" x1=".1" y1="0" x2=".55" y2="1">
+    <stop offset="0%" stop-color="#3C434A"/><stop offset="55%" stop-color="#23282E"/><stop offset="100%" stop-color="#15181D"/>
+  </linearGradient>
+  <linearGradient id="gEdgeDark" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#6A737C"/><stop offset="100%" stop-color="#0C0E12"/>
+  </linearGradient>
+
+  <!-- ① 团 · 黑团子（用户图片复刻：横向鹅卵石黑团） -->
+  <clipPath id="c-loaf"><rect x="14" y="38" width="92" height="48" rx="24"/></clipPath>
+  <symbol id="b-loaf" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="93" rx="30" ry="5" fill="rgba(0,0,0,.30)" filter="url(#fB5)"/>
+    <rect x="14" y="38" width="92" height="48" rx="24" fill="url(#gGloss)" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
+    <g clip-path="url(#c-loaf)">
+      <ellipse cx="50" cy="45" rx="34" ry="11" transform="rotate(-5 50 45)" fill="rgba(255,255,255,.13)" filter="url(#fB4)"/>
+      <ellipse cx="34" cy="44" rx="11" ry="3.6" transform="rotate(-16 34 44)" fill="rgba(255,255,255,.22)" filter="url(#fB1)"/>
+      <ellipse cx="60" cy="86" rx="30" ry="8" fill="rgba(110,150,210,.10)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="90" rx="38" ry="8" fill="rgba(0,0,0,.35)" filter="url(#fB4)"/>
+    </g>
+  </symbol>
+
+  <!-- ② 舱 · 黑方舱（哑光 + 一条顶缝 + 四钉 + 散热口） -->
+  <clipPath id="c-pod"><rect x="21" y="24" width="78" height="76" rx="24"/></clipPath>
+  <symbol id="b-pod" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="108" rx="32" ry="5.5" fill="rgba(0,0,0,.30)" filter="url(#fB5)"/>
+    <rect x="21" y="24" width="78" height="76" rx="24" fill="url(#gMatte)" stroke="rgba(255,255,255,.13)" stroke-width="1"/>
+    <g clip-path="url(#c-pod)">
+      <ellipse cx="42" cy="38" rx="17" ry="9" transform="rotate(-22 42 38)" fill="rgba(255,255,255,.10)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="98" rx="36" ry="10" fill="rgba(100,140,200,.08)" filter="url(#fB4)"/>
+    </g>
+    <path d="M24 42 H96" stroke="rgba(255,255,255,.10)" stroke-width="1.4"/>
+    <g fill="rgba(255,255,255,.16)">
+      <circle cx="31" cy="33" r="1.7"/><circle cx="89" cy="33" r="1.7"/>
+      <circle cx="31" cy="91" r="1.7"/><circle cx="89" cy="91" r="1.7"/>
+    </g>
+    <g stroke="rgba(255,255,255,.12)" stroke-width="1.6" stroke-linecap="round">
+      <path d="M52 93 V98"/><path d="M60 93 V98"/><path d="M68 93 V98"/>
+    </g>
+  </symbol>
+
+  <!-- ③ 胶 · 黑胶囊（竖立胶囊，EVE 一脉比例） -->
+  <clipPath id="c-caps"><rect x="29" y="18" width="62" height="88" rx="31"/></clipPath>
+  <symbol id="b-caps" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="112" rx="26" ry="5" fill="rgba(0,0,0,.30)" filter="url(#fB5)"/>
+    <rect x="29" y="18" width="62" height="88" rx="31" fill="url(#gGloss)" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
+    <g clip-path="url(#c-caps)">
+      <ellipse cx="46" cy="36" rx="10" ry="20" transform="rotate(-8 46 36)" fill="rgba(255,255,255,.14)" filter="url(#fB4)"/>
+      <ellipse cx="34" cy="30" rx="5" ry="8" transform="rotate(-14 34 30)" fill="rgba(255,255,255,.20)" filter="url(#fB1)"/>
+      <ellipse cx="60" cy="102" rx="26" ry="9" fill="rgba(110,150,210,.10)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="106" rx="32" ry="9" fill="rgba(0,0,0,.35)" filter="url(#fB4)"/>
+    </g>
+  </symbol>
+
+  <!-- ④ 球 · 黑球（哑光碳黑圆球） -->
+  <clipPath id="c-ball"><circle cx="60" cy="62" r="40"/></clipPath>
+  <symbol id="b-ball" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="110" rx="30" ry="6" fill="rgba(0,0,0,.30)" filter="url(#fB5)"/>
+    <circle cx="60" cy="62" r="40" fill="url(#gMatte)" stroke="rgba(255,255,255,.13)" stroke-width="1"/>
+    <g clip-path="url(#c-ball)">
+      <ellipse cx="46" cy="40" rx="17" ry="10" transform="rotate(-26 46 40)" fill="rgba(255,255,255,.10)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="100" rx="34" ry="14" fill="rgba(100,140,200,.08)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="106" rx="36" ry="12" fill="rgba(0,0,0,.30)" filter="url(#fB5)"/>
+    </g>
+  </symbol>
+
+  <!-- ⑤ 碟 · 黑碟（压扁悬浮碟，底部一圈厚度） -->
+  <clipPath id="c-disc"><ellipse cx="60" cy="54" rx="46" ry="28"/></clipPath>
+  <symbol id="b-disc" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="96" rx="40" ry="6" fill="rgba(0,0,0,.30)" filter="url(#fB5)"/>
+    <ellipse cx="60" cy="62" rx="44" ry="26" fill="#0B0D11"/>
+    <ellipse cx="60" cy="54" rx="46" ry="28" fill="url(#gGloss)" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
+    <g clip-path="url(#c-disc)">
+      <ellipse cx="42" cy="40" rx="22" ry="10" transform="rotate(-16 42 40)" fill="rgba(255,255,255,.13)" filter="url(#fB4)"/>
+      <path d="M16 56 C28 70 92 70 104 56" stroke="rgba(255,255,255,.10)" stroke-width="1.4" fill="none"/>
+      <ellipse cx="60" cy="82" rx="42" ry="10" fill="rgba(110,150,210,.10)" filter="url(#fB4)"/>
+      <ellipse cx="60" cy="88" rx="44" ry="10" fill="rgba(0,0,0,.35)" filter="url(#fB4)"/>
+    </g>
+  </symbol>
+</defs>
+</svg>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>浮时 · 助手形象探索 05</h1>
+      <p class="tagline">基准 = 你给的图：黑色圆润头部 + 两只竖椭圆发光眼，无嘴无眉。情绪全靠两只眼的形状变化。下面是 1 个复刻基准 + 4 个同族优化方案。</p>
+    </div>
+    <button class="ghost" id="themeBtn">切换外观</button>
+  </div>
+
+  <!-- ============ 01 基准 ============ -->
+  <section class="section">
+    <header><span class="num">01</span><h2>基准：黑团子（你的图，矢量复刻）</h2></header>
+    <div class="anchor">
+      <div class="astage"><span class="ch v-loaf" data-e="idle" id="hero"><svg class="art" viewBox="0 0 120 120"></svg></span></div>
+      <div>
+        <span class="base">✓ 采用：你的图为唯一样式基准</span>
+        <h3>团 · 黑团子</h3>
+        <p>横向圆润的黑色小团，亮面壳体，两只竖椭圆的发光眼。它已经把之前所有"廉价元素"天然排除了：<b>没有嘴、没有眉、没有腮红、没有贴纸高光</b>——脸上只有两块会发光的屏幕。</p>
+        <ul>
+          <li><b>两只眼 = 两块屏</b>：眼本身就是光源，情绪全靠屏上的形状变化</li>
+          <li><b>黑壳是最高级的底色</b>：黑吸收一切，眼的光就格外干净，对比天然拉开</li>
+          <li><b>体积小、一体、悬浮</b>：正好是桌面角落该有的尺寸和姿态</li>
+          <li>之前两版失败的根因：往"贴五官"的方向走。这一版脸上永远只有两只眼。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 02 双眼屏规则 ============ -->
+  <section class="section">
+    <header><span class="num">02</span><h2>双眼屏的四条规则</h2></header>
+    <p class="lede">这是 EVE / NOMI 一脉的表情语法：脸不添加任何零件，情绪全部是"两块屏的形状变化"。</p>
+    <div class="rules">
+      <div class="rule"><span class="rn">E1</span><h3>脸上只有两只眼</h3>
+        <p>眼是唯一的光源、唯一的表情器官。形状：竖椭圆。</p>
+        <span class="no">禁止：嘴、眉、腮红、鼻子、第三种五官</span></div>
+      <div class="rule"><span class="rn">E2</span><h3>情绪 = 形状变化</h3>
+        <p>眯（专注）、闭线（眨眼）、上弧（开心）、圆睁（惊讶）、偏移（思考）。两只眼可以不对称。</p>
+        <span class="no">禁止：用颜色堆情绪、加零件表达情绪</span></div>
+      <div class="rule"><span class="rn">E3</span><h3>光色只给状态</h3>
+        <p>冰白＝日常；琥珀＝临期；薄荷绿＝完成。颜色是系统状态，不是装饰。</p>
+        <span class="no">禁止：彩虹渐变、七彩流光、呼吸变色</span></div>
+      <div class="rule"><span class="rn">E4</span><h3>壳体只做两种黑</h3>
+        <p>亮面黑（原图质感）与哑光深空黑。精密感来自缝与钉，不来自零件数量。</p>
+        <span class="no">禁止：白壳、透明壳、金属拉丝</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 03 十种情绪 ============ -->
+  <section class="section">
+    <header><span class="num">03</span><h2>十种情绪，两只眼全包</h2></header>
+    <p class="lede">以下十张脸身体完全一致，<b>只有两块屏在变</b>。注意没有任何一张需要嘴或眉。</p>
+    <div class="emogrid" id="emogrid"></div>
+  </section>
+
+  <!-- ============ 04 五个型号 ============ -->
+  <section class="section">
+    <header><span class="num">04</span><h2>一个基准 + 四个同族方案</h2></header>
+    <p class="lede">都是黑壳 + 双眼屏，区别只在体形与材质细节：<b>团（复刻）／舱（精密）／胶（EVE 比例）／球（极简）／碟（横向）</b>。每张卡附四种状态。</p>
+    <div class="grid5" id="grid"></div>
+  </section>
+
+  <!-- ============ 05 硬检验 ============ -->
+  <section class="section">
+    <header><span class="num">05</span><h2>三项硬检验</h2></header>
+    <p class="lede"><b>剪影</b>（填黑只剩体形，认得出吗）、<b>灰度</b>（去色后眼依然焦点）、<b>尺寸</b>（小尺寸下眼按比例放大是实现约定）。</p>
+    <div class="tests t-sil" id="testsSil"></div>
+    <div class="tests t-gray" id="testsGray" style="margin-top:14px"></div>
+    <div class="sizerow" id="sizeRow"></div>
+  </section>
+
+  <!-- ============ 06 桌面情境 ============ -->
+  <section class="section">
+    <header><span class="num">06</span><h2>它出现在桌面上的三个位置</h2></header>
+    <p class="lede">同一个黑团子：<b>角落常驻</b>（专注态）、<b>强提醒弹窗</b>（临期·琥珀眼）、<b>完成 Toast</b>（薄荷绿·上弧眼）。</p>
+    <div class="desk">
+      <div class="wall" id="wall" style="background-image:url('assets/wallpaper.jpg')">
+        <div class="glass widget">
+          <span class="ch v-loaf" data-e="focus"><svg class="art" viewBox="0 0 120 120"></svg></span>
+          <div class="wtxt"><div class="wk">正在专注</div><div class="wn">高等数学 · 第 7 讲</div><div class="wt">剩余 46 分钟</div></div>
+        </div>
+        <div class="glass center-pop">
+          <span class="ch v-loaf" data-e="soon"><svg class="art" viewBox="0 0 120 120"></svg></span>
+          <div class="cpk">即将开始</div>
+          <div class="cpn">数据结构 · 上机课</div>
+          <div class="cpt">5 分钟后 · 实验楼 A-312</div>
+          <div class="cpbtns"><button class="cpb-1">知道了</button><button class="cpb-2">再等 5 分钟</button></div>
+        </div>
+        <div class="glass toast">
+          <span class="ch v-loaf" data-e="done"><svg class="art" viewBox="0 0 120 120"></svg></span>
+          <div><div class="tt">完成打卡</div><div class="ts">今天 3 个任务，全部拿下</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 07 建议 ============ -->
+  <section class="section">
+    <header><span class="num">07</span><h2>我的建议</h2></header>
+    <div class="pick">
+      <div class="pickcard">
+        <h3>最忠实：团 · 黑团子</h3>
+        <p>你的图原样矢量复刻。鹅卵石般的横向小团，最圆润可爱，悬浮感最好。</p>
+      </div>
+      <div class="pickcard">
+        <h3>最精密：舱 · 黑方舱</h3>
+        <p>顶缝 + 四钉 + 散热口。最"设备"，科技感最强，体形最大方。</p>
+      </div>
+      <div class="pickcard">
+        <h3>最 EVE：胶 · 黑胶囊</h3>
+        <p>竖立胶囊，头身一体。最有未来感，也最省画面空间。</p>
+      </div>
+      <div class="pickcard">
+        <h3>最折中：碟 · 黑碟</h3>
+        <p>横向且带一点设备感，介于团与舱之间；剪影在五个里最独特。</p>
+      </div>
+    </div>
+    <p class="lede" style="margin-top:24px">选定一个后，我把它接回 v4 原型，替换第 02 节与提醒弹窗，表情按<b>这套双眼屏语法</b>接入四种课程状态。</p>
+  </section>
+
+  <div class="foot">
+    浮时 · 助手形象探索 05 · 黑丸双眼屏系　·　基准来自用户提供的图片　·　情绪语法对标 EVE / NOMI 一脉<br>
+    本页为设计稿，非产品代码。脸上永远只有两只眼。
+  </div>
+</div>
+
+<script>
+(function(){
+  // 一张脸 = 两组眼 + 上弧（开心/完成）+ 圆睁（惊讶），全部可被状态切换
+  function eyeg(side){
+    var cx = side === 'l' ? 44.5 : 75.5;
+    return '<g class="eyeg eyeg-' + side + '">' +
+      '<g class="ovals">' +
+        '<ellipse class="halo" cx="' + cx + '" cy="60" rx="10.5" ry="15" opacity=".30" filter="url(#fB5)"/>' +
+        '<ellipse class="eye" cx="' + cx + '" cy="60" rx="7.4" ry="13"/>' +
+        '<ellipse class="eye-deep" cx="' + cx + '" cy="64.5" rx="5.2" ry="7.6" filter="url(#fB2)"/>' +
+        '<ellipse class="eye-lit" cx="' + cx + '" cy="53.5" rx="3.4" ry="4.4" opacity=".5" filter="url(#fB1)"/>' +
+      '</g>' +
+    '</g>';
+  }
+  var FACE =
+    '<g class="face">' +
+      '<g class="eyes">' + eyeg('l') + eyeg('r') + '</g>' +
+      '<g class="arcs">' +
+        '<path d="M37.5 64 Q44.5 54 51.5 64"/>' +
+        '<path d="M68.5 64 Q75.5 54 82.5 64"/>' +
+      '</g>' +
+      '<g class="sur">' +
+        '<circle cx="44.5" cy="60" r="8.8"/>' +
+        '<circle cx="75.5" cy="60" r="8.8"/>' +
+      '</g>' +
+    '</g>';
+
+  var CHARS = [
+    { id:'loaf', cls:'v-loaf', name:'团 · 黑团子', tag:'基准 · 复刻',
+      line:'你给的图原样矢量复刻：横向鹅卵石黑团，亮面壳体。',
+      specs:[['体形','横向圆角团块 92×48'],['材质','亮面黑，宽幅顶部柔光'],['优势','最忠实原图，最圆润可爱'],['风险','体形偏扁，双眼间距较宽']] },
+    { id:'pod', cls:'v-pod', name:'舱 · 黑方舱', tag:'方案 1',
+      line:'圆角方舱：一条顶缝、四颗钉、三条散热口，精密感全在缝上。',
+      specs:[['体形','圆角方 78×76，r24'],['材质','哑光深空黑 + 缝钉细节'],['优势','最"设备"，科技感最强'],['风险','方体偏硬，靠双眼补亲和力']] },
+    { id:'caps', cls:'v-caps', name:'胶 · 黑胶囊', tag:'方案 2',
+      line:'竖立胶囊，头身不分。EVE 一脉的经典比例。',
+      specs:[['体形','竖胶囊 62×88，r31'],['材质','亮面黑，纵向柔光'],['优势','最有未来感，占画面最小'],['风险','竖长体在极小尺寸下显窄']] },
+    { id:'ball', cls:'v-ball', name:'球 · 黑球', tag:'方案 3',
+      line:'一颗哑光碳黑圆球。零件为零，只剩体与眼。',
+      specs:[['体形','正圆 r40'],['材质','哑光碳黑，无任何缝钉'],['优势','极简到极致，16px 不散'],['风险','剪影与常见语音音箱最接近']] },
+    { id:'disc', cls:'v-disc', name:'碟 · 黑碟', tag:'方案 4',
+      line:'压扁的悬浮碟，底部一圈厚度。横而不扁，稳而能飘。',
+      specs:[['体形','扁椭球 92×56 + 底缘'],['材质','亮面黑，一道赤道缝'],['优势','剪影独特，横向不占视线'],['风险','脸部面积有限，眼已适配缩小']] }
+  ];
+
+  function ch(c, state, extra){
+    return '<span class="ch ' + c.cls + (extra ? ' ' + extra : '') + '" data-e="' + state + '">' +
+      '<svg class="art" viewBox="0 0 120 120"><use href="#b-' + c.id + '"/>' + FACE + '</svg></span>';
+  }
+
+  // ---- 03 情绪 ----
+  var EMO = [
+    ['idle','待机','平静','两块屏安静地亮着'],
+    ['blink','眨眼','自发','每 4–6 秒一次，闭 80ms'],
+    ['focus','专注','工作中','上睑压低，屏变窄'],
+    ['think','思考','回忆中','双眼一起往斜上瞟'],
+    ['curious','疑惑','没听懂','单眼眯起，不对称'],
+    ['sleep','困倦','熬夜后','眼睑垂到一半'],
+    ['happy','开心','被夸了','两块屏弯成上弧'],
+    ['surprise','惊讶','有变化','换成圆睁，瞬间放大'],
+    ['soon','临期','要上课了','眼放大 + 琥珀光'],
+    ['done','完成','打卡成功','上弧眼 + 薄荷绿光']
+  ];
+  document.getElementById('emogrid').innerHTML = EMO.map(function(e){
+    return '<div class="ecard"><div class="estage">' + ch(CHARS[0], e[0]) + '</div>' +
+      '<div class="ecap"><span class="mood">' + e[2] + '</span><h5>' + e[1] + '</h5><p>' + e[3] + '</p></div></div>';
+  }).join('');
+
+  // ---- 04 型号 ----
+  document.getElementById('grid').innerHTML = CHARS.map(function(c){
+    return '<div class="concept">' +
+      '<div class="stage">' + ch(c, 'idle') + '</div>' +
+      '<div class="states">' +
+        '<figure>' + ch(c, 'idle') + '<figcaption>待机</figcaption></figure>' +
+        '<figure>' + ch(c, 'focus') + '<figcaption>专注</figcaption></figure>' +
+        '<figure>' + ch(c, 'soon') + '<figcaption>临期</figcaption></figure>' +
+        '<figure>' + ch(c, 'done') + '<figcaption>完成</figcaption></figure>' +
+      '</div>' +
+      '<div class="cbody">' +
+        '<span class="tag">' + c.tag + '</span>' +
+        '<h3>' + c.name + '</h3>' +
+        '<p class="concept-line">' + c.line + '</p>' +
+        '<div class="spec2">' + c.specs.map(function(s){
+          return '<div class="r' + (s[0]==='风险'?' risk':'') + '"><b>' + s[0] + '</b><span>' + s[1] + '</span></div>';
+        }).join('') + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  // ---- 05 硬检验 ----
+  function testRow(el){
+    el.innerHTML = CHARS.map(function(c){
+      return '<div class="tcol"><span class="nm">' + c.name.split(' · ')[0] + '</span>' + ch(c, 'idle') + '</div>';
+    }).join('');
+  }
+  testRow(document.getElementById('testsSil'));
+  testRow(document.getElementById('testsGray'));
+
+  var sizes = [64,48,32,24,16];
+  var groups = [CHARS[0], CHARS[1], CHARS[2]];
+  document.getElementById('sizeRow').innerHTML = groups.map(function(c){
+    return sizes.map(function(s){
+      return '<div class="cell">' + ch(c, 'idle', 'sz' + s) + '<span>' + s + '</span></div>';
+    }).join('');
+  }).join('<span style="flex:1"></span>');
+
+  // ---- 基准：自动眨眼 ----
+  var hero = document.getElementById('hero');
+  if(hero && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    (function loop(){
+      setTimeout(function(){
+        hero.dataset.e = 'blink';
+        setTimeout(function(){ hero.dataset.e = 'idle'; loop(); }, 90);
+      }, 4200 + Math.random() * 2200);
+    })();
+  }
+
+  // ---- 主题 ----
+  var body = document.body;
+  document.getElementById('themeBtn').addEventListener('click', function(){
+    body.dataset.theme = body.dataset.theme === 'light' ? 'dark' : 'light';
+  });
+})();
+</script>
+</body>
+</html>
