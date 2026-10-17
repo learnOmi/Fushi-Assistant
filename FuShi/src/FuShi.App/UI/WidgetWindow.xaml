@@ -6,23 +6,47 @@
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False" ShowActivated="False"
         ResizeMode="NoResize"
-        MouseLeftButtonDown="OnGrab">
-    <Border x:Name="Root" CornerRadius="32" Background="{StaticResource SurfaceBrush}"
+        MouseLeftButtonDown="OnGrab"
+        MouseEnter="OnHoverEnter" MouseLeave="OnHoverLeave">
+    <Border x:Name="Root" CornerRadius="12" Background="{StaticResource SurfaceBrush}"
             BorderThickness="1" BorderBrush="#26FFFFFF" Padding="10,9,12,9">
         <StackPanel>
-            <!-- 药丸态：团子 + 下一件事 -->
-            <StackPanel x:Name="Pill" Orientation="Horizontal" Background="Transparent">
-                <local:BotView x:Name="Bot" Width="44" Height="44" Margin="2,0,0,0" Mood="Idle"/>
-                <StackPanel VerticalAlignment="Center" Margin="12,0,4,1">
-                    <TextBlock x:Name="TitleText" Text="今天没有课" FontSize="14" FontWeight="SemiBold"
-                               Foreground="{StaticResource LabelBrush}"/>
-                    <TextBlock x:Name="SubText" Text="团子待命中" FontSize="11.5"
-                               Foreground="{StaticResource Label2Brush}" Margin="0,1,0,0"/>
+            <!-- 收起态：圆角卡片（非胶囊），四要素 = 科目 / 倒计时 / 进度条 / 下一节（设计文档第 6 章）
+                 左侧保留团子，维持助手形象在常驻态的可见性 -->
+            <Grid x:Name="Card">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <local:BotView Grid.Column="0" x:Name="Bot" Width="44" Height="44"
+                               VerticalAlignment="Center" Margin="2,0,0,0" Mood="Idle"/>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,2,0">
+                    <!-- 要素① 科目：M1 为空课表，先显示空态文案 -->
+                    <TextBlock x:Name="SubjectText" Text="今天没有课" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{StaticResource LabelBrush}" TextTrimming="CharacterEllipsis"/>
+
+                    <!-- 要素② 倒计时：M1 无数据源，先折叠；M2 接入数据后显示 -->
+                    <TextBlock x:Name="CountdownText" Visibility="Collapsed" FontSize="16" FontWeight="Bold"
+                               Foreground="{StaticResource LabelBrush}" Margin="0,3,0,0"/>
+
+                    <!-- 要素③ 进度条：M1 无数据源，先折叠 -->
+                    <Border x:Name="ProgressTrack" Visibility="Collapsed" Height="4" Margin="0,7,0,0"
+                            CornerRadius="2" Background="#2EFFFFFF">
+                        <Border x:Name="ProgressFill" HorizontalAlignment="Left" Width="0"
+                                CornerRadius="2" Background="#D9FFFFFF"/>
+                    </Border>
+
+                    <!-- 要素④ 下一节：空课表时退化为引导文案（设计文档 5.8） -->
+                    <TextBlock x:Name="NextText" Text="点击添加第一个时段" FontSize="11.5"
+                               Foreground="{StaticResource Label2Brush}" Margin="0,3,0,0"
+                               TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
-            </StackPanel>
+            </Grid>
 
             <!-- 展开态：M1 为空课表态 -->
-            <Border x:Name="Expanded" Visibility="Collapsed" Margin="2,10,0,2" CornerRadius="18"
+            <Border x:Name="Expanded" Visibility="Collapsed" Margin="2,10,0,2" CornerRadius="10"
                     Background="#1FFFFFFF" Padding="14,12,14,14">
                 <StackPanel>
                     <TextBlock x:Name="DateText" FontSize="12" FontWeight="SemiBold"
