@@ -339,6 +339,8 @@ ScheduleEntry ──&lt; N CompletionLog（按日期展开）
   </tbody>
 </table>
 
+<p class="muted"><strong>ADR-4 落地结论（M2b 实测，2026-10-18）：</strong>Windows Toast 采用 CommunityToolkit.WinUI.Notifications。非打包的桌面进程弹 Toast 必须显式声明 AUMID，且宿主工程目标框架需 ≥ net8.0-windows10.0.18362.0（否则 NuGet 只解析到 net5.0 资产，拿不到 ToastNotificationManagerCompat）。实测 ToastNotificationManagerCompat.CreateToastNotifier() 在非打包进程「探测通过」（AUMID = FuShi.FloatTime.Desktop）；「能否真正弹出」仍待运行期首次派发确认，实现已做失败自动降级（转自绘弹窗 + 记 Warning）。</p>
+
 <h2>4 · 技术栈选型</h2>
 
 <h3>4.1 候选对比</h3>

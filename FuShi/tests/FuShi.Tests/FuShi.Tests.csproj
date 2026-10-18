@@ -23,6 +23,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FuShi.Domain\FuShi.Domain.csproj" />
+    <!-- M2b：课表服务/引擎落在 Infrastructure，集成测试需要直接引用它与 EF Core Sqlite -->
+    <ProjectReference Include="..\..\src\FuShi.Infrastructure\FuShi.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,21 +1,26 @@
 using System.Threading;
 using System.Windows;
+using System.Windows.Threading;
 using FuShi.Core;
+using FuShi.Domain;
 using FuShi.Domain.Entities;
 using FuShi.Domain.Time;
 using FuShi.Infrastructure;
+using FuShi.Infrastructure.Scheduling;
+using FuShi.Notifications;
 using FuShi.UI;
 using FuShi.ViewModels;
 using H.NotifyIcon;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Win32;
 using Serilog;
 
 namespace FuShi;
 
 /// <summary>
-/// 应用入口：单实例守护、DI 宿主装配、数据库迁移、托盘与悬浮窗的创建。
+/// 应用入口：单实例守护、DI 宿主装配、数据库迁移、托盘与悬浮窗的创建，以及 M2b 的提醒引擎启动。
 /// M2 起改为 MVVM + DI：所有服务与状态经容器装配，窗口只保留纯视图职责。
 /// </summary>
 public partial class App : Application
@@ -34,6 +39,13 @@ public partial class App : Application
     private WidgetWindow? _widget;
     private TaskbarIcon? _tray;
     private Serilog.ILogger _logger = null!;
+
+    private ScheduleService? _scheduleService;
+    private ToastNotificationChannel? _toastChannel;
+    private ReminderEngine? _engine;
+
+    /// <summary>悬浮组件数据兜底重载定时器（跨天滚动与引擎事件之外的安全网）。</summary>
+    private DispatcherTimer? _widgetReloadTimer;
 
     /// <inheritdoc />
     protected override void OnStartup(StartupEventArgs e)
@@ -60,11 +72,26 @@ public partial class App : Application
 
         CreateTray();
         CreateWidget(settingsRepository, settings);
+        StartEngine();
     }
 
     /// <inheritdoc />
     protected override void OnExit(ExitEventArgs e)
     {
+        // 收尾顺序：先摘掉外部事件与定时器，再停引擎（它会取消后台循环），最后释放宿主。
+        SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+        _widgetReloadTimer?.Stop();
+        if (_widgetReloadTimer is not null)
+        {
+            _widgetReloadTimer.Tick -= OnWidgetReloadTick;
+        }
+
+        if (_engine is not null)
+        {
+            _engine.ScheduleChanged -= OnScheduleChanged;
+            _engine.Dispose();
+        }
+
         _widget?.SavePosition();
         _tray?.Dispose();
         _host?.Dispose();
@@ -79,7 +106,8 @@ public partial class App : Application
 
     /// <summary>
     /// 构建 DI 宿主。存储用 <see cref="EntityFrameworkServiceCollectionExtensions.AddDbContextFactory{TContext}"/>
-    /// 注册工厂——每次操作创建短生命周期上下文，隔离 UI 线程与（M2b 的）引擎后台线程。
+    /// 注册工厂——每次操作创建短生命周期上下文，隔离 UI 线程与引擎后台线程。
+    /// M2b 追加：课表服务、Toast 通道、通知调度器、提醒引擎。
     /// </summary>
     private IHost BuildHost()
     {
@@ -89,6 +117,12 @@ public partial class App : Application
             options => options.UseSqlite(StoragePaths.ConnectionString));
         builder.Services.AddSingleton<Serilog.ILogger>(_logger);
         builder.Services.AddSingleton<AppSettingRepository>();
+
+        builder.Services.AddSingleton<ScheduleService>();
+        builder.Services.AddSingleton<ToastNotificationChannel>();
+        builder.Services.AddSingleton<NotificationService>();
+        builder.Services.AddSingleton<INotificationChannel>(provider => provider.GetRequiredService<NotificationService>());
+        builder.Services.AddSingleton<ReminderEngine>();
 
         return builder.Build();
     }
@@ -132,6 +166,79 @@ public partial class App : Application
         _widget = new WidgetWindow(viewModel);
         PositionWidget(viewModel);
         _widget.Show();
+    }
+
+    /// <summary>
+    /// 启动提醒引擎并接好两侧的「线」：
+    /// 引擎的数据变更事件 → 刷新悬浮组件；系统唤醒事件 → 只请求重排；兜底定时器 → 周期重载。
+    /// </summary>
+    private void StartEngine()
+    {
+        _scheduleService = _host!.Services.GetRequiredService<ScheduleService>();
+
+        // 风险 6 的验证点：先探测非打包进程能否弹 Toast，结论写入日志（失败则自动降级）。
+        _toastChannel = _host.Services.GetRequiredService<ToastNotificationChannel>();
+        _toastChannel.Probe();
+
+        _engine = _host.Services.GetRequiredService<ReminderEngine>();
+        _engine.ScheduleChanged += OnScheduleChanged;
+
+        SystemEvents.PowerModeChanged += OnPowerModeChanged;
+
+        _widgetReloadTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(UiConstants.WIDGET_DATA_RELOAD_INTERVAL_MS),
+        };
+        _widgetReloadTimer.Tick += OnWidgetReloadTick;
+        _widgetReloadTimer.Start();
+
+        ReloadWidget(); // 先铺一次数据再让引擎跑起来，避免首屏空窗。
+        _engine.Start();
+    }
+
+    /// <summary>引擎报告「课表数据可能已变」→ 编组回 UI 线程重载悬浮组件。</summary>
+    private void OnScheduleChanged(object? sender, EventArgs e)
+    {
+        if (Dispatcher.HasShutdownStarted)
+        {
+            return;
+        }
+
+        Dispatcher.BeginInvoke(new Action(ReloadWidget));
+    }
+
+    /// <summary>兜底重载定时器到点。</summary>
+    private void OnWidgetReloadTick(object? sender, EventArgs e) => ReloadWidget();
+
+    /// <summary>
+    /// 系统电源模式变化。<b>该处理器跑在系统隐藏窗口的消息泵线程上</b>，
+    /// 因此只允许调用引擎的「取消休眠」这一个动作，绝不触碰 UI 或 DbContext。
+    /// </summary>
+    private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+    {
+        if (e.Mode == PowerModes.Resume)
+        {
+            _engine?.RequestRescan();
+        }
+    }
+
+    /// <summary>把当前课表时间线推给悬浮组件（在 UI 线程上同步取数后转交视图）。</summary>
+    private void ReloadWidget()
+    {
+        if (_widget is null || _scheduleService is null)
+        {
+            return;
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        // 与 ScheduleService 的展开视野保持一致的 7 天窗口（双闭区间，故 -1）。
+        var horizonEnd = today.AddDays(TimeDefaults.EXPANSION_HORIZON_DAYS - 1);
+        var slots = _scheduleService
+            .GetTimelineAsync(today, horizonEnd)
+            .GetAwaiter()
+            .GetResult();
+
+        _widget.ApplySchedule(slots);
     }
 
     /// <summary>恢复悬浮窗位置：有保存值则用之，否则落到主屏右上角。</summary>

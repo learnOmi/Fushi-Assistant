@@ -2,7 +2,9 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <!-- 目标框架带 Windows 版本：CommunityToolkit.WinUI.Notifications 的 ToastNotificationManagerCompat
+         （非打包进程弹 Toast）只存在于 windows10.0.18362 及以上版本的资产里，故此处必须声明平台版本 -->
+    <TargetFramework>net8.0-windows10.0.18362.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
@@ -30,6 +32,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="CommunityToolkit.WinUI.Notifications" Version="7.1.2" />
     <PackageReference Include="H.NotifyIcon.Wpf" Version="2.1.4" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
     <PackageReference Include="Serilog" Version="4.4.0" />

@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using FuShi.Core;
+using FuShi.Domain.Scheduling;
 using FuShi.ViewModels;
 
 namespace FuShi.UI;
@@ -120,4 +121,11 @@ public partial class WidgetWindow : Window
 
     /// <summary>把当前位置交给视图模型持久化（写入 AppSetting 单行表）。</summary>
     public void SavePosition() => _viewModel.PersistPosition(Left, Top);
+
+    /// <summary>
+    /// 推入新的课表时段表（由宿主在启动时、以及引擎报告数据变更时调用）。
+    /// 视图本身不做数据计算，只把数据转交给视图模型。
+    /// </summary>
+    /// <param name="slots">已展开的时段表（升序）。</param>
+    public void ApplySchedule(IReadOnlyList<TimelineSlot> slots) => _viewModel.ApplySchedule(slots);
 }
