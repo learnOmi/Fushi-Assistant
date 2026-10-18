@@ -1,0 +1,20 @@
+namespace FuShi.Domain;
+
+/// <summary>
+/// 与「实体模型」相关的领域默认值。
+/// 集中常量：单行设置表主键、默认配色、默认主题与透明度。
+/// </summary>
+public static class ModelDefaults
+{
+    /// <summary>AppSetting 是单行设置表，主键恒为该值。</summary>
+    public const int SINGLETON_ROW_ID = 1;
+
+    /// <summary>科目默认颜色（强调色），用户未选色时使用。</summary>
+    public const string DEFAULT_SUBJECT_COLOR = "#FF8A5B";
+
+    /// <summary>默认主题名（设计基线为暗色）。</summary>
+    public const string DEFAULT_THEME = "dark";
+
+    /// <summary>默认不透明度（完全不透明）。</summary>
+    public const double DEFAULT_OPACITY = 1.0;
+}

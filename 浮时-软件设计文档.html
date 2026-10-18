@@ -368,7 +368,7 @@ ScheduleEntry ──&lt; N CompletionLog（按日期展开）
     <tr><td>托盘</td><td>H.NotifyIcon.Wpf</td></tr>
     <tr><td>通知</td><td>CommunityToolkit.WinUI.Notifications</td></tr>
     <tr><td>存储</td><td>SQLite + EF Core（或 Dapper）</td></tr>
-    <tr><td>调度</td><td>PeriodicTimer（后台线程）</td></tr>
+    <tr><td>调度</td><td>Task.Delay + 可取消 CTS（睡到下一触发点，后台线程）</td></tr>
     <tr><td>日志</td><td>Serilog</td></tr>
     <tr><td>打包</td><td>Velopack / Inno Setup</td></tr>
     <tr><td>测试</td><td>xUnit + FluentAssertions</td></tr>

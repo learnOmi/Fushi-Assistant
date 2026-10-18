@@ -2,41 +2,47 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using FuShi.Core;
+using FuShi.ViewModels;
 
 namespace FuShi.UI;
 
 /// <summary>
 /// 悬浮组件窗口：无边框、置顶、不进任务栏的圆角卡片。
-/// 交互（设计文档 5.3）：悬停 200ms 自动展开；鼠标移开 300ms 自动收起；
-/// 左键拖动移动位置，拖完持久化。
+/// 只承担**纯视图职责**——拖动（DragMove）、悬停 200/300ms 计时、命中判定、倒计时定时器；
+/// 数据与状态全部经绑定取自 <see cref="WidgetViewModel"/>（交互时序见设计文档 5.3）。
 /// </summary>
 public partial class WidgetWindow : Window
 {
-    private readonly WidgetStateStore _store;
+    private readonly WidgetViewModel _viewModel;
     private readonly DispatcherTimer _hoverTimer;
-
-    /// <summary>当前是否处于展开态。</summary>
-    private bool _expanded;
+    private readonly DispatcherTimer _countdownTimer;
 
     /// <summary>延时任务的目标状态：true = 待展开，false = 待收起。</summary>
     private bool _pendingExpand;
 
-    public WidgetWindow(WidgetStateStore store)
+    /// <summary>构造窗口。</summary>
+    /// <param name="viewModel">视图模型（数据与状态来源）。</param>
+    public WidgetWindow(WidgetViewModel viewModel)
     {
         InitializeComponent();
-        _store = store;
+
+        _viewModel = viewModel;
+        DataContext = viewModel;
 
         _hoverTimer = new DispatcherTimer();
         _hoverTimer.Tick += OnHoverDelayElapsed;
 
-        UpdateDateText();
+        // 倒计时刷新：UI 侧每秒推一次，ViewModel 保持纯 net8.0 可测、不依赖 WPF 计时器。
+        _countdownTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(UiConstants.COUNTDOWN_REFRESH_INTERVAL_MS)
+        };
+        _countdownTimer.Tick += OnCountdownTick;
+        _countdownTimer.Start();
     }
 
-    private void UpdateDateText()
-    {
-        var now = DateTime.Now;
-        DateText.Text = $"{now:M月d日} 周{"日一二三四五六"[(int)now.DayOfWeek]}";
-    }
+    /// <summary>每秒刷新一次视图模型（M2b 起据此更新倒计时/进度）。</summary>
+    private void OnCountdownTick(object? sender, EventArgs e) => _viewModel.Refresh(DateTime.Now);
 
     // ---------- 悬停展开 / 移开收起 ----------
     private void OnHoverEnter(object sender, MouseEventArgs e) => ScheduleExpand(true);
@@ -63,18 +69,24 @@ public partial class WidgetWindow : Window
 
         // 收起前复核光标位置：拖动期间鼠标被窗口捕获，MouseLeave 可能不会触发，
         // 若此时光标仍压在组件上就保持展开，避免误收起。
-        if (!_pendingExpand && IsCursorInside()) return;
+        if (!_pendingExpand && IsCursorInside())
+        {
+            return;
+        }
 
         SetExpanded(_pendingExpand);
     }
 
-    /// <summary>按目标状态切换展开态。M1 的展开内容是空课表态，不承载真实课表。</summary>
+    /// <summary>按目标状态切换展开态（状态落在视图模型，视图据绑定切换可见性）。</summary>
     /// <param name="expanded">true = 展开；false = 收起。</param>
     private void SetExpanded(bool expanded)
     {
-        if (_expanded == expanded) return;
-        _expanded = expanded;
-        Expanded.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+        if (_viewModel.IsExpanded == expanded)
+        {
+            return;
+        }
+
+        _viewModel.IsExpanded = expanded;
     }
 
     /// <summary>
@@ -106,5 +118,6 @@ public partial class WidgetWindow : Window
         ScheduleExpand(IsCursorInside());
     }
 
-    public void SavePosition() => _store.Save(Left, Top);
+    /// <summary>把当前位置交给视图模型持久化（写入 AppSetting 单行表）。</summary>
+    public void SavePosition() => _viewModel.PersistPosition(Left, Top);
 }

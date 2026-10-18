@@ -19,8 +19,20 @@
   <ItemGroup>
     <!-- WPF + WinForms 双开时移除 WinForms 隐式 global using，避免类型二义；
          WinForms 仅用于托盘 NotifyIcon，调用处全部全限定 -->
-    <Using Remove="System.Windows.Forms"/>
-    <Using Remove="System.Drawing"/>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FuShi.Domain\FuShi.Domain.csproj" />
+    <ProjectReference Include="..\FuShi.Infrastructure\FuShi.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="H.NotifyIcon.Wpf" Version="2.1.4" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
+    <PackageReference Include="Serilog" Version="4.4.0" />
   </ItemGroup>
 
 </Project>

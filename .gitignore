@@ -25,6 +25,17 @@ TestResults/
 *.binlog
 *.log
 
+# ---------- 本地数据库 / 覆盖率产物 ----------
+# 正式库落在 %APPDATA%\FuShi\fushi.db（在仓库外）；
+# 这几条是防集成测试 / 本地调试把 SQLite 文件漏进仓库。
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+coverage*.xml
+*.coverage
+
 # ---------- IDE / 编辑器 ----------
 .vs/
 .vscode/

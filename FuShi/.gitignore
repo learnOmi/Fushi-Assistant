@@ -11,3 +11,12 @@ out/
 artifacts/
 TestResults/
 *.log
+
+# 本地数据库（正式库在 %APPDATA%\FuShi，此处防集成测试漏入）与覆盖率产物
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+coverage*.xml
+*.coverage
