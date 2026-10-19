@@ -1,3 +1,5 @@
+using System.Windows;
+
 namespace FuShi.Core;
 
 /// <summary>
@@ -23,4 +25,50 @@ internal static class UiConstants
 
     /// <summary>托盘图标的悬停提示文本。</summary>
     public const string TRAY_TOOLTIP_TEXT = "浮时 · 课表提醒";
+
+    // ---------- M3 主窗口 / 周网格 / 编辑对话框 ----------
+
+    /// <summary>主窗口初始宽度（设备无关单位）。</summary>
+    public const double MAIN_WINDOW_WIDTH = 960.0;
+
+    /// <summary>主窗口初始高度。</summary>
+    public const double MAIN_WINDOW_HEIGHT = 620.0;
+
+    /// <summary>主窗口最小宽度。</summary>
+    public const double MAIN_WINDOW_MIN_WIDTH = 720.0;
+
+    /// <summary>主窗口最小高度。</summary>
+    public const double MAIN_WINDOW_MIN_HEIGHT = 480.0;
+
+    /// <summary>周网格时间列的固定宽度（跨行共享，保证列对齐）。</summary>
+    public const double GRID_TIME_COLUMN_WIDTH = 62.0;
+
+    /// <summary>周网格单元格最小高度。</summary>
+    public const double GRID_CELL_MIN_HEIGHT = 56.0;
+
+    /// <summary>
+    /// 周网格单元格圆角半径。<b>类型必须是 <see cref="CornerRadius"/></b>：
+    /// XAML 里 <c>{x:Static}</c> 传的是装箱对象，若声明为 <c>double</c>，
+    /// 布局阶段读 <c>Border.CornerRadius</c> 时会抛 InvalidCastException（Double → CornerRadius）。
+    /// 因结构体非编译期常量，故用 static readonly。
+    /// </summary>
+    public static readonly CornerRadius GRID_CELL_CORNER_RADIUS = new(8);
+
+    /// <summary>停用条目的弱化不透明度。</summary>
+    public const double GRID_DISABLED_OPACITY = 0.45;
+
+    /// <summary>新建时段时，默认时长（分钟）。</summary>
+    public const int EDITOR_DEFAULT_DURATION_MINUTES = 60;
+
+    /// <summary>「添加时段」时把当前时刻向上取整的分钟粒度。</summary>
+    public const int EDITOR_TIME_ROUND_MINUTES = 5;
+
+    /// <summary>一周的天数（周网格列数）。</summary>
+    public const int DAYS_PER_WEEK = 7;
+
+    /// <summary>一天的小时数（编辑对话框小时下拉上限）。</summary>
+    public const int HOURS_PER_DAY = 24;
+
+    /// <summary>编辑对话框分钟下拉的步长（分钟）。</summary>
+    public const int MINUTE_STEP = 5;
 }

@@ -9,6 +9,9 @@ public static class ModelDefaults
     /// <summary>AppSetting 是单行设置表，主键恒为该值。</summary>
     public const int SINGLETON_ROW_ID = 1;
 
+    /// <summary>自举阶段的默认名称（首次进入课表页、无生效阶段时创建）。</summary>
+    public const string DEFAULT_PHASE_NAME = "默认课表";
+
     /// <summary>科目默认颜色（强调色），用户未选色时使用。</summary>
     public const string DEFAULT_SUBJECT_COLOR = "#FF8A5B";
 

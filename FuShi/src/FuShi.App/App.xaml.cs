@@ -9,6 +9,7 @@ using FuShi.Infrastructure;
 using FuShi.Infrastructure.Scheduling;
 using FuShi.Notifications;
 using FuShi.UI;
+using FuShi.UI.Dialogs;
 using FuShi.ViewModels;
 using H.NotifyIcon;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,7 @@ public partial class App : Application
     private Mutex? _mutex;
     private IHost? _host;
     private WidgetWindow? _widget;
+    private MainWindow? _mainWindow;
     private TaskbarIcon? _tray;
     private Serilog.ILogger _logger = null!;
 
@@ -50,17 +52,21 @@ public partial class App : Application
     /// <inheritdoc />
     protected override void OnStartup(StartupEventArgs e)
     {
+        // 日志最先装配：OnExit 无条件引用 _logger，而二次实例会在 base.OnStartup 之前
+        // 就走到 Shutdown() 分支；若此时 _logger 仍为 null，OnExit 会抛 NullReferenceException。
+        _logger = LoggingSetup.Create();
+
         // 单实例：二次启动直接退出（避免两个引擎/两套托盘）。
         _mutex = new Mutex(true, MUTEX_ID, out var isNewInstance);
         if (!isNewInstance)
         {
+            _logger.Information("已有实例在运行，二次启动退出");
             Shutdown();
             return;
         }
 
         base.OnStartup(e);
 
-        _logger = LoggingSetup.Create();
         _logger.Information("浮时启动");
 
         _host = BuildHost();
@@ -93,6 +99,11 @@ public partial class App : Application
         }
 
         _widget?.SavePosition();
+        if (_widget is not null)
+        {
+            _widget.OpenScheduleRequested -= OnOpenScheduleRequested;
+        }
+
         _tray?.Dispose();
         _host?.Dispose();
 
@@ -119,6 +130,7 @@ public partial class App : Application
         builder.Services.AddSingleton<AppSettingRepository>();
 
         builder.Services.AddSingleton<ScheduleService>();
+        builder.Services.AddSingleton<ScheduleEditService>();
         builder.Services.AddSingleton<ToastNotificationChannel>();
         builder.Services.AddSingleton<NotificationService>();
         builder.Services.AddSingleton<INotificationChannel>(provider => provider.GetRequiredService<NotificationService>());
@@ -149,7 +161,7 @@ public partial class App : Application
     private void CreateTray()
     {
         _tray = (TaskbarIcon)FindResource(TRAY_ICON_RESOURCE_KEY);
-        _tray.DataContext = new TrayViewModel(ToggleWidget, Shutdown);
+        _tray.DataContext = new TrayViewModel(ToggleWidget, OpenMainWindow, ExitApplication);
         _tray.Icon = TrayIconFactory.Create();
         _tray.ToolTipText = UiConstants.TRAY_TOOLTIP_TEXT;
 
@@ -164,6 +176,7 @@ public partial class App : Application
     {
         var viewModel = new WidgetViewModel(settingsRepository, settings);
         _widget = new WidgetWindow(viewModel);
+        _widget.OpenScheduleRequested += OnOpenScheduleRequested;
         PositionWidget(viewModel);
         _widget.Show();
     }
@@ -279,5 +292,77 @@ public partial class App : Application
             _widget.Show();
             _widget.Activate();
         }
+    }
+
+    /// <summary>退出应用：先真正关闭主窗口（绕过"关闭即隐藏"），再请求 WPF 关闭。</summary>
+    private void ExitApplication()
+    {
+        _mainWindow?.ForceClose();
+        Shutdown();
+    }
+
+    /// <summary>
+    /// 打开 / 唤起主窗口（托盘左键、悬浮组件双击与「打开课表」按钮共用）。
+    /// 主窗口惰性创建、单例持有；关闭只是隐藏（见 <see cref="MainWindow"/>）。
+    /// </summary>
+    private void OpenMainWindow()
+    {
+        if (_mainWindow is null)
+        {
+            _mainWindow = CreateMainWindow();
+        }
+
+        if (!_mainWindow.IsVisible)
+        {
+            _mainWindow.Show();
+        }
+
+        if (_mainWindow.WindowState == WindowState.Minimized)
+        {
+            _mainWindow.WindowState = WindowState.Normal;
+        }
+
+        _mainWindow.Activate();
+    }
+
+    /// <summary>悬浮组件请求打开课表。</summary>
+    private void OnOpenScheduleRequested(object? sender, EventArgs e) => OpenMainWindow();
+
+    /// <summary>按需装配主窗口：注入写/读服务、引擎、悬浮组件刷新回调与对话框委托。</summary>
+    private MainWindow CreateMainWindow()
+    {
+        var viewModel = new MainWindowViewModel(
+            _host!.Services.GetRequiredService<ScheduleEditService>(),
+            _host.Services.GetRequiredService<ScheduleService>(),
+            _host.Services.GetRequiredService<ReminderEngine>(),
+            ReloadWidget,
+            ShowEntryEditor,
+            ShowSubjectEditor,
+            _logger);
+
+        return new MainWindow(viewModel);
+    }
+
+    /// <summary>弹出时段编辑对话框，返回用户是否点「确定」。</summary>
+    private bool ShowEntryEditor(EntryEditorViewModel viewModel)
+    {
+        var dialog = new EntryEditorDialog(viewModel) { Owner = ActiveOwnerWindow() };
+        return dialog.ShowDialog() == true;
+    }
+
+    /// <summary>弹出新建科目对话框，返回用户是否点「确定」。</summary>
+    private bool ShowSubjectEditor(SubjectEditorViewModel viewModel)
+    {
+        var dialog = new SubjectEditorDialog(viewModel) { Owner = ActiveOwnerWindow() };
+        return dialog.ShowDialog() == true;
+    }
+
+    /// <summary>取当前活动窗口作为模态对话框的 Owner；若无则退回主窗口。</summary>
+    private Window? ActiveOwnerWindow()
+    {
+        var active = Windows
+            .OfType<Window>()
+            .FirstOrDefault(static window => window.IsActive);
+        return active ?? _mainWindow;
     }
 }

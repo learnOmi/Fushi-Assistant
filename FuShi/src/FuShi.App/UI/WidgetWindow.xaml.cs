@@ -21,6 +21,9 @@ public partial class WidgetWindow : Window
     /// <summary>延时任务的目标状态：true = 待展开，false = 待收起。</summary>
     private bool _pendingExpand;
 
+    /// <summary>请求打开课表（双击组件或点击展开态「打开课表」按钮时触发，由宿主接管）。</summary>
+    public event EventHandler? OpenScheduleRequested;
+
     /// <summary>构造窗口。</summary>
     /// <param name="viewModel">视图模型（数据与状态来源）。</param>
     public WidgetWindow(WidgetViewModel viewModel)
@@ -103,6 +106,13 @@ public partial class WidgetWindow : Window
     // ---------- 左键拖动移动位置 ----------
     private void OnGrab(object sender, MouseButtonEventArgs e)
     {
+        // 双击 = 打开课表（设计 5.3）；与单击拖动区分开，命中时不做拖动。
+        if (e.ClickCount == 2)
+        {
+            OpenScheduleRequested?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
         _hoverTimer.Stop(); // 拖动期间不做展开/收起判定
 
         Win32.GetCursorPos(out var before);
@@ -121,6 +131,10 @@ public partial class WidgetWindow : Window
 
     /// <summary>把当前位置交给视图模型持久化（写入 AppSetting 单行表）。</summary>
     public void SavePosition() => _viewModel.PersistPosition(Left, Top);
+
+    /// <summary>展开态「打开课表」按钮：请求宿主唤起主窗口。</summary>
+    private void OnOpenSchedule(object sender, RoutedEventArgs e) =>
+        OpenScheduleRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>
     /// 推入新的课表时段表（由宿主在启动时、以及引擎报告数据变更时调用）。

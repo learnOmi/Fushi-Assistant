@@ -1,0 +1,113 @@
+<Window x:Class="FuShi.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:FuShi.UI.Views"
+        xmlns:conv="clr-namespace:FuShi.UI.Converters"
+        xmlns:core="clr-namespace:FuShi.Core"
+        Title="{x:Static core:WindowText.WINDOW_TITLE}"
+        Width="{x:Static core:UiConstants.MAIN_WINDOW_WIDTH}"
+        Height="{x:Static core:UiConstants.MAIN_WINDOW_HEIGHT}"
+        MinWidth="{x:Static core:UiConstants.MAIN_WINDOW_MIN_WIDTH}"
+        MinHeight="{x:Static core:UiConstants.MAIN_WINDOW_MIN_HEIGHT}"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource SurfaceBrush}"
+        FontFamily="{StaticResource AppFont}">
+    <Window.Resources>
+        <!-- 布尔取反 → 可见性：空态提示与网格互斥显示 -->
+        <conv:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility"/>
+
+        <!-- 主操作按钮（强调色） -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="#FFFFFFFF"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 深色页签：与整体暗色主题一致 -->
+        <Style x:Key="DarkTabItem" TargetType="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource Label2Brush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="6"
+                                Padding="14,8" Margin="0,0,6,0"
+                                TextElement.Foreground="{TemplateBinding Foreground}">
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#1FFFFFFF"/>
+                                <Setter Property="Foreground" Value="{StaticResource LabelBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#14FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 顶部工具栏：阶段名 + 主操作 -->
+        <Grid Grid.Row="0" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding PhaseText}" VerticalAlignment="Center"
+                       Foreground="{StaticResource LabelBrush}" FontSize="16" FontWeight="SemiBold"/>
+            <Button Grid.Column="1" Content="{x:Static core:WindowText.ADD_ENTRY}"
+                    Style="{StaticResource PrimaryButton}" Command="{Binding AddEntryCommand}"/>
+        </Grid>
+
+        <!-- 页签：课表 / 设置（设置项在 M3b 落地） -->
+        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" Padding="0">
+            <TabItem Header="{x:Static core:WindowText.TAB_SCHEDULE}" Style="{StaticResource DarkTabItem}">
+                <Grid Margin="0,12,0,0">
+                    <!-- 可见性绑「窗口 VM」的 IsEmpty；网格自身绑「网格 VM」（Grid 属性）。
+                         若 WeekGridView 直接继承窗口 VM，其内部 Rows/Cells 将找不到绑定源而整片空白。 -->
+                    <Grid Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}">
+                        <views:WeekGridView DataContext="{Binding Grid}"/>
+                    </Grid>
+                    <TextBlock Text="{x:Static core:WindowText.EMPTY_GRID_HINT}"
+                               Foreground="{StaticResource Label3Brush}" FontSize="13"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="{x:Static core:WindowText.TAB_SETTINGS}" Style="{StaticResource DarkTabItem}">
+                <TextBlock Text="{x:Static core:WindowText.SETTINGS_PLACEHOLDER}" Margin="4,16,0,0"
+                           Foreground="{StaticResource Label2Brush}" FontSize="13"
+                           VerticalAlignment="Top"/>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

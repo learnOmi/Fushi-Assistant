@@ -37,6 +37,7 @@
              图标由 TrayIconFactory 运行时绘制后赋给 Icon 属性。
              ============================================================ -->
         <ContextMenu x:Key="TrayMenu">
+            <MenuItem Header="打开课表" Command="{Binding OpenMainWindowCommand}"/>
             <MenuItem Header="显示 / 隐藏悬浮窗" Command="{Binding ToggleWidgetCommand}"/>
             <Separator/>
             <MenuItem Header="退出" Command="{Binding ExitCommand}"/>
@@ -44,7 +45,7 @@
 
         <tb:TaskbarIcon x:Key="TrayIcon"
                         ContextMenu="{StaticResource TrayMenu}"
-                        DoubleClickCommand="{Binding ToggleWidgetCommand}"
+                        LeftClickCommand="{Binding OpenMainWindowCommand}"
                         NoLeftClickDelay="True"/>
 
     </Application.Resources>

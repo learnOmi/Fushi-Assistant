@@ -82,40 +82,128 @@ public sealed class ScheduleService
             return 0;
         }
 
-        var rangeStart = from.ToDateTime(TimeOnly.MinValue);
-        var rangeEnd = to.ToDateTime(TimeOnly.MaxValue);
+        return await PersistExpansionAsync(
+            context,
+            expansion,
+            from.ToDateTime(TimeOnly.MinValue),
+            to.ToDateTime(TimeOnly.MaxValue),
+            cancellationToken).ConfigureAwait(false);
+    }
 
-        var existing = await context.Occurrences
-            .Where(o => o.PlannedAt >= rangeStart && o.PlannedAt <= rangeEnd)
+    /// <summary>
+    /// 取周网格用的「模板视图」：当前阶段下的课表条目（关联科目名/颜色），供纯算法
+    /// <see cref="WeekGridProjector"/> 投影成 7×N 网格。与 <see cref="GetTimelineAsync"/> 的区别：
+    /// 后者返回「已展开到具体日期」的实例，前者保留「周几」的模板语义。
+    /// </summary>
+    /// <param name="phaseId">阶段主键。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    public async Task<IReadOnlyList<WeekGridSource>> GetWeekGridAsync(
+        int phaseId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory
+            .CreateDbContextAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var rows = await (from entry in context.ScheduleEntries
+                          join subject in context.Subjects on entry.SubjectId equals subject.Id
+                          where entry.PhaseId == phaseId
+                          orderby entry.StartTime
+                          select new
+                          {
+                              entry.Id,
+                              entry.DayOfWeek,
+                              entry.StartTime,
+                              entry.EndTime,
+                              entry.Note,
+                              entry.Enabled,
+                              SubjectName = subject.Name,
+                              SubjectColor = subject.Color,
+                          })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        var fresh = OccurrenceDeduplicator.RemoveExisting(expansion.Occurrences, existing);
-        if (fresh.Count == 0)
+        return rows
+            .Select(static row => new WeekGridSource(
+                row.Id,
+                row.DayOfWeek,
+                row.StartTime,
+                row.EndTime,
+                row.SubjectName,
+                row.SubjectColor,
+                row.Note,
+                row.Enabled))
+            .ToList();
+    }
+
+    /// <summary>
+    /// 课表对账（M3 技术核心，解决"幽灵提醒"）。
+    /// 口径一句话：<b>「改模板只影响未来，已发生的账本不改写」</b>。
+    /// <list type="number">
+    /// <item>删除这些来源下、<c>PlannedAt &gt; now</c> 且 <c>Status == Pending</c> 的 Occurrence。</item>
+    /// <item>若对应模板仍存在且启用，则在未来视野内重新展开并落库（幂等，唯一索引兜底）。</item>
+    /// <item>不动 <c>PlannedAt &lt;= now</c> 的实例，不动任何 Fired / Missed / Skipped / Done / Snoozed。</item>
+    /// </list>
+    /// </summary>
+    /// <param name="entryIds">本次编辑涉及的课表条目主键集合。</param>
+    /// <param name="now">当前时刻（对账分界线）。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>重展开后新增落库的实例条数。</returns>
+    public async Task<int> ReconcileAsync(
+        IReadOnlyList<int> entryIds,
+        DateTime now,
+        CancellationToken cancellationToken = default)
+    {
+        if (entryIds.Count == 0)
         {
             return 0;
         }
 
-        context.Occurrences.AddRange(fresh.Select(static planned => new Occurrence
-        {
-            SourceType = planned.SourceType,
-            SourceId = planned.SourceId,
-            PlannedAt = planned.PlannedAt,
-            Status = OccurrenceStatus.Pending,
-        }));
+        await using var context = await _contextFactory
+            .CreateDbContextAsync(cancellationToken)
+            .ConfigureAwait(false);
 
-        try
+        var ids = entryIds.Distinct().ToList();
+
+        // ① 删未来待触发实例（只动该来源、只动 PlannedAt>now、只动 Pending）。
+        var removed = await context.Occurrences
+            .Where(o => o.SourceType == OwnerType.ScheduleEntry
+                        && ids.Contains(o.SourceId)
+                        && o.Status == OccurrenceStatus.Pending
+                        && o.PlannedAt > now)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        _logger.Information("对账：清除 {Removed} 条未来待触发实例（来源 {Count} 个条目）", removed, ids.Count);
+
+        // ② 若模板仍存在且属于生效阶段，则重新展开落库。
+        var phase = await GetActivePhaseAsync(context, cancellationToken).ConfigureAwait(false);
+        if (phase is null)
         {
-            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (DbUpdateException ex)
-        {
-            // 唯一索引冲突属预期兜底（并发/重放），记警告后放弃本轮的这批新增，不打断引擎。
-            _logger.Warning(ex, "落库计划实例时命中唯一索引，本轮新增已跳过");
             return 0;
         }
 
-        return fresh.Count;
+        var entries = await context.ScheduleEntries
+            .Where(e => ids.Contains(e.Id) && e.PhaseId == phase.Id && e.Enabled)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (entries.Count == 0)
+        {
+            return 0;
+        }
+
+        var timeZone = await ResolveTimeZoneAsync(cancellationToken).ConfigureAwait(false);
+        var from = DateOnly.FromDateTime(now);
+        var to = from.AddDays(TimeDefaults.EXPANSION_HORIZON_DAYS - 1);
+        var expansion = Expand(entries, phase, from, to, timeZone);
+
+        return await PersistExpansionAsync(
+            context,
+            expansion,
+            from.ToDateTime(TimeOnly.MinValue),
+            to.ToDateTime(TimeOnly.MaxValue),
+            cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -256,6 +344,62 @@ public sealed class ScheduleService
                 setters => setters.SetProperty(o => o.Status, OccurrenceStatus.Missed),
                 cancellationToken)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// 把展开结果中「尚不存在」的实例落库（幂等）：算法层剔除已存在的三元组，
+    /// 数据库层 (SourceType, SourceId, PlannedAt) 唯一索引兜底并发/重放。
+    /// <see cref="MaterializeAsync"/> 与 <see cref="ReconcileAsync"/> 共用这段落库逻辑。
+    /// </summary>
+    /// <param name="context">当前短生命周期上下文。</param>
+    /// <param name="expansion">展开结果。</param>
+    /// <param name="rangeStart">查重窗口起（含）。</param>
+    /// <param name="rangeEnd">查重窗口止（含）。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>本轮新增的实例条数。</returns>
+    private async Task<int> PersistExpansionAsync(
+        FuShiDbContext context,
+        ExpansionResult expansion,
+        DateTime rangeStart,
+        DateTime rangeEnd,
+        CancellationToken cancellationToken)
+    {
+        if (expansion.Occurrences.Count == 0)
+        {
+            return 0;
+        }
+
+        var existing = await context.Occurrences
+            .Where(o => o.PlannedAt >= rangeStart && o.PlannedAt <= rangeEnd)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var fresh = OccurrenceDeduplicator.RemoveExisting(expansion.Occurrences, existing);
+        if (fresh.Count == 0)
+        {
+            return 0;
+        }
+
+        context.Occurrences.AddRange(fresh.Select(static planned => new Occurrence
+        {
+            SourceType = planned.SourceType,
+            SourceId = planned.SourceId,
+            PlannedAt = planned.PlannedAt,
+            Status = OccurrenceStatus.Pending,
+        }));
+
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateException ex)
+        {
+            // 唯一索引冲突属预期兜底（并发/重放），记警告后放弃本轮的这批新增，不打断引擎。
+            _logger.Warning(ex, "落库计划实例时命中唯一索引，本轮新增已跳过");
+            return 0;
+        }
+
+        return fresh.Count;
     }
 
     /// <summary>取当前生效阶段（IsActive 中起始日最晚者）。无则返回 null。</summary>

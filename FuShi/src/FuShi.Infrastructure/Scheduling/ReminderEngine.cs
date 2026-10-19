@@ -1,4 +1,4 @@
-﻿using FuShi.Domain;
+﻿﻿using FuShi.Domain;
 using FuShi.Domain.Compensation;
 using FuShi.Domain.Enums;
 using Serilog;
