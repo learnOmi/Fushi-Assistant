@@ -36,7 +36,13 @@
              命令通过 DataContext 绑定到 TrayViewModel（App 启动时注入），
              图标由 TrayIconFactory 运行时绘制后赋给 Icon 属性。
              ============================================================ -->
-        <ContextMenu x:Key="TrayMenu">
+        <!--
+            托盘右键菜单。StaysOpen 必须显式置 False：
+            ContextMenu 的 StaysOpen 依赖属性「元数据默认值是 true」（与官方文档写的 false 不符），
+            默认 true 时该菜单的 Popup 会保持打开、程序里置 IsOpen=false 及退出时都难以及时收起，
+            于是出现「点退出后菜单仍赖在屏幕上几秒」的现象。
+        -->
+        <ContextMenu x:Key="TrayMenu" StaysOpen="False">
             <MenuItem Header="打开课表" Command="{Binding OpenMainWindowCommand}"/>
             <MenuItem Header="显示 / 隐藏悬浮窗" Command="{Binding ToggleWidgetCommand}"/>
             <Separator/>

@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
@@ -29,6 +31,14 @@ public partial class App : Application
     /// <summary>单实例互斥体名。</summary>
     private const string MUTEX_ID = "FuShi.SingleInstance.Mutex";
 
+    /// <summary>
+    /// 结束当前线程的「活动菜单」（Win32 原生弹出菜单）。托盘右键菜单若由 H.NotifyIcon 以原生方式弹出，
+    /// WPF 的 <c>ContextMenu.IsOpen</c> 管不到它；退出时补一刀 <c>EndMenu</c> 兜底。无活动菜单时返回 0，属无副作用调用。
+    /// </summary>
+    /// <returns>成功结束菜单返回非零；当前线程无活动菜单返回 0。</returns>
+    [DllImport("user32.dll")]
+    private static extern bool EndMenu();
+
     /// <summary>App.xaml 中托盘控件的资源键。</summary>
     private const string TRAY_ICON_RESOURCE_KEY = "TrayIcon";
 
@@ -50,6 +60,9 @@ public partial class App : Application
 
     /// <summary>悬浮组件数据兜底重载定时器（跨天滚动与引擎事件之外的安全网）。</summary>
     private DispatcherTimer? _widgetReloadTimer;
+
+    /// <summary>退出流程是否已启动：防止重复点击「退出」或重入收尾。</summary>
+    private bool _exiting;
 
     /// <inheritdoc />
     protected override void OnStartup(StartupEventArgs e)
@@ -84,42 +97,133 @@ public partial class App : Application
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// 收尾顺序：先摘掉外部事件与定时器，再停引擎（它会取消后台循环），最后释放宿主。
+    /// <para>
+    /// <b>每一步都独立兜底并计耗时</b>：本方法跑在 UI 线程上，任何一步抛出（例如宿主二次释放
+    /// DI 单例）都会让后续步骤、乃至进程真正退出所依赖的 <c>base.OnExit</c> 被跳过，
+    /// 表现为「进程残留」。故此处逐步 try/catch，既保证收尾不中断，也让「退出卡在哪一段」可查
+    /// ——设计文档运行期缺陷 4 的排查手段。
+    /// </para>
+    /// </remarks>
     protected override void OnExit(ExitEventArgs e)
     {
-        // 收尾顺序：先摘掉外部事件与定时器，再停引擎（它会取消后台循环），最后释放宿主。
-        SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+        var exitWatch = Stopwatch.StartNew();
+
+        RunExitStep(() => SystemEvents.PowerModeChanged -= OnPowerModeChanged, "摘除电源事件", exitWatch);
+        RunExitStep(StopWidgetReloadTimer, "停止兜底定时器", exitWatch);
+        RunExitStep(UnhookRescanRequested, "摘除通知重排事件", exitWatch);
+        RunExitStep(StopReminderEngine, "停止提醒引擎", exitWatch);
+        RunExitStep(() => _widget?.SavePosition(), "保存悬浮窗位置", exitWatch);
+        RunExitStep(UnhookOpenScheduleRequested, "摘除悬浮窗事件", exitWatch);
+        RunExitStep(() => _tray?.Dispose(), "释放托盘图标", exitWatch);
+
+        // 释放 DI 宿主会把日志器一并关掉（ILogger 以<b>实例</b>方式注册进容器，容器退出时会 Dispose 它），
+        // 自那时起再写日志会被 Serilog 静默丢弃——上一轮排查中「浮时退出」凭空消失就是这个原因
+        // （不是退出流程被异常打断）。因此必须<b>先把累计耗时落盘</b>，再做这最后一步。
+        _logger.Information("浮时退出：收尾累计 {Ms}ms（以下仅剩释放宿主，它之后日志器即关闭）", exitWatch.ElapsedMilliseconds);
+
+        // 释放宿主：容器会反向释放各单例（提醒引擎等），单步失败已由 RunExitStep 兜住，
+        // 保证后续的 base.OnExit 一定会执行——否则 Dispatcher 不会关停，进程会残留。
+        RunExitStep(() => _host?.Dispose(), "释放 DI 宿主", exitWatch);
+
+        // 此后日志器已关闭：不得再写日志，只做无声兜底。
+        DisposeLoggerQuietly();
+        DisposeMutexQuietly();
+
+        base.OnExit(e);
+    }
+
+    /// <summary>执行一个退出收尾步骤；任一步失败只记录、不中断后续步骤与进程退出。</summary>
+    /// <param name="step">收尾动作。</param>
+    /// <param name="name">步骤名（写入日志，便于分段定位卡顿点）。</param>
+    /// <param name="watch">退出总计时器，用于算出本段耗时。</param>
+    private void RunExitStep(Action step, string name, Stopwatch watch)
+    {
+        var before = watch.ElapsedMilliseconds;
+
+        try
+        {
+            step();
+        }
+        catch (Exception ex)
+        {
+            // 退出路径兜底：单步失败不能阻止进程退出，但绝不静默——记错误后继续下一步。
+            _logger.Error(ex, "退出收尾步骤「{Step}」失败，已跳过", name);
+        }
+
+        _logger.Information("退出收尾：{Step} 用时 {Ms}ms", name, watch.ElapsedMilliseconds - before);
+    }
+
+    /// <summary>停止悬浮组件的兜底重载定时器并摘除其 Tick。</summary>
+    private void StopWidgetReloadTimer()
+    {
         _widgetReloadTimer?.Stop();
         if (_widgetReloadTimer is not null)
         {
             _widgetReloadTimer.Tick -= OnWidgetReloadTick;
         }
+    }
 
+    /// <summary>摘除通知服务的重排事件（引擎即将停止，不再需要它唤醒）。</summary>
+    private void UnhookRescanRequested()
+    {
         if (_notifications is not null)
         {
             _notifications.RescanRequested -= OnRescanRequested;
         }
+    }
 
+    /// <summary>停止提醒引擎并摘除其「数据变更」事件。</summary>
+    private void StopReminderEngine()
+    {
         if (_engine is not null)
         {
             _engine.ScheduleChanged -= OnScheduleChanged;
             _engine.Dispose();
         }
+    }
 
-        _widget?.SavePosition();
+    /// <summary>摘除悬浮组件的「打开课表」事件。</summary>
+    private void UnhookOpenScheduleRequested()
+    {
         if (_widget is not null)
         {
             _widget.OpenScheduleRequested -= OnOpenScheduleRequested;
         }
+    }
 
-        _tray?.Dispose();
-        _host?.Dispose();
+    /// <summary>
+    /// 关闭日志器。此步在宿主释放之后执行：若宿主已代为释放（日志器以实例方式注册进容器，
+    /// 容器退出时会 Dispose 它），这里是幂等空操作；若宿主未接管，这一步保证日志缓冲被刷盘。
+    /// 失败无处可记——毕竟要关的就是日志器本身；此时进程即将结束，无用户可感知影响。
+    /// </summary>
+    private void DisposeLoggerQuietly()
+    {
+        try
+        {
+            (_logger as IDisposable)?.Dispose(); // Serilog 的具体实现实现了 IDisposable，接口未暴露，故显式转换。
+        }
+        catch (Exception)
+        {
+            // 日志器关闭失败：无可写之处，且进程即将结束。
+        }
+    }
 
-        _logger.Information("浮时退出");
-        (_logger as IDisposable)?.Dispose(); // Serilog 的具体实现实现了 IDisposable，接口未暴露，故显式转换。
-
-        _mutex?.Dispose();
-
-        base.OnExit(e);
+    /// <summary>
+    /// 释放单实例互斥体。此步在日志器关闭之后执行，故失败时无处可记——只能就地吞掉，
+    /// 且此时进程即将结束，互斥体的释放失败对用户没有任何可感知影响。
+    /// </summary>
+    private void DisposeMutexQuietly()
+    {
+        try
+        {
+            _mutex?.Dispose();
+        }
+        catch (Exception)
+        {
+            // 日志器已关闭，且进程正在退出：无需也无法上报。
+        }
     }
 
     /// <summary>
@@ -169,7 +273,7 @@ public partial class App : Application
     private void CreateTray()
     {
         _tray = (TaskbarIcon)FindResource(TRAY_ICON_RESOURCE_KEY);
-        _tray.DataContext = new TrayViewModel(ToggleWidget, OpenMainWindow, ExitApplication);
+        _tray.DataContext = new TrayViewModel(ToggleWidget, OpenMainWindow, RequestExit);
         _tray.Icon = TrayIconFactory.Create();
         _tray.ToolTipText = UiConstants.TRAY_TOOLTIP_TEXT;
 
@@ -322,11 +426,95 @@ public partial class App : Application
         }
     }
 
-    /// <summary>退出应用：先真正关闭主窗口（绕过"关闭即隐藏"），再请求 WPF 关闭。</summary>
+    /// <summary>
+    /// 托盘「退出」的入口。
+    /// <para>
+    /// 菜单项命令是在 Popup <b>仍打开时同步执行</b>的：若在这里直接做收尾，UI 线程会被占住，
+    /// Popup 的关闭与渲染来不及跑完，菜单就「赖」在屏幕上几秒（运行期缺陷 4 的观感来源）。
+    /// 因此命令本身只排一次 <see cref="DispatcherPriority.ApplicationIdle"/> 回调就返回——
+    /// 排到这个优先级时队列已空（菜单已关闭并渲染完毕），再执行真正的收尾。
+    /// </para>
+    /// </summary>
+    private void RequestExit()
+    {
+        if (_exiting)
+        {
+            return;
+        }
+
+        _logger.Information("托盘退出：收到退出请求，待调度器空闲后执行收尾");
+        Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(ExitApplication));
+    }
+
+    /// <summary>
+    /// 退出应用：先收起菜单、再<b>释放托盘图标本身</b>（这一步才是真正带走菜单的关键），最后关窗与退出。
+    /// 全程记录分段耗时，配合 <see cref="OnExit"/> 的收尾日志构成完整的退出时延证据链。
+    /// </summary>
     private void ExitApplication()
     {
+        // 重入保护：ApplicationIdle 回调期间可能被再次触发（重复点击、或另一条退出入口）。
+        if (_exiting)
+        {
+            return;
+        }
+
+        _exiting = true;
+
+        var exitWatch = Stopwatch.StartNew();
+        _logger.Information("托盘退出：开始");
+
+        // 第 1 步：收起托盘右键菜单。两条路一起上，覆盖「WPF ContextMenu」与「原生菜单」两种可能：
+        // ① 置 ContextMenu.IsOpen=false（WPF 路径）；
+        // ② EndMenu() 结束当前线程的活动菜单（Win32 原生路径，无菜单时是空操作）。
+        CloseTrayMenu();
+        EndMenu();
+
+        // 第 2 步：释放托盘图标。TaskbarIcon.Dispose() 会拆掉它自持的隐藏窗口，把挂在这条链路上的
+        // 菜单一并带走。必须放在 Shutdown 之前，且只做一次（随后置空，避免 OnExit 重复释放）。
+        if (_tray is not null)
+        {
+            try
+            {
+                _tray.Dispose();
+            }
+            catch (Exception ex)
+            {
+                // 退出路径的兜底：释放失败也不能阻止应用退出；记录即可（绝不静默吞掉异常）。
+                _logger.Warning(ex, "释放托盘图标失败");
+            }
+
+            // 置空：使 OnExit 的 _tray?.Dispose() 成为空操作，避免重复释放。
+            _tray = null;
+        }
+
+        _logger.Information("托盘退出：菜单已收起、托盘已释放 用时 {Ms}ms", exitWatch.ElapsedMilliseconds);
+
+        // 第 3 步：同步泵一次调度器。IsOpen=false / Dispose 只是把「关闭 Popup」的活儿排进队列，
+        // 这里以 Background 优先级抽干队列（更高优先级的关闭与渲染会先跑），让菜单先在屏幕上消失，
+        // 再进入关窗与 Shutdown。
+        // 注意：真正让菜单「赖着不走」的是随后的 Shutdown 收尾——见 ReminderEngine.Dispose() 的说明
+        // （UI 线程上同步 Wait 引擎循环数秒）；那一处已改为非阻塞，本方法因此不再有阻塞点。
+        Dispatcher.Invoke(DispatcherPriority.Background, new Action(() => { }));
+
+        _logger.Information("托盘退出：调度器队列已抽干 用时 {Ms}ms", exitWatch.ElapsedMilliseconds);
+
+        // 第 4 步：关主窗口（绕过"关闭即隐藏"）并请求 WPF 关闭。
+        // Shutdown() 会同步走完 OnExit 收尾，期间不再写日志（日志器将在收尾末段关闭），
+        // 因此这里不记录「Shutdown 返回」；退出总时延由 OnExit 末尾那条汇总日志给出。
         _mainWindow?.ForceClose();
         Shutdown();
+    }
+
+    /// <summary>
+    /// 收起托盘右键菜单（若已打开）。置 <c>IsOpen = false</c> 会让 ContextMenu 的 Popup 关闭；
+    /// 菜单未打开时该赋值为无副作用的空操作。
+    /// </summary>
+    private void CloseTrayMenu()
+    {
+        if (_tray?.ContextMenu is { } menu)
+        {
+            menu.IsOpen = false;
+        }
     }
 
     /// <summary>

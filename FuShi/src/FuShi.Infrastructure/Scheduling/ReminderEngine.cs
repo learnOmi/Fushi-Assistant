@@ -39,6 +39,9 @@ public sealed class ReminderEngine : IDisposable
     /// <summary>循环任务句柄。</summary>
     private Task? _loop;
 
+    /// <summary>释放标记（0 = 未释放，1 = 已释放）。用 <see cref="Interlocked"/> 保证 Dispose 幂等。</summary>
+    private int _disposed;
+
     /// <summary>引擎侧数据发生变化的通知（课表展开出新实例、或某实例被触发），供宿主刷新悬浮组件。</summary>
     public event EventHandler? ScheduleChanged;
 
@@ -73,12 +76,47 @@ public sealed class ReminderEngine : IDisposable
     /// <summary>
     /// 请求重新展开与重扫：取消当前休眠，使循环立即进入下一轮。
     /// 仅做「取消 CTS」这一件事，线程安全；系统唤醒事件处理器可直接调用。
+    /// <para>
+    /// 与循环自身的 <c>finally</c>（会 <c>_rescan.Dispose()</c> 并置空）存在天然竞态：
+    /// 若恰好读到「已被释放但尚未置空」的实例，<c>Cancel()</c> 会抛 <see cref="ObjectDisposedException"/>。
+    /// 该调用点跑在系统隐藏窗口的消息泵线程上，异常逃逸后果不可控，故此处就地兜住（重排本就是幂等的，丢掉这一次取消也无碍）。
+    /// </para>
     /// </summary>
-    public void RequestRescan() => _rescan?.Cancel();
+    public void RequestRescan()
+    {
+        try
+        {
+            _rescan?.Cancel();
+        }
+        catch (ObjectDisposedException ex)
+        {
+            // 竞态：循环刚释放了重排信号。下一轮仍会因课表变更而重排，此处忽略即可。
+            _logger.Debug(ex, "请求重排时重排信号已先行释放");
+        }
+    }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// <b>幂等</b>：本类以 <c>AddSingleton</c> 注册，退出路径上宿主会先显式释放一次，随后
+    /// <c>IHost.Dispose()</c> 还会释放容器内的<b>同一个</b>实例。若不保护，第二次 <c>_stop.Cancel()</c>
+    /// 会对已释放的 CTS 抛 <see cref="ObjectDisposedException"/>，把整个退出收尾流程打断
+    /// （M3c 实测缺陷 4：日志里「浮时退出」缺失、进程残留）。
+    /// <para>
+    /// <b>不在调用线程上等待循环收尾</b>：退出路径跑在 UI 线程上，同步 <c>Wait</c> 最多会把 UI 线程
+    /// 占死 <see cref="STOP_WAIT_SECONDS"/> 秒，期间已排队的托盘菜单关闭/渲染消息无法被处理，
+    /// 界面表现就是「点了退出，菜单赖在屏幕上几秒才消失」。因此这里只发停止信号，
+    /// 收尾等待与 CTS 释放一并甩到线程池，绝不阻塞调用方。
+    /// </para>
+    /// </remarks>
     public void Dispose()
     {
+        // 幂等保护：第二次及以后的调用直接返回（容器二次释放是常态，不是异常）。
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        // 停止信号：主循环在这行之后会从 Task.Delay(…) 上立刻抛取消并退出（非阻塞）。
         _stop.Cancel();
 
         try
@@ -91,17 +129,46 @@ public sealed class ReminderEngine : IDisposable
             _logger.Debug(ex, "释放重排信号时 CTS 已先行释放");
         }
 
-        try
+        var loop = _loop;
+        if (loop is null || loop.IsCompleted)
         {
-            _loop?.Wait(TimeSpan.FromSeconds(STOP_WAIT_SECONDS));
-        }
-        catch (AggregateException ex)
-        {
-            // 循环以取消结束属预期；仍记录以便排查非预期异常。
-            _logger.Debug(ex, "等待引擎循环收尾时捕获到异常");
+            // 循环从未启动或已经结束：可以直接释放信号源。
+            DisposeStopSource();
+            return;
         }
 
-        _stop.Dispose();
+        // 有循环在跑：把「等它收尾 → 释放 CTS」交给线程池。
+        // 刻意不在进入此分之后写日志：本回调可能在宿主已释放日志器之后才跑完，
+        // 届时再写日志会二次抛错（退出末段的日志器已被关闭），故收尾阶段保持静默。
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                loop.Wait(TimeSpan.FromSeconds(STOP_WAIT_SECONDS));
+            }
+            catch (AggregateException)
+            {
+                // 循环以取消结束属预期形态：此处只做收尾，不再上报。
+            }
+
+            DisposeStopSource();
+        });
+    }
+
+    /// <summary>
+    /// 释放进程级停止信号源。被重复调用（或与循环释放产生竞态）时静默忽略，不写日志
+    /// ——调用方可能在宿主已释放日志器之后才执行到这里。
+    /// </summary>
+    private void DisposeStopSource()
+    {
+        try
+        {
+            _stop.Dispose();
+        }
+        catch (ObjectDisposedException)
+        {
+            // 已释放：幂等收尾，无需处理。
+        }
     }
 
     /// <summary>引擎主循环。每轮做一次「展开 → 扫描 → 睡到下一触发点」，被重排打断则立刻重来。</summary>
