@@ -14,6 +14,9 @@ namespace FuShi.Domain.Scheduling;
 /// <param name="IsCrossMidnight">是否跨午夜（结束时刻意归到起始日那一格）。</param>
 /// <param name="IsCurrent">是否与当前时刻重合（高亮用，口径与悬浮组件一致）。</param>
 /// <param name="IsEnabled">是否启用；停用项弱化显示。</param>
+/// <param name="IsShifted">是否被「稍后」当日顺延过（M3c）；仅在「今天」这一列可能为真，界面据此显示「已顺延」角标。</param>
+/// <param name="IsSkipped">今天这一次是否被用户「跳过」（M3c 可见反馈）；仅在「今天」这一列可能为真，
+/// 界面据此显示「已跳过」角标（比「已顺延」更终态，同时命中时优先展示）。</param>
 public sealed record WeekGridItem(
     int EntryId,
     TimeOnly StartTime,
@@ -23,7 +26,9 @@ public sealed record WeekGridItem(
     string? Note,
     bool IsCrossMidnight,
     bool IsCurrent,
-    bool IsEnabled);
+    bool IsEnabled,
+    bool IsShifted = false,
+    bool IsSkipped = false);
 
 /// <summary>
 /// 网格单元格：某个星期几 + 某个起始时刻下的条目集合。

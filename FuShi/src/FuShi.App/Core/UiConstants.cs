@@ -60,8 +60,8 @@ internal static class UiConstants
     /// <summary>新建时段时，默认时长（分钟）。</summary>
     public const int EDITOR_DEFAULT_DURATION_MINUTES = 60;
 
-    /// <summary>「添加时段」时把当前时刻向上取整的分钟粒度。</summary>
-    public const int EDITOR_TIME_ROUND_MINUTES = 5;
+    /// <summary>「添加时段」时把当前时刻向上取整的分钟粒度（与 <see cref="MINUTE_STEP"/> 保持一致，保证取整结果落在下拉档位内）。</summary>
+    public const int EDITOR_TIME_ROUND_MINUTES = 1;
 
     /// <summary>一周的天数（周网格列数）。</summary>
     public const int DAYS_PER_WEEK = 7;
@@ -69,6 +69,20 @@ internal static class UiConstants
     /// <summary>一天的小时数（编辑对话框小时下拉上限）。</summary>
     public const int HOURS_PER_DAY = 24;
 
-    /// <summary>编辑对话框分钟下拉的步长（分钟）。</summary>
-    public const int MINUTE_STEP = 5;
+    /// <summary>编辑对话框与设置页分钟下拉的步长（分钟）。1 = 每分钟一档（0–59）。</summary>
+    public const int MINUTE_STEP = 1;
+
+    // ---------- M3b 设置页 ----------
+
+    /// <summary>提前提醒分钟数的可选档位（下拉预设）。</summary>
+    public static readonly int[] LEAD_TIME_PRESET_MINUTES = { 0, 5, 10, 15, 20, 30 };
+
+    /// <summary>免打扰「未设置」时，勾选启用后的默认起始小时（22:00）。</summary>
+    public const int QUIET_DEFAULT_START_HOUR = 22;
+
+    /// <summary>免打扰「未设置」时，勾选启用后的默认结束小时（07:00，跨午夜）。</summary>
+    public const int QUIET_DEFAULT_END_HOUR = 7;
+
+    /// <summary>免打扰默认结束分钟。</summary>
+    public const int QUIET_DEFAULT_END_MINUTE = 0;
 }

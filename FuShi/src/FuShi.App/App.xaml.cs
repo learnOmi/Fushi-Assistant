@@ -39,11 +39,13 @@ public partial class App : Application
     private IHost? _host;
     private WidgetWindow? _widget;
     private MainWindow? _mainWindow;
+    private MainWindowViewModel? _mainWindowViewModel;
     private TaskbarIcon? _tray;
     private Serilog.ILogger _logger = null!;
 
     private ScheduleService? _scheduleService;
     private ToastNotificationChannel? _toastChannel;
+    private NotificationService? _notifications;
     private ReminderEngine? _engine;
 
     /// <summary>悬浮组件数据兜底重载定时器（跨天滚动与引擎事件之外的安全网）。</summary>
@@ -92,6 +94,11 @@ public partial class App : Application
             _widgetReloadTimer.Tick -= OnWidgetReloadTick;
         }
 
+        if (_notifications is not null)
+        {
+            _notifications.RescanRequested -= OnRescanRequested;
+        }
+
         if (_engine is not null)
         {
             _engine.ScheduleChanged -= OnScheduleChanged;
@@ -131,6 +138,7 @@ public partial class App : Application
 
         builder.Services.AddSingleton<ScheduleService>();
         builder.Services.AddSingleton<ScheduleEditService>();
+        builder.Services.AddSingleton<ReminderResponseService>();
         builder.Services.AddSingleton<ToastNotificationChannel>();
         builder.Services.AddSingleton<NotificationService>();
         builder.Services.AddSingleton<INotificationChannel>(provider => provider.GetRequiredService<NotificationService>());
@@ -178,6 +186,7 @@ public partial class App : Application
         _widget = new WidgetWindow(viewModel);
         _widget.OpenScheduleRequested += OnOpenScheduleRequested;
         PositionWidget(viewModel);
+        ApplyWidgetOpacity(settings.Opacity); // 按设置回放不透明度，避免启动瞬间闪一下全不透明
         _widget.Show();
     }
 
@@ -195,6 +204,10 @@ public partial class App : Application
 
         _engine = _host.Services.GetRequiredService<ReminderEngine>();
         _engine.ScheduleChanged += OnScheduleChanged;
+
+        // 弹窗动作（稍后 / 开始）会改变未来触发点：接到通知后唤醒引擎重算休眠。
+        _notifications = _host.Services.GetRequiredService<NotificationService>();
+        _notifications.RescanRequested += OnRescanRequested;
 
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
 
@@ -222,6 +235,21 @@ public partial class App : Application
 
     /// <summary>兜底重载定时器到点。</summary>
     private void OnWidgetReloadTick(object? sender, EventArgs e) => ReloadWidget();
+
+    /// <summary>
+    /// 弹窗动作落库后请求引擎重排休眠（见 <see cref="NotificationService.RescanRequested"/>）；
+    /// 同时立即刷新悬浮组件，使「已稍后 / 已跳过」的反馈在点完按钮后即可见（无需等兜底定时器）。
+    /// 该事件在 UI 线程（弹窗回调）上触发，故可直接调用同步取数的 <see cref="ReloadWidget"/>。
+    /// </summary>
+    private void OnRescanRequested(object? sender, EventArgs e)
+    {
+        _engine?.RequestRescan();
+        ReloadWidget();
+
+        // 「稍后」是实例级顺延、只改「今天」，不经过课表编辑命令：若主窗口已创建，顺带刷新其周网格，
+        // 使今天那一列的时段与「已顺延」角标即时更新（M3c）。异步刷新，不阻塞弹窗回调。
+        _ = _mainWindowViewModel?.RefreshGridAsync();
+    }
 
     /// <summary>
     /// 系统电源模式变化。<b>该处理器跑在系统隐藏窗口的消息泵线程上</b>，
@@ -335,12 +363,35 @@ public partial class App : Application
             _host!.Services.GetRequiredService<ScheduleEditService>(),
             _host.Services.GetRequiredService<ScheduleService>(),
             _host.Services.GetRequiredService<ReminderEngine>(),
+            CreateSettingsViewModel(),
             ReloadWidget,
             ShowEntryEditor,
             ShowSubjectEditor,
             _logger);
 
+        _mainWindowViewModel = viewModel;
         return new MainWindow(viewModel);
+    }
+
+    /// <summary>装配设置页视图模型：注入仓储、引擎，以及本宿主的两个即时生效回调。</summary>
+    private SettingsViewModel CreateSettingsViewModel()
+    {
+        return new SettingsViewModel(
+            _host!.Services.GetRequiredService<AppSettingRepository>(),
+            _host.Services.GetRequiredService<ReminderEngine>(),
+            ReloadWidget,
+            ApplyWidgetOpacity,
+            _logger);
+    }
+
+    /// <summary>把不透明度应用到悬浮窗（设置页实时预览与启动回放共用）。</summary>
+    /// <param name="opacity">不透明度（0.3~1.0）。</param>
+    private void ApplyWidgetOpacity(double opacity)
+    {
+        if (_widget is not null)
+        {
+            _widget.Opacity = opacity;
+        }
     }
 
     /// <summary>弹出时段编辑对话框，返回用户是否点「确定」。</summary>

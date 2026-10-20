@@ -22,21 +22,32 @@ public sealed class NotificationService : INotificationChannel
 {
     private readonly AppSettingRepository _settings;
     private readonly ToastNotificationChannel _toast;
+    private readonly ReminderResponseService _response;
     private readonly ILogger _logger;
 
     /// <summary>构造通知调度器。</summary>
     /// <param name="settings">设置仓储（读取免打扰时段）。</param>
     /// <param name="toast">系统 Toast 通道。</param>
+    /// <param name="response">提醒响应服务（弹窗动作回写账本）。</param>
     /// <param name="logger">Serilog 日志器。</param>
     public NotificationService(
         AppSettingRepository settings,
         ToastNotificationChannel toast,
+        ReminderResponseService response,
         ILogger logger)
     {
         _settings = settings;
         _toast = toast;
+        _response = response;
         _logger = logger;
     }
+
+    /// <summary>
+    /// 用户在弹窗上作出响应（动作已落库）后触发，供宿主请求引擎重排休眠。
+    /// 「稍后」把触发点顺延（改 ShiftMinutes）、「开始」新增一条进行中结束时刻——若不唤醒引擎，
+    /// 引擎仍睡在旧的最早触发点上，会导致稍后提醒迟到、自动完成迟到。
+    /// </summary>
+    public event EventHandler? RescanRequested;
 
     /// <inheritdoc />
     public void Dispatch(ReminderMessage message)
@@ -72,11 +83,39 @@ public sealed class NotificationService : INotificationChannel
             return;
         }
 
-        new ReminderPopupWindow(message.Title, message.Body).Show();
+        // 传入动作回调：有归属实例的弹窗点按钮后回写账本；汇总类通知（OccurrenceId 为空）退化为哑壳。
+        new ReminderPopupWindow(message, action => HandleAction(message, action)).Show();
 
         if (message.Strength == ReminderStrength.Strong)
         {
             _toast.Show(message);
+        }
+    }
+
+    /// <summary>
+    /// 弹窗动作回调（在 UI 线程被调用）：把用户动作交 <see cref="ReminderResponseService"/> 落账。
+    /// 服务内部 <c>ConfigureAwait(false)</c>，这里同步等待一次微小写入；异常只记日志，绝不抛回弹窗。
+    /// </summary>
+    /// <param name="message">产生该动作的提醒内容（提供归属实例主键）。</param>
+    /// <param name="action">用户动作。</param>
+    private void HandleAction(ReminderMessage message, ReminderAction action)
+    {
+        if (message.OccurrenceId is not { } occurrenceId)
+        {
+            return;
+        }
+
+        try
+        {
+            _response.RespondAsync(occurrenceId, action, DateTime.Now).GetAwaiter().GetResult();
+            _logger.Information("提醒响应：实例 {OccurrenceId} → {Action}", occurrenceId, action);
+
+            // 动作改变了未来的触发点（稍后 → 顺延 ShiftMinutes；开始 → 新增结束时刻），唤醒引擎重算休眠。
+            RescanRequested?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "处理提醒响应失败：实例 {OccurrenceId} → {Action}", occurrenceId, action);
         }
     }
 

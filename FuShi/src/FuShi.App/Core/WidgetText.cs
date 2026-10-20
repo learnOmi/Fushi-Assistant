@@ -30,6 +30,12 @@ internal static class WidgetText
     /// <summary>倒计时（下一节距开始）：{0} = 时长。</summary>
     public const string COUNTDOWN_UNTIL_START_FORMAT = "距开始 {0}";
 
+    /// <summary>「已跳过」状态文案。</summary>
+    public const string STATUS_SKIPPED = "已跳过";
+
+    /// <summary>「已顺延」徽标文案（M3c：该时段被「稍后」当日顺延过）。</summary>
+    public const string SHIFTED_BADGE = "已顺延";
+
     /// <summary>时长格式化（≥1 小时）：{0} = 小时，{1} = 分钟（两位）。</summary>
     public const string DURATION_HOURS_FORMAT = "{0}小时{1:D2}分";
 

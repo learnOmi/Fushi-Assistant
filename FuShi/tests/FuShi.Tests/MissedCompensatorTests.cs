@@ -130,4 +130,17 @@ public class MissedCompensatorTests
         result.ToResend.Should().ContainSingle();
         result.ToMarkMissed.Should().BeEmpty();
     }
+
+    [Fact]
+    public void Evaluate_ShouldUseShiftedTriggerTime()
+    {
+        // 计划 10:00（无顺延时落在宽限之外 → 会被标记错过），顺延 105 分钟后触发点 11:45 落进宽限内 → 应补发。
+        var occurrence = Pending(11, Now.AddHours(-2));
+        occurrence.ShiftMinutes = 105;
+
+        var result = MissedCompensator.Evaluate(new[] { occurrence }, Now, Since, GRACE_MINUTES);
+
+        result.ToResend.Should().ContainSingle().Which.Id.Should().Be(11);
+        result.ToMarkMissed.Should().BeEmpty();
+    }
 }

@@ -9,4 +9,16 @@ namespace FuShi.Infrastructure.Scheduling;
 /// <param name="Title">标题（通常是科目名或「错过提醒汇总」）。</param>
 /// <param name="Body">正文（如「14:00 开始」或错过摘要）。</param>
 /// <param name="Strength">提醒力度（影响通道的打断强度）。</param>
-public sealed record ReminderMessage(string Title, string Body, ReminderStrength Strength);
+/// <param name="OccurrenceId">
+/// 对应的账本行主键（M3b）。弹窗的「开始/稍后/跳过」需要它才能回写事件；
+/// 汇总类通知无明确归属，留 <c>null</c>（此时弹窗按「哑壳」呈现、无按钮）。
+/// </param>
+/// <param name="PlannedAt">课程开始时刻（展示用）。</param>
+/// <param name="EndsAt">课程结束时刻（弹窗展示与「进行中」自动完成用）。</param>
+public sealed record ReminderMessage(
+    string Title,
+    string Body,
+    ReminderStrength Strength,
+    int? OccurrenceId = null,
+    DateTime? PlannedAt = null,
+    DateTime? EndsAt = null);

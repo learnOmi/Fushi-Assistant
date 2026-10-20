@@ -12,8 +12,14 @@ internal static class NotificationConstants
     /// </summary>
     public const string AUMID = "FuShi.FloatTime.Desktop";
 
-    /// <summary>自绘弹窗自动消失时长（毫秒）。到点自行关闭，不打扰用户。</summary>
+    /// <summary>自绘弹窗自动消失时长（毫秒）。到点自行关闭，不打扰用户。用于无按钮的「哑壳」弹窗（如错过汇总）。</summary>
     public const int POPUP_AUTO_DISMISS_MILLISECONDS = 12000;
+
+    /// <summary>
+    /// 带动作按钮的弹窗「未响应」超时（毫秒）。超时未选动作即记为一次「未响应」。
+    /// 比哑壳弹窗长，给用户留出决策时间（设计 5.4）。
+    /// </summary>
+    public const int POPUP_NO_RESPONSE_MILLISECONDS = 30000;
 
     /// <summary>自绘弹窗宽度（设备无关单位）。</summary>
     public const double POPUP_WIDTH = 360.0;

@@ -16,24 +16,28 @@ public static class MissedCompensator
 
     /// <summary>
     /// 对一轮扫描窗口内的未触发实例做补偿判决。
-    /// 判定顺序（逐条）：
+    /// 判定顺序（逐条），<b>一律以「实际触发时刻」为基准</b>：
     /// <list type="number">
-    /// <item>已触发（FiredAt 不为 null）或已处于终态（Done/Skipped/Missed）→ 不动。</item>
-    /// <item>计划时刻早于 <paramref name="since"/>（本轮窗口之前，已在上轮处理）→ 不动。</item>
-    /// <item>计划时刻晚于 <paramref name="now"/> → 未到点，不动。</item>
-    /// <item>计划时刻落在 [now - 宽限, now] → <see cref="MissedVerdict.Resend"/>。</item>
+    /// <item>已触发（FiredAt 不为 null）→ 不动（M3c 起「稍后」改为回退 Pending 并清 FiredAt，不再带旧 FiredAt 排队）。</item>
+    /// <item>已处于终态（Done/Skipped/Missed）或已「进行中」→ 不动。</item>
+    /// <item>实际触发时刻早于 <paramref name="since"/>（本轮窗口之前，已在上轮处理）→ 不动。</item>
+    /// <item>实际触发时刻晚于 <paramref name="now"/> → 未到点，不动。</item>
+    /// <item>实际触发时刻落在 [now - 宽限, now] → <see cref="MissedVerdict.Resend"/>。</item>
     /// <item>更早 → <see cref="MissedVerdict.MarkMissed"/>，并计入合并摘要。</item>
     /// </list>
+    /// 「实际触发时刻」口径（M3c）：计划时刻 + 顺延量 − 提前量（顺延量 = <c>Occurrence.ShiftMinutes</c>，0 表示未顺延）。
     /// </summary>
-    /// <param name="pending">本轮涉及的实例（通常为 Pending/Snoozed 集合）。</param>
+    /// <param name="pending">本轮涉及的实例（通常为 Pending 集合）。</param>
     /// <param name="now">当前时刻（本地墙钟）。</param>
     /// <param name="since">本轮扫描窗口起点（上次正常扫描时刻）。</param>
     /// <param name="graceMinutes">宽限期（分钟）。</param>
+    /// <param name="leadMinutes">全局提前提醒分钟数（0 = 触发点即计划时刻，与 M2 行为等价）。</param>
     public static CompensationResult Evaluate(
         IEnumerable<Occurrence> pending,
         DateTime now,
         DateTime since,
-        int graceMinutes)
+        int graceMinutes,
+        int leadMinutes = 0)
     {
         var toResend = new List<Occurrence>();
         var toMarkMissed = new List<Occurrence>();
@@ -48,17 +52,20 @@ public static class MissedCompensator
 
             if (occurrence.Status is OccurrenceStatus.Done
                 or OccurrenceStatus.Skipped
-                or OccurrenceStatus.Missed)
+                or OccurrenceStatus.Missed
+                or OccurrenceStatus.InProgress)
             {
                 continue;
             }
 
-            if (occurrence.PlannedAt < since || occurrence.PlannedAt > now)
+            var triggerAt = occurrence.PlannedAt.AddMinutes(occurrence.ShiftMinutes - leadMinutes);
+
+            if (triggerAt < since || triggerAt > now)
             {
                 continue;
             }
 
-            if (occurrence.PlannedAt >= graceStart)
+            if (triggerAt >= graceStart)
             {
                 toResend.Add(occurrence);
             }

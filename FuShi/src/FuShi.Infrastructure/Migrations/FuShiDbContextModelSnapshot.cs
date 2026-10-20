@@ -97,8 +97,11 @@ namespace FuShi.Infrastructure.Migrations
                     b.Property<DateTime>("PlannedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("SnoozeUntil")
-                        .HasColumnType("TEXT");
+                    b.Property<int?>("ShiftBatchId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ShiftMinutes")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("SourceId")
                         .HasColumnType("INTEGER");

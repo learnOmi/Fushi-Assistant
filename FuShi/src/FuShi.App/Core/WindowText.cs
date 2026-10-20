@@ -15,8 +15,70 @@ internal static class WindowText
     /// <summary>「设置」页签标题。</summary>
     public const string TAB_SETTINGS = "设置";
 
-    /// <summary>设置页占位文案（设置项在 M3b 落地）。</summary>
-    public const string SETTINGS_PLACEHOLDER = "设置项将在下一阶段提供。";
+    // ---------- 设置页（M3b） ----------
+
+    /// <summary>设置页：不透明度标签。</summary>
+    public const string SETTINGS_OPACITY = "悬浮窗不透明度";
+
+    /// <summary>不透明度百分比显示格式：{0} = 百分比数值（0~100）。</summary>
+    public const string SETTINGS_OPACITY_PERCENT_FORMAT = "{0:F0}%";
+
+    /// <summary>设置页：免打扰分组标题。</summary>
+    public const string SETTINGS_QUIET_TITLE = "免打扰";
+
+    /// <summary>设置页：启用免打扰复选框。</summary>
+    public const string SETTINGS_QUIET_ENABLED = "启用免打扰（时段内提醒降级为系统通知）";
+
+    /// <summary>设置页：免打扰起始标签。</summary>
+    public const string SETTINGS_QUIET_START = "起始";
+
+    /// <summary>设置页：免打扰结束标签。</summary>
+    public const string SETTINGS_QUIET_END = "结束";
+
+    /// <summary>设置页：免打扰说明。</summary>
+    public const string SETTINGS_QUIET_HINT = "起止时刻相同视为不启用；跨午夜（如 23:00~07:00）自动识别。";
+
+    /// <summary>设置页：提前提醒标签。</summary>
+    public const string SETTINGS_LEAD_TITLE = "提前提醒";
+
+    /// <summary>设置页：提前提醒分钟数显示格式：{0} = 分钟数。</summary>
+    public const string SETTINGS_LEAD_MINUTES_FORMAT = "{0} 分钟";
+
+    /// <summary>设置页：提前提醒说明。</summary>
+    public const string SETTINGS_LEAD_HINT = "0 = 准点提醒；改动即时重排调度。";
+
+    /// <summary>设置页：时区标签。</summary>
+    public const string SETTINGS_TIMEZONE = "时区";
+
+    /// <summary>设置页：时区说明。</summary>
+    public const string SETTINGS_TIMEZONE_HINT = "改动按 IANA 时区重展开课表（含夏令时归一）。";
+
+    /// <summary>设置页：主题标签。</summary>
+    public const string SETTINGS_THEME = "主题";
+
+    /// <summary>设置页：主题说明。</summary>
+    public const string SETTINGS_THEME_HINT = "M3b 仅存值，亮色主题界面留后续版本。";
+
+    /// <summary>主题名：暗色（基线）。</summary>
+    public const string SETTINGS_THEME_DARK = "dark";
+
+    /// <summary>主题名：亮色（预留）。</summary>
+    public const string SETTINGS_THEME_LIGHT = "light";
+
+    /// <summary>主题显示标签：暗色。</summary>
+    public const string SETTINGS_THEME_DARK_LABEL = "暗色";
+
+    /// <summary>主题显示标签：亮色。</summary>
+    public const string SETTINGS_THEME_LIGHT_LABEL = "亮色";
+
+    /// <summary>设置页：保存按钮。</summary>
+    public const string SETTINGS_SAVE = "保存设置";
+
+    /// <summary>设置页：保存成功提示。</summary>
+    public const string SETTINGS_SAVED = "设置已保存";
+
+    /// <summary>时刻分隔符（时:分）。</summary>
+    public const string TIME_SEPARATOR = ":";
 
     /// <summary>「添加时段」按钮文案。</summary>
     public const string ADD_ENTRY = "＋ 添加时段";
@@ -110,6 +172,12 @@ internal static class WindowText
 
     /// <summary>跨午夜角标。</summary>
     public const string CROSS_MIDNIGHT_BADGE = "跨午夜";
+
+    /// <summary>「已顺延」角标（M3c：今天被「稍后」当日顺延过）。</summary>
+    public const string SHIFTED_BADGE = "已顺延";
+
+    /// <summary>「已跳过」角标（M3c：今天这一次被用户跳过；比「已顺延」更终态，同时命中时优先）。</summary>
+    public const string SKIPPED_BADGE = "已跳过";
 
     /// <summary>停用角标。</summary>
     public const string DISABLED_BADGE = "已停用";

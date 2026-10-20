@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using FuShi.Core;
 using FuShi.Domain.Entities;
+using FuShi.Domain.Enums;
 using FuShi.Domain.Scheduling;
 using FuShi.Infrastructure;
 
@@ -52,6 +53,12 @@ public partial class WidgetViewModel : ObservableObject
     /// <summary>要素④ 下一节文案。</summary>
     [ObservableProperty]
     private string _nextText = WidgetText.EMPTY_NEXT;
+
+    /// <summary>
+    /// 主位时段是否被「稍后」当日顺延过（累计顺延量 &gt; 0）；供悬浮组件显示「已顺延」徽标（M3c）。
+    /// </summary>
+    [ObservableProperty]
+    private bool _isShifted;
 
     /// <summary>展开态：标题行（当前科目）。</summary>
     [ObservableProperty]
@@ -120,8 +127,21 @@ public partial class WidgetViewModel : ObservableObject
         }
 
         SubjectText = focus.SubjectName;
+        IsShifted = focus.ShiftMinutes > 0; // 被「稍后」顺延过 → 点亮「已顺延」徽标（M3c）。
 
-        if (view.Current is not null)
+        // 账本反馈优先（M3b）：点过「跳过」后，主位文案让给状态（「已跳过」），
+        // 不再重复倒计时与进度条，避免出现「已跳过」与「距开始 5 分」并存的矛盾观感。
+        // 注：「稍后」在 M3c 改为当日顺延（时间整体后移），主位照常展示顺延后的倒计时，
+        // 由「已顺延」徽标另行提示，故不再占用主位文案。
+        var statusText = BuildStatusText(focus);
+        if (statusText is not null)
+        {
+            HasCountdown = true;
+            CountdownText = statusText;
+            HasProgress = false;
+            ProgressPercent = 0;
+        }
+        else if (view.Current is not null)
         {
             // 正在上课：倒计时是「还剩多久」，进度条是本节完成度。
             HasCountdown = true;
@@ -138,23 +158,44 @@ public partial class WidgetViewModel : ObservableObject
             ProgressPercent = 0;
         }
 
-        NextText = BuildNextText(view, now);
+        NextText = BuildNextText(_slots, now, focus);
         ExpandedTitle = focus.SubjectName;
         ExpandedBody = BuildExpandedBody(now);
     }
 
-    /// <summary>持久化窗口位置（拖动结束时由视图调用）。</summary>
+    /// <summary>
+    /// 持久化窗口位置（拖动结束时由视图调用）。
+    /// <para>
+    /// 必须先「重读最新单行设置」再写：拖动位置与设置页是<b>两个不同的写入方</b>，
+    /// 若直接回写构造时持有的启动快照，会把设置页刚保存的不透明度 / 提前量 / 时区等字段一起盖回旧值
+    /// （M3b 实测缺陷：拖动悬浮窗后「提前 5 分钟」被重置为 0，提醒退化成准点弹出）。
+    /// </para>
+    /// </summary>
     /// <param name="x">窗口左坐标。</param>
     /// <param name="y">窗口上坐标。</param>
     public void PersistPosition(double x, double y)
     {
-        _settings.WidgetX = x;
-        _settings.WidgetY = y;
-        _settings.HasWidgetPosition = true;
+        // 重读最新行（仓储内部 ConfigureAwait(false)，UI 线程同步等待不死锁），只覆盖位置三列。
+        var current = _settingsRepository.GetAsync().GetAwaiter().GetResult();
+        current.WidgetX = x;
+        current.WidgetY = y;
+        current.HasWidgetPosition = true;
 
-        // 约定：UI 线程上做一次微小的单行写入，用同步等待（仓储内部 ConfigureAwait(false)，不会死锁）。
-        _settingsRepository.SaveAsync(_settings).GetAwaiter().GetResult();
+        // 约定：UI 线程上做一次微小的单行写入，用同步等待。
+        _settingsRepository.SaveAsync(current).GetAwaiter().GetResult();
     }
+
+    /// <summary>
+    /// 由主位时段的账本状态生成反馈文案（M3b 可见反馈）：「跳过」→ 「已跳过」。
+    /// 其余状态（无账本 / 已触发未响应 / 进行中 / 已完成 / 已顺延等）一律返回 null，交回常规倒计时展示。
+    /// </summary>
+    /// <param name="slot">主位时段（当前节或下一节）。</param>
+    /// <returns>状态文案；无需展示状态时为 null。</returns>
+    private static string? BuildStatusText(TimelineSlot slot) => slot.Status switch
+    {
+        OccurrenceStatus.Skipped => WidgetText.STATUS_SKIPPED,
+        _ => null,
+    };
 
     /// <summary>更新日期文本（如「10月18日 周六」）。</summary>
     private void UpdateDateText(DateTime now)
@@ -171,18 +212,44 @@ public partial class WidgetViewModel : ObservableObject
         CountdownText = string.Empty;
         HasProgress = false;
         ProgressPercent = 0;
+        IsShifted = false;
         NextText = WidgetText.EMPTY_NEXT;
         ExpandedTitle = WidgetText.EMPTY_SUBJECT;
         ExpandedBody = WidgetText.EMPTY_EXPANDED_BODY;
     }
 
     /// <summary>
-    /// 「下一节」文案。主位已经占用「当前或下一节」，因此这里描述的是更靠后的那一节
-    /// （当前有课时看 <see cref="TimelineView.Next"/>，当前无课时看 <see cref="TimelineView.Following"/>）。
+    /// 「下一节」文案。主位已经占用「当前或下一节」，因此这里描述的是更靠后的那一节。
+    /// <para>
+    /// M3c 反馈修正：被用户「跳过」的课不再算「下一节」——它的 <c>Status</c> 为
+    /// <see cref="OccurrenceStatus.Skipped"/>，属于用户主动放弃的课，若仍列为「下一节」与观感矛盾。
+    /// 故这里在整张时段表上顺移取景：从主位之后的第一节<b>未被跳过</b>的课。
+    /// </para>
     /// </summary>
-    private static string BuildNextText(TimelineView view, DateTime now)
+    /// <param name="slots">升序的时段表。</param>
+    /// <param name="now">当前时刻。</param>
+    /// <param name="focus">主位时段（当前节或下一节）。</param>
+    private static string BuildNextText(IReadOnlyList<TimelineSlot> slots, DateTime now, TimelineSlot? focus)
     {
-        var upcoming = view.Current is not null ? view.Next : view.Following;
+        // 取景基准：主位若在未来（未开课），从它的开始时刻往后找；否则从「现在」往后找。
+        // 两种情况都要排除主位自身，故用「严格大于」比较。
+        var reference = focus is not null && focus.StartsAt > now ? focus.StartsAt : now;
+
+        TimelineSlot? upcoming = null;
+        foreach (var slot in slots)
+        {
+            if (slot.Status == OccurrenceStatus.Skipped)
+            {
+                continue; // 跳过的课不参与「下一节」取景。
+            }
+
+            if (slot.StartsAt > reference)
+            {
+                upcoming = slot;
+                break;
+            }
+        }
+
         if (upcoming is null)
         {
             return WidgetText.LAST_OF_DAY_TEXT;
@@ -206,12 +273,20 @@ public partial class WidgetViewModel : ObservableObject
         return string.Format(WidgetText.NEXT_LATER_FORMAT, weekday, time, upcoming.SubjectName);
     }
 
-    /// <summary>展开态正文：今天剩余时段的紧凑列举；今天已无课时退回空态说明。</summary>
+    /// <summary>
+    /// 展开态正文：今天剩余时段的紧凑列举；今天已无课时退回空态说明。
+    /// <para>
+    /// M3c 反馈修正：被用户「跳过」（<see cref="OccurrenceStatus.Skipped"/>）的时段不再列入，
+    /// 避免悬停下拉框里仍把已跳过的课当成「接下来要上的课」。
+    /// </para>
+    /// </summary>
     private string BuildExpandedBody(DateTime now)
     {
         var today = DateOnly.FromDateTime(now);
         var items = _slots
-            .Where(slot => DateOnly.FromDateTime(slot.StartsAt) == today && slot.EndsAt > now)
+            .Where(slot => DateOnly.FromDateTime(slot.StartsAt) == today
+                           && slot.EndsAt > now
+                           && slot.Status != OccurrenceStatus.Skipped)
             .Select(slot => string.Format(WidgetText.EXPANDED_ITEM_FORMAT, slot.StartsAt.ToString(WidgetText.CLOCK_FORMAT), slot.SubjectName))
             .ToList();
 

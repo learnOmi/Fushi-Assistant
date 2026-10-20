@@ -104,9 +104,8 @@
                 </Grid>
             </TabItem>
             <TabItem Header="{x:Static core:WindowText.TAB_SETTINGS}" Style="{StaticResource DarkTabItem}">
-                <TextBlock Text="{x:Static core:WindowText.SETTINGS_PLACEHOLDER}" Margin="4,16,0,0"
-                           Foreground="{StaticResource Label2Brush}" FontSize="13"
-                           VerticalAlignment="Top"/>
+                <!-- 显式绑 DataContext 到设置视图模型：WeekGridView 曾因继承错误 DataContext 而整片空白（缺陷 2），此处不重蹈。 -->
+                <views:SettingsView DataContext="{Binding Settings}"/>
             </TabItem>
         </TabControl>
     </Grid>

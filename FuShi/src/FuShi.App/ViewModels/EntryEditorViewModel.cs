@@ -51,7 +51,7 @@ public sealed partial class EntryEditorViewModel : ObservableObject
     /// <summary>可选小时（0~23）。</summary>
     public IReadOnlyList<int> HourOptions { get; } = Enumerable.Range(0, UiConstants.HOURS_PER_DAY).ToList();
 
-    /// <summary>可选分钟（0,5,…,55）。</summary>
+    /// <summary>可选分钟（0–59，每分钟一档）。</summary>
     public IReadOnlyList<int> MinuteOptions { get; } = Enumerable
         .Range(0, 60 / UiConstants.MINUTE_STEP)
         .Select(i => i * UiConstants.MINUTE_STEP)

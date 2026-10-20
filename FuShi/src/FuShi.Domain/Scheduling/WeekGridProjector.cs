@@ -65,38 +65,56 @@ public static class WeekGridProjector
         return new WeekGrid(rows);
     }
 
-    /// <summary>把模板项投影成网格条目（计算跨午夜与"当前"标记）。</summary>
-    private static WeekGridItem ToItem(WeekGridSource source, DateTime now) => new(
-        source.EntryId,
-        source.StartTime,
-        source.EndTime,
-        source.SubjectName,
-        source.SubjectColor,
-        source.Note,
-        IsCrossMidnight(source),
-        IsCurrent(source, now),
-        source.Enabled);
+    /// <summary>把模板项投影成网格条目（叠「今天」的当日顺延、计算跨午夜与"当前"标记）。</summary>
+    /// <remarks>
+    /// 「稍后」是实例级、只作用于今天的改动，而网格是横跨一周的模板表，故顺延量<b>仅当该列就是今天时</b>
+    /// 才叠加：其余六天必须保持模板时间（否则就骗人了——周二那节课根本没动）。叠加后格内显示顺延后的
+    /// 时段文本并点亮「已顺延」角标；行仍按模板起始时刻排列（块不搬家，只是格内时刻变了）。
+    /// </remarks>
+    private static WeekGridItem ToItem(WeekGridSource source, DateTime now)
+    {
+        var isToday = source.DayOfWeek == now.DayOfWeek;
+        var shiftMinutes = isToday ? source.ShiftMinutes : 0;
+        var startTime = source.StartTime.Add(TimeSpan.FromMinutes(shiftMinutes));
+        var endTime = source.EndTime.Add(TimeSpan.FromMinutes(shiftMinutes));
+        var isCrossMidnight = endTime < startTime;
 
-    /// <summary>是否跨午夜：结束时刻早于开始时刻。</summary>
-    private static bool IsCrossMidnight(WeekGridSource source) => source.EndTime < source.StartTime;
+        return new WeekGridItem(
+            source.EntryId,
+            startTime,
+            endTime,
+            source.SubjectName,
+            source.SubjectColor,
+            source.Note,
+            isCrossMidnight,
+            IsCurrent(source.DayOfWeek, startTime, endTime, isCrossMidnight, now),
+            source.Enabled,
+            shiftMinutes > 0,
+            isToday && source.IsSkipped);
+    }
 
     /// <summary>
-    /// 该模板此刻是否"正在进行"。
+    /// 该条目此刻是否"正在进行"（口径基于<b>顺延后</b>的有效时段）。
     /// 非跨午夜：起始日 == 今天 且 now 落在 [Start, End)。
     /// 跨午夜：起始日今天且 now >= Start（深夜段），或次日的今天且 now &lt; End（凌晨段）。
     /// </summary>
-    private static bool IsCurrent(WeekGridSource source, DateTime now)
+    private static bool IsCurrent(
+        DayOfWeek dayOfWeek,
+        TimeOnly start,
+        TimeOnly end,
+        bool isCrossMidnight,
+        DateTime now)
     {
         var nowTime = TimeOnly.FromDateTime(now);
 
-        if (!IsCrossMidnight(source))
+        if (!isCrossMidnight)
         {
-            return source.DayOfWeek == now.DayOfWeek && nowTime >= source.StartTime && nowTime < source.EndTime;
+            return dayOfWeek == now.DayOfWeek && nowTime >= start && nowTime < end;
         }
 
-        var startDayMatches = source.DayOfWeek == now.DayOfWeek && nowTime >= source.StartTime;
-        var nextDay = (DayOfWeek)(((int)source.DayOfWeek + 1) % DAYS_PER_WEEK);
-        var nextDayMatches = nextDay == now.DayOfWeek && nowTime < source.EndTime;
+        var startDayMatches = dayOfWeek == now.DayOfWeek && nowTime >= start;
+        var nextDay = (DayOfWeek)(((int)dayOfWeek + 1) % DAYS_PER_WEEK);
+        var nextDayMatches = nextDay == now.DayOfWeek && nowTime < end;
         return startDayMatches || nextDayMatches;
     }
 

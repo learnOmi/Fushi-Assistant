@@ -89,6 +89,12 @@ public sealed class WeekGridCellViewModel
     /// <summary>是否跨午夜（角标）。</summary>
     public bool IsCrossMidnight => _item?.IsCrossMidnight ?? false;
 
+    /// <summary>是否被「稍后」当日顺延过（角标，M3c）。</summary>
+    public bool IsShifted => _item?.IsShifted ?? false;
+
+    /// <summary>今天这一次是否被「跳过」（角标，M3c 可见反馈）。</summary>
+    public bool IsSkipped => _item?.IsSkipped ?? false;
+
     /// <summary>启用/停用决定整体不透明度。</summary>
     public double CellOpacity { get; }
 
@@ -113,7 +119,17 @@ public sealed class WeekGridCellViewModel
         SubjectBrush = _item is null ? Brushes.Transparent : ToBrush(_item.SubjectColor);
         CellOpacity = _item is { IsEnabled: false } ? UiConstants.GRID_DISABLED_OPACITY : 1.0;
 
-        var badges = new List<string>(2);
+        // 角标优先级：「已跳过」比「已顺延」更终态，两者同时命中时只显示前者（跳过即不再顺延，实际互斥）。
+        var badges = new List<string>(3);
+        if (IsSkipped)
+        {
+            badges.Add(WindowText.SKIPPED_BADGE);
+        }
+        else if (IsShifted)
+        {
+            badges.Add(WindowText.SHIFTED_BADGE);
+        }
+
         if (IsCrossMidnight)
         {
             badges.Add(WindowText.CROSS_MIDNIGHT_BADGE);

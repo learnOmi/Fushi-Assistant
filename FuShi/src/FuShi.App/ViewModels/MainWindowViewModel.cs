@@ -21,6 +21,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly ScheduleEditService _editService;
     private readonly ScheduleService _scheduleService;
     private readonly ReminderEngine _engine;
+    private readonly SettingsViewModel _settings;
     private readonly Action _reloadWidget;
     private readonly Func<EntryEditorViewModel, bool> _showEntryEditor;
     private readonly Func<SubjectEditorViewModel, bool> _showSubjectEditor;
@@ -40,6 +41,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <param name="editService">课表写服务。</param>
     /// <param name="scheduleService">课表读服务。</param>
     /// <param name="engine">提醒引擎（改动后请求重排）。</param>
+    /// <param name="settings">设置页视图模型（供设置页签绑定）。</param>
     /// <param name="reloadWidget">刷新悬浮组件的回调（由宿主提供）。</param>
     /// <param name="showEntryEditor">弹出时段编辑对话框的委托。</param>
     /// <param name="showSubjectEditor">弹出新建科目对话框的委托。</param>
@@ -48,6 +50,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ScheduleEditService editService,
         ScheduleService scheduleService,
         ReminderEngine engine,
+        SettingsViewModel settings,
         Action reloadWidget,
         Func<EntryEditorViewModel, bool> showEntryEditor,
         Func<SubjectEditorViewModel, bool> showSubjectEditor,
@@ -56,11 +59,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _editService = editService;
         _scheduleService = scheduleService;
         _engine = engine;
+        _settings = settings;
         _reloadWidget = reloadWidget;
         _showEntryEditor = showEntryEditor;
         _showSubjectEditor = showSubjectEditor;
         _logger = logger;
     }
+
+    /// <summary>设置页视图模型（设置页签的数据上下文）。</summary>
+    public SettingsViewModel Settings => _settings;
 
     /// <summary>列头（转发给网格 VM，供 XAML 绑定）。</summary>
     public IReadOnlyList<string> DayHeaders => WindowText.WEEKDAY_COLUMN_LABELS;
@@ -79,6 +86,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _phase = await _editService.EnsureActivePhaseAsync();
             PhaseText = string.Format(WindowText.PHASE_FORMAT, _phase.Name);
             await ReloadGridAsync();
+            await _settings.LoadAsync();
         }
         catch (Exception ex)
         {
@@ -113,7 +121,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    /// <summary>重新投影周网格。</summary>
+    /// <summary>重新投影周网格（含「今天」已顺延实例的叠加以供角标）。</summary>
     private async Task ReloadGridAsync()
     {
         if (_phase is null)
@@ -121,10 +129,28 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var sources = await _scheduleService.GetWeekGridAsync(_phase.Id);
-        var grid = WeekGridProjector.Project(sources, DateTime.Now);
+        var now = DateTime.Now;
+        var sources = await _scheduleService.GetWeekGridAsync(_phase.Id, now);
+        var grid = WeekGridProjector.Project(sources, now);
         Grid = new WeekGridViewModel(grid, OnCellClicked);
         OnPropertyChanged(nameof(IsEmpty));
+    }
+
+    /// <summary>
+    /// 供宿主在「实例级」变更（如弹窗点「稍后」顺延）后刷新周网格。
+    /// 这类变更不经过课表编辑命令，故不触发 <see cref="AfterScheduleChangedAsync"/>；
+    /// 内部捕获异常并记日志，避免 fire-and-forget 的未观察异常。
+    /// </summary>
+    public async Task RefreshGridAsync()
+    {
+        try
+        {
+            await ReloadGridAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "刷新主窗口周网格失败");
+        }
     }
 
     /// <summary>

@@ -1,4 +1,4 @@
-﻿﻿using FuShi.Domain;
+using FuShi.Domain;
 using FuShi.Domain.Compensation;
 using FuShi.Domain.Enums;
 using Serilog;
@@ -26,6 +26,7 @@ public sealed class ReminderEngine : IDisposable
     private const int STOP_WAIT_SECONDS = 3;
 
     private readonly ScheduleService _schedule;
+    private readonly ReminderResponseService _response;
     private readonly INotificationChannel _notifications;
     private readonly ILogger _logger;
 
@@ -43,11 +44,17 @@ public sealed class ReminderEngine : IDisposable
 
     /// <summary>构造引擎。</summary>
     /// <param name="schedule">课表服务（取数/写状态）。</param>
+    /// <param name="response">提醒响应服务（「进行中」到点自动收成 Done 也经它落账）。</param>
     /// <param name="notifications">提醒派发通道。</param>
     /// <param name="logger">Serilog 日志器。</param>
-    public ReminderEngine(ScheduleService schedule, INotificationChannel notifications, ILogger logger)
+    public ReminderEngine(
+        ScheduleService schedule,
+        ReminderResponseService response,
+        INotificationChannel notifications,
+        ILogger logger)
     {
         _schedule = schedule;
+        _response = response;
         _notifications = notifications;
         _logger = logger;
     }
@@ -123,10 +130,12 @@ public sealed class ReminderEngine : IDisposable
                 }
 
                 await ProcessDueAsync(since, now, token).ConfigureAwait(false);
+                await ProcessCompletionsAsync(now, token).ConfigureAwait(false);
                 since = now;
 
                 var upcoming = await _schedule.GetUpcomingAsync(now, token).ConfigureAwait(false);
-                var delay = ComputeDelay(upcoming, now);
+                var nextCompletion = await _schedule.GetNextCompletionAtAsync(now, token).ConfigureAwait(false);
+                var delay = ComputeDelay(upcoming, nextCompletion, now);
                 await Task.Delay(delay, token).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (!stopToken.IsCancellationRequested)
@@ -164,29 +173,47 @@ public sealed class ReminderEngine : IDisposable
     /// <summary>
     /// 扫描本轮窗口 <c>[since, now]</c> 内到期的实例，走错过补偿判决：
     /// 宽限期内 → 立即补发；超出宽限 → 标记错过并合并一条摘要。
+    /// <para>
+    /// 窗口下界<b>严格取本轮起点 <paramref name="since"/></b>，不再向前放宽到宽限期。
+    /// 曾一度放宽为 <c>min(since, now − 宽限期)</c> 以兜住「实例在触发点之后才落库」的迟到实例，
+    /// 但该口径会让「临近开场才新建/重存课表条目」的场景在保存瞬间立刻补弹一条提醒
+    /// （M3b 实测缺陷：用户点「稍后」后重存条目，旧稍后被对账取消、新条目又立刻补发，
+    /// 界面表现为「稍后/跳过按钮没有作用」）。现按用户口径回退：<b>补偿只覆盖「本轮扫描窗口内到达的触发点」</b>。
+    /// </para>
+    /// <para>
+    /// 取舍：进程关闭/休眠期间错过的提醒仍由启动回溯窗口兜住
+    /// （启动首轮 <c>since = now − STARTUP_LOOKBACK_HOURS</c>）；代价是「在提前量之内才新建的课」不再补发提醒，
+    /// 属本次回退的预期行为。
+    /// </para>
     /// </summary>
-    /// <param name="since">本轮窗口起点。</param>
+    /// <param name="since">本轮窗口起点（启动首轮为回溯窗口起点）。</param>
     /// <param name="now">当前时刻。</param>
     /// <param name="token">取消令牌。</param>
     private async Task ProcessDueAsync(DateTime since, DateTime now, CancellationToken token)
     {
+        var grace = TimeDefaults.DEFAULT_GRACE_MINUTES;
+
         var due = await _schedule.GetDueAsync(since, now, token).ConfigureAwait(false);
         if (due.Count == 0)
         {
             return;
         }
 
+        // 补偿判决按「实际触发时刻」比对：全局提前量与顺延量（Occurrence.ShiftMinutes）都由它内部消化。
+        var lead = await _schedule.GetLeadMinutesAsync(token).ConfigureAwait(false);
+
         var byId = due.ToDictionary(static item => item.Occurrence.Id);
         var verdict = MissedCompensator.Evaluate(
             due.Select(static item => item.Occurrence),
             now,
             since,
-            TimeDefaults.DEFAULT_GRACE_MINUTES);
+            grace,
+            lead);
 
         foreach (var occurrence in verdict.ToResend)
         {
             token.ThrowIfCancellationRequested();
-            await FireAsync(byId[occurrence.Id], occurrence.PlannedAt, token).ConfigureAwait(false);
+            await FireAsync(byId[occurrence.Id], token).ConfigureAwait(false);
         }
 
         if (verdict.ToMarkMissed.Count > 0)
@@ -207,20 +234,48 @@ public sealed class ReminderEngine : IDisposable
         }
     }
 
+    /// <summary>
+    /// 收起「进行中」且已到结束时刻的实例：写 Done 与 CompletionLog（M3b）。
+    /// 每轮在到期扫描之后执行，保证「开始」后即使应用一直开着也能自动收账。
+    /// </summary>
+    /// <param name="now">当前时刻。</param>
+    /// <param name="token">取消令牌。</param>
+    private async Task ProcessCompletionsAsync(DateTime now, CancellationToken token)
+    {
+        var completions = await _schedule.GetDueCompletionsAsync(now, token).ConfigureAwait(false);
+        if (completions.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var occurrence in completions)
+        {
+            token.ThrowIfCancellationRequested();
+            await _response.RespondFinishAsync(occurrence.Id, now, token).ConfigureAwait(false);
+        }
+
+        _logger.Information("进行中收尾：{Count} 条到点自动完成", completions.Count);
+        ScheduleChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     /// <summary>触发一条提醒：写账本状态 → 派发通知 → 通知宿主刷新悬浮组件。</summary>
     /// <param name="reminder">计划实例及其科目上下文。</param>
-    /// <param name="plannedAt">计划触发时刻。</param>
     /// <param name="token">取消令牌。</param>
-    private async Task FireAsync(PendingReminder reminder, DateTime plannedAt, CancellationToken token)
+    private async Task FireAsync(PendingReminder reminder, CancellationToken token)
     {
         var firedAt = DateTime.Now;
         await _schedule.MarkFiredAsync(reminder.Occurrence.Id, firedAt, token).ConfigureAwait(false);
 
+        // 正文展示「课程开始时刻」（PlannedAt），而非实际触发点——提前量/稍后都不改变用户认知里的上课时间。
+        var plannedAt = reminder.Occurrence.PlannedAt;
         var body = string.Format(EngineConstants.REMINDER_BODY_FORMAT, plannedAt.ToString(EngineConstants.CLOCK_FORMAT));
         _notifications.Dispatch(new ReminderMessage(
             reminder.SubjectName,
             body,
-            ReminderStrength.Normal));
+            ReminderStrength.Normal,
+            reminder.Occurrence.Id,
+            plannedAt,
+            reminder.EndsAt));
 
         _logger.Information("触发提醒：{Subject} @ {PlannedAt}", reminder.SubjectName, plannedAt);
         ScheduleChanged?.Invoke(this, EventArgs.Empty);
@@ -230,19 +285,32 @@ public sealed class ReminderEngine : IDisposable
     /// 由「未来最近触发点」算出下一次休眠时长，并夹在 [下限, 上限] 之间。
     /// 无待触发项时睡到上限，借此周期性重新展开课表视野。
     /// </summary>
-    /// <param name="upcoming">未来待触发实例（按计划时刻升序）。</param>
+    /// <param name="upcoming">未来待触发实例（按<b>实际触发点</b>升序：计划时刻 + 顺延量 − 提前量）。</param>
+    /// <param name="nextCompletionAt">最早的「进行中」结束时刻（无则 null），用于准点自动收成 Done。</param>
     /// <param name="now">当前时刻。</param>
-    private static TimeSpan ComputeDelay(IReadOnlyList<PendingReminder> upcoming, DateTime now)
+    private static TimeSpan ComputeDelay(
+        IReadOnlyList<PendingReminder> upcoming,
+        DateTime? nextCompletionAt,
+        DateTime now)
     {
         var min = TimeSpan.FromMilliseconds(EngineConstants.MIN_SLEEP_MILLISECONDS);
         var max = TimeSpan.FromMinutes(EngineConstants.MAX_SLEEP_MINUTES);
 
-        if (upcoming.Count == 0)
+        // 睡到「下一个待触发点」与「下一个进行中结束时刻」二者较早者。
+        // 必须用 TriggerAt 而非 PlannedAt：顺延实例的触发点是 PlannedAt + ShiftMinutes − 提前量，
+        // 若误用 PlannedAt 会算出负时长 → 退化为忙等（M3b/M3c 修正）。
+        DateTime? next = upcoming.Count > 0 ? upcoming[0].TriggerAt : null;
+        if (nextCompletionAt is { } completion && (next is null || completion < next.Value))
+        {
+            next = completion;
+        }
+
+        if (next is null)
         {
             return max;
         }
 
-        var delay = upcoming[0].Occurrence.PlannedAt - now;
+        var delay = next.Value - now;
         if (delay < min)
         {
             return min;

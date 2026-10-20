@@ -20,4 +20,13 @@ public static class ModelDefaults
 
     /// <summary>默认不透明度（完全不透明）。</summary>
     public const double DEFAULT_OPACITY = 1.0;
+
+    /// <summary>悬浮窗不透明度下限（再低会看不见，避免用户把自己"调丢"）。</summary>
+    public const double MIN_OPACITY = 0.3;
+
+    /// <summary>悬浮窗不透明度上限。</summary>
+    public const double MAX_OPACITY = 1.0;
+
+    /// <summary>默认提前提醒分钟数（0 = 准点提醒，与 M2 行为等价）。</summary>
+    public const int DEFAULT_LEAD_TIME_MINUTES = 0;
 }

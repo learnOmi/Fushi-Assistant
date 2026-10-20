@@ -13,6 +13,10 @@ namespace FuShi.Domain.Scheduling;
 /// <param name="SubjectColor">科目颜色（#RRGGBB）。</param>
 /// <param name="Note">备注（可选）。</param>
 /// <param name="Enabled">是否启用；停用的模板在网格里以弱化样式呈现。</param>
+/// <param name="ShiftMinutes">该条目<b>今天</b>被「稍后」当日顺延的累计分钟数（M3c）；0 = 未顺延。由 Infrastructure
+/// 层查「今天」的实例填好，仅当 <paramref name="DayOfWeek"/> 恰为今天时才有非零值（顺延只影响今天这一列）。</param>
+/// <param name="IsSkipped">该条目<b>今天</b>这一次是否被用户「跳过」（M3c 可见反馈）；由 Infrastructure 层查「今天」
+/// 的实例填好，仅当 <paramref name="DayOfWeek"/> 恰为今天时才有意义（跳过只作用于今天这一次）。</param>
 public sealed record WeekGridSource(
     int EntryId,
     DayOfWeek DayOfWeek,
@@ -21,4 +25,6 @@ public sealed record WeekGridSource(
     string SubjectName,
     string SubjectColor,
     string? Note,
-    bool Enabled);
+    bool Enabled,
+    int ShiftMinutes = 0,
+    bool IsSkipped = false);

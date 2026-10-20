@@ -92,6 +92,42 @@ public sealed class ScheduleReconcileTests
         rows.Should().ContainSingle("重复对账不应产生重复实例");
     }
 
+    [Fact]
+    public async Task ReconcileAsync_ShouldRollBackSameBatchShiftedNeighbours()
+    {
+        using var db = new TestDatabase();
+        var (edit, schedule) = CreateServices(db);
+        var first = await SeedEntryAsync(db, edit, new TimeOnly(14, 0), new TimeOnly(15, 0));
+        var second = await SeedEntryAsync(db, edit, new TimeOnly(15, 0), new TimeOnly(16, 0));
+        await schedule.MaterializeAsync(Noon);
+
+        // 模拟一次「稍后」：被点的第一节与其后继第二节被同一条链顺延 +10 分钟，共用批次号 1。
+        await using (var context = db.CreateContext())
+        {
+            foreach (var occurrence in await context.Occurrences.ToListAsync())
+            {
+                occurrence.ShiftMinutes = TimeDefaults.DEFAULT_SNOOZE_MINUTES;
+                occurrence.ShiftBatchId = 1;
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        // 改第一节模板到 16:00 后对账：第一节旧实例清除重建，第二节（同批次配角）应被一并回退。
+        first.StartTime = new TimeOnly(16, 0);
+        first.EndTime = new TimeOnly(17, 0);
+        await edit.UpsertEntryAsync(first);
+        await schedule.ReconcileAsync(new[] { first.Id }, Noon);
+
+        await using (var context = db.CreateContext())
+        {
+            var neighbour = await context.Occurrences.SingleAsync(o => o.SourceId == second.Id);
+            neighbour.ShiftMinutes.Should().Be(0, "同批次的配角应随对账回退顺延量");
+            neighbour.ShiftBatchId.Should().BeNull("批次号回退后应撤销，不留残余错位");
+            neighbour.PlannedAt.Hour.Should().Be(15, "配角时刻本身不变，只是不再顺延");
+        }
+    }
+
     /// <summary>构造写/读两个服务。</summary>
     private static (ScheduleEditService Edit, ScheduleService Schedule) CreateServices(TestDatabase db) =>
         (new ScheduleEditService(db.Factory, db.Logger),
