@@ -1,4 +1,4 @@
-<Window x:Class="FuShi.UI.WidgetWindow"
+﻿<Window x:Class="FuShi.UI.WidgetWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:FuShi.UI"
@@ -10,7 +10,7 @@
         MouseLeftButtonDown="OnGrab"
         MouseEnter="OnHoverEnter" MouseLeave="OnHoverLeave">
     <Border x:Name="Root" CornerRadius="12" Background="{DynamicResource SurfaceBrush}"
-            BorderThickness="1" BorderBrush="#26FFFFFF" Padding="10,9,12,9">
+            BorderThickness="1" BorderBrush="{DynamicResource DividerStrongBrush}" Padding="10,9,12,9">
         <StackPanel>
             <!-- 收起态：圆角卡片（非胶囊），四要素 = 科目 / 倒计时 / 进度条 / 下一节（设计文档第 6 章）
                  左侧保留团子，维持助手形象在常驻态的可见性。
@@ -36,10 +36,10 @@
                                    FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"
                                    Foreground="{DynamicResource LabelBrush}" TextTrimming="CharacterEllipsis"/>
                         <Border Grid.Column="1" x:Name="ShiftBadge" Margin="6,0,0,0" Padding="5,1" CornerRadius="4"
-                                Background="#33FF8A5B" VerticalAlignment="Center"
+                                Background="{DynamicResource AccentSoftBrush}" VerticalAlignment="Center"
                                 Visibility="{Binding IsShifted, Converter={StaticResource BoolToVisibility}}">
                             <TextBlock x:Name="ShiftBadgeText" Text="{x:Static core:WidgetText.SHIFTED_BADGE}"
-                                       FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
+                                       FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentDeepBrush}"/>
                         </Border>
                     </Grid>
 
@@ -50,14 +50,14 @@
 
                     <!-- 要素③ 进度条：两列星号布局，填充列宽度 = 进度百分比 -->
                     <Border x:Name="ProgressTrack" Height="4" Margin="0,7,0,0"
-                            CornerRadius="2" Background="#2EFFFFFF"
+                            CornerRadius="2" Background="{DynamicResource DividerStrongBrush}"
                             Visibility="{Binding HasProgress, Converter={StaticResource BoolToVisibility}}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="{Binding ProgressPercent, Converter={StaticResource PercentToStar}}"/>
                                 <ColumnDefinition Width="{Binding ProgressRemainderPercent, Converter={StaticResource PercentToStar}}"/>
                             </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" CornerRadius="2" Background="#D9FFFFFF"/>
+                            <Border Grid.Column="0" CornerRadius="2" Background="{DynamicResource LabelBrush}"/>
                         </Grid>
                     </Border>
 
@@ -70,7 +70,7 @@
 
             <!-- 展开态：内容同样经绑定；M2a 为空课表态 -->
             <Border x:Name="Expanded" Margin="2,10,0,2" CornerRadius="10"
-                    Background="#1FFFFFFF" Padding="14,12,14,14"
+                    Background="{DynamicResource Surface2Brush}" Padding="14,12,14,14"
                     Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibility}}">
                 <StackPanel>
                     <TextBlock x:Name="DateText" Text="{Binding DateText}" FontSize="12" FontWeight="SemiBold"
@@ -85,7 +85,7 @@
                     <Button x:Name="OpenScheduleButton" Content="打开课表"
                             Click="OnOpenSchedule" HorizontalAlignment="Left"
                             Margin="0,10,0,0" Padding="12,6" Cursor="Hand"
-                            Foreground="#FFFFFFFF" BorderThickness="0"
+                            Foreground="{DynamicResource AccentInkBrush}" BorderThickness="0"
                             Background="{DynamicResource AccentBrush}"/>
                 </StackPanel>
             </Border>

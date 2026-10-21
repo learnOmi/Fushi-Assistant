@@ -69,9 +69,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>设置页视图模型（设置页签的数据上下文）。</summary>
     public SettingsViewModel Settings => _settings;
 
-    /// <summary>列头（转发给网格 VM，供 XAML 绑定）。</summary>
-    public IReadOnlyList<string> DayHeaders => WindowText.WEEKDAY_COLUMN_LABELS;
-
     /// <summary>是否空课表（驱动空态提示）。</summary>
     public bool IsEmpty => Grid?.IsEmpty ?? true;
 
@@ -132,7 +129,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var now = DateTime.Now;
         var sources = await _scheduleService.GetWeekGridAsync(_phase.Id, now);
         var grid = WeekGridProjector.Project(sources, now);
-        Grid = new WeekGridViewModel(grid, OnCellClicked);
+        Grid = new WeekGridViewModel(grid, OnCellClicked, now.DayOfWeek);
         OnPropertyChanged(nameof(IsEmpty));
     }
 

@@ -240,6 +240,13 @@
                 Background="{DynamicResource SpecularBrush}"
                 IsHitTestVisible="False"/>
 
+        <!-- 噪点：把纯色底打成磨砂质感；强度由主题令牌 GrainOpacity 控（明 2.8% / 暗 3.5%）。
+             Border 的 CornerRadius 会把贴图裁成圆角，最大化时随 WindowCornerStyle 归零。 -->
+        <Border Style="{StaticResource WindowCornerStyle}"
+                Background="{StaticResource GrainBrush}"
+                Opacity="{DynamicResource GrainOpacity}"
+                IsHitTestVisible="False"/>
+
         <Grid Margin="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

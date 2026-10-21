@@ -57,6 +57,12 @@ internal static class UiConstants
     /// <summary>停用条目的弱化不透明度。</summary>
     public const double GRID_DISABLED_OPACITY = 0.45;
 
+    /// <summary>
+    /// 已跳过条目「内容层」的弱化不透明度（M3.5 视觉稿 §4.2：只弱化内容，不弱化到不可读）。
+    /// 类型为 <see cref="double"/>，XAML 侧用 <c>{x:Static}</c> 直接取。
+    /// </summary>
+    public const double GRID_SKIPPED_CONTENT_OPACITY = 0.62;
+
     /// <summary>新建时段时，默认时长（分钟）。</summary>
     public const int EDITOR_DEFAULT_DURATION_MINUTES = 60;
 

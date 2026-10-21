@@ -19,6 +19,9 @@ internal static class WindowChromeHelper
     /// <summary>圆角模式：系统默认圆角半径。</summary>
     private const int DWMWCP_ROUND = 2;
 
+    /// <summary>DWM 深色标题栏属性（Windows 10 20H1 起可用）。</summary>
+    private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+
     /// <summary>请求最大化 / 最小化尺寸限制的通知消息。</summary>
     private const int WM_GETMINMAXINFO = 0x0024;
 
@@ -68,6 +71,28 @@ internal static class WindowChromeHelper
 
         var preference = DWMWCP_ROUND;
         return DwmSetWindowAttribute(handle, DWMWA_WINDOW_CORNER_PREFERENCE, ref preference, sizeof(int)) == 0;
+    }
+
+    /// <summary>
+    /// 让系统标题栏跟随明暗主题（编辑对话框等保留原生标题栏的窗口用）。
+    /// <para>
+    /// 不处理时，暗色主题下会露出白色标题栏，与窗口内容形成硬边界；
+    /// 该属性由 DWM 绘制，XAML 无法表达，只能在句柄就绪后请求一次。
+    /// </para>
+    /// </summary>
+    /// <param name="window">已创建句柄的窗口（须在 <c>SourceInitialized</c> 之后调用）。</param>
+    /// <param name="useDark">true = 深色标题栏；false = 浅色标题栏。</param>
+    /// <returns>成功返回 true；系统不支持该属性时返回 false（保持默认外观，属可接受降级）。</returns>
+    public static bool TryApplyCaptionTheme(Window window, bool useDark)
+    {
+        var handle = new WindowInteropHelper(window).Handle;
+        if (handle == IntPtr.Zero)
+        {
+            return false;
+        }
+
+        var enabled = useDark ? 1 : 0;
+        return DwmSetWindowAttribute(handle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref enabled, sizeof(int)) == 0;
     }
 
     /// <summary>

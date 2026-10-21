@@ -95,6 +95,9 @@ internal sealed class ThemeService
         _logger.Information("主题已应用：{Theme}", normalized);
     }
 
+    /// <summary>当前是否为暗色主题。供需要配合原生外观的窗口使用（例如系统标题栏配色）。</summary>
+    public bool IsDark => !string.Equals(_currentTheme, THEME_LIGHT, StringComparison.Ordinal);
+
     /// <summary>
     /// 把外部传入的主题值规范化为 dark / light。
     /// 未知值（含空串）一律暗色：这是历史默认，也是悬浮组件的原始配色。

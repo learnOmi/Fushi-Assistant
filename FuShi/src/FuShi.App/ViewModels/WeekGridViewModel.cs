@@ -11,8 +11,8 @@ namespace FuShi.ViewModels;
 /// </summary>
 public sealed class WeekGridViewModel
 {
-    /// <summary>列头（周一…周日），与 <see cref="WeekGridRowViewModel.Cells"/> 顺序一致。</summary>
-    public IReadOnlyList<string> DayHeaders { get; } = WindowText.WEEKDAY_COLUMN_LABELS;
+    /// <summary>列头（周一…周日），与 <see cref="WeekGridRowViewModel.Cells"/> 顺序一致；「今天」那一列带标记。</summary>
+    public IReadOnlyList<WeekGridDayHeader> DayHeaders { get; }
 
     /// <summary>网格行（按起始时刻升序）。</summary>
     public IReadOnlyList<WeekGridRowViewModel> Rows { get; }
@@ -20,21 +20,37 @@ public sealed class WeekGridViewModel
     /// <summary>是否空课表。</summary>
     public bool IsEmpty { get; }
 
+    /// <summary>今天在网格里的列索引（周一 = 0 … 周日 = 6），供今日列车道定位。</summary>
+    public int TodayIndex { get; }
+
     /// <summary>构造。</summary>
     /// <param name="grid">领域层投影结果。</param>
     /// <param name="onCellClicked">点击单元格的回调（编辑/新建入口）。</param>
-    public WeekGridViewModel(WeekGrid grid, Action<WeekGridCellViewModel> onCellClicked)
+    /// <param name="today">今天（由调用方传入，避免视图侧再读一次时钟导致跨天不一致）。</param>
+    public WeekGridViewModel(WeekGrid grid, Action<WeekGridCellViewModel> onCellClicked, DayOfWeek today)
     {
+        TodayIndex = ((int)today + 6) % 7; // DayOfWeek 以周日 = 0 打头，网格以周一 = 0 打头
+        DayHeaders = WindowText.WEEKDAY_COLUMN_LABELS
+            .Select((label, index) => new WeekGridDayHeader(label, index == TodayIndex))
+            .ToList();
         Rows = grid.Rows.Select(row => new WeekGridRowViewModel(row, onCellClicked)).ToList();
         IsEmpty = grid.IsEmpty;
     }
 }
+
+/// <summary>列头：星期文本 + 是否今天（今天那一列在表头有强调底色，并贯通一条列车道）。</summary>
+/// <param name="Label">星期文本。</param>
+/// <param name="IsToday">是否今天。</param>
+public sealed record WeekGridDayHeader(string Label, bool IsToday);
 
 /// <summary>网格行：左侧时刻 + 七天单元格。</summary>
 public sealed class WeekGridRowViewModel
 {
     /// <summary>该行的时刻文本（HH:mm）。</summary>
     public string TimeText { get; }
+
+    /// <summary>该行是否包含「正在进行」的条目（时间列加重显示，与视觉稿的 is-now 对应）。</summary>
+    public bool IsNow { get; }
 
     /// <summary>七天单元格（周一…周日）。</summary>
     public IReadOnlyList<WeekGridCellViewModel> Cells { get; }
@@ -46,6 +62,7 @@ public sealed class WeekGridRowViewModel
     {
         TimeText = row.StartTime.ToString(WindowText.TIME_FORMAT);
         Cells = row.Cells.Select(cell => new WeekGridCellViewModel(cell, onCellClicked)).ToList();
+        IsNow = Cells.Any(cell => cell.IsCurrent);
     }
 }
 
@@ -79,6 +96,26 @@ public sealed class WeekGridCellViewModel
             WindowText.TIME_RANGE_FORMAT,
             _item.StartTime.ToString(WindowText.TIME_FORMAT),
             _item.EndTime.ToString(WindowText.TIME_FORMAT));
+
+    /// <summary>
+    /// 单元格第二行文本：有备注显示备注，没有备注退回时刻区间（视觉稿的 meta 行）。
+    /// 不丢信息——区间是唯一能看出时长的位置。
+    /// </summary>
+    public string MetaText => _item is null
+        ? string.Empty
+        : string.IsNullOrWhiteSpace(_item.Note)
+            ? TimeRangeText
+            : _item.Note!;
+
+    /// <summary>是否有第二行文本（无备注且无区间时不占位）。</summary>
+    public bool HasMeta => MetaText.Length > 0;
+
+    /// <summary>悬停提示：星期 + 起始时刻 · 科目名（空格子为「新建时段」）。</summary>
+    public string ToolTipText => string.Format(
+        WindowText.CELL_TOOLTIP_FORMAT,
+        WindowText.WEEKDAY_COLUMN_LABELS[((int)DayOfWeek + 6) % 7],
+        StartTime.ToString(WindowText.TIME_FORMAT),
+        _item is null ? WindowText.CELL_NEW_TOOLTIP : SubjectName);
 
     /// <summary>科目色刷（空格子透明）。</summary>
     public Brush SubjectBrush { get; }

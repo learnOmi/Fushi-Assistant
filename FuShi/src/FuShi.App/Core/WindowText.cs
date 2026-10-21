@@ -188,6 +188,18 @@ internal static class WindowText
     /// <summary>「已跳过」角标（M3c：今天这一次被用户跳过；比「已顺延」更终态，同时命中时优先）。</summary>
     public const string SKIPPED_BADGE = "已跳过";
 
+    /// <summary>当前正在进行的时段标记（单元格底部，M3.5 视觉稿）。</summary>
+    public const string CURRENT_FLAG = "进行中";
+
+    /// <summary>空格子悬停时浮出的新建提示字符。</summary>
+    public const string CELL_NEW_HINT = "+";
+
+    /// <summary>空格子的悬停提示语。</summary>
+    public const string CELL_NEW_TOOLTIP = "新建时段";
+
+    /// <summary>单元格悬停提示格式：{0} = 星期、{1} = 起始时刻、{2} = 科目名或新建提示。</summary>
+    public const string CELL_TOOLTIP_FORMAT = "{0} {1} · {2}";
+
     /// <summary>停用角标。</summary>
     public const string DISABLED_BADGE = "已停用";
 

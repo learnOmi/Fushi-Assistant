@@ -602,6 +602,7 @@ public partial class App : Application
     private bool ShowEntryEditor(EntryEditorViewModel viewModel)
     {
         var dialog = new EntryEditorDialog(viewModel) { Owner = ActiveOwnerWindow() };
+        ApplyCaptionTheme(dialog);
         return dialog.ShowDialog() == true;
     }
 
@@ -609,7 +610,19 @@ public partial class App : Application
     private bool ShowSubjectEditor(SubjectEditorViewModel viewModel)
     {
         var dialog = new SubjectEditorDialog(viewModel) { Owner = ActiveOwnerWindow() };
+        ApplyCaptionTheme(dialog);
         return dialog.ShowDialog() == true;
+    }
+
+    /// <summary>
+    /// 让对话框的系统标题栏跟随当前主题：句柄就绪后再请求 DWM 深色标题栏，
+    /// 否则暗色主题下会露出白色标题栏（§4.4 标题栏口径）。
+    /// </summary>
+    /// <param name="dialog">即将以模态方式打开的窗口。</param>
+    private void ApplyCaptionTheme(Window dialog)
+    {
+        dialog.SourceInitialized += (_, _) =>
+            WindowChromeHelper.TryApplyCaptionTheme(dialog, _themeService?.IsDark ?? true);
     }
 
     /// <summary>取当前活动窗口作为模态对话框的 Owner；若无则退回主窗口。</summary>

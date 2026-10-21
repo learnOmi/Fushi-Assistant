@@ -1,8 +1,10 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 using FuShi.Core;
 using FuShi.Domain;
 using FuShi.Domain.Entities;
+using FuShi.Domain.Time;
 using FuShi.Infrastructure;
 using FuShi.Infrastructure.Scheduling;
 using Serilog;
@@ -91,10 +93,16 @@ public sealed partial class SettingsViewModel : ObservableObject
         .Select(minutes => new LeadOption(minutes, FormatLead(minutes)))
         .ToList();
 
-    /// <summary>可选时区（系统 IANA Id，按系统枚举顺序）。</summary>
-    public List<string> TimezoneOptions { get; } = TimeZoneInfo.GetSystemTimeZones()
-        .Select(static zone => zone.Id)
-        .ToList();
+    /// <summary>
+    /// 可选时区（IANA Id，按系统枚举顺序）。
+    /// <para>
+    /// 必须是可观察集合：库里的时区可能不在 <see cref="TimeZoneInfo.GetSystemTimeZones"/> 里
+    /// （Windows 枚举出来的是 <c>GMT Standard Time</c> 这类 Id，而项目存储的是 <c>Europe/London</c> 这类 IANA Id），
+    /// 加载时需要把它补进列表。用普通 List 补项不会通知 ComboBox，选中项就显示为空白。
+    /// 默认时区在建列表时就补齐，保证首次绑定（早于 LoadAsync）也能正常选中。
+    /// </para>
+    /// </summary>
+    public ObservableCollection<string> TimezoneOptions { get; } = BuildTimezoneOptions();
 
     /// <summary>可选主题（切换即刻生效，见 <see cref="OnSelectedThemeChanged"/>）。</summary>
     public IReadOnlyList<ThemeOption> ThemeOptions { get; } = new[]
@@ -254,6 +262,13 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     /// <summary>把分钟向下对齐到下拉步长（保证落在 <see cref="MinuteOptions"/> 内）。</summary>
     private static int RoundToStep(int minute) => minute / UiConstants.MINUTE_STEP * UiConstants.MINUTE_STEP;
+
+    /// <summary>
+    /// 构建时区下拉项：由领域层统一构造（系统时区 + 默认 IANA Id 置顶），
+    /// 视图模型只负责包成可通知的集合（设计 2.3 ③：Windows 枚举不含 IANA Id）。
+    /// </summary>
+    private static ObservableCollection<string> BuildTimezoneOptions() =>
+        new(TimeZoneOptionBuilder.Build(TimeDefaults.DEFAULT_TIMEZONE_ID));
 
     /// <summary>把值夹到 [min, max] 闭区间。</summary>
     private static double Clamp(double value, double min, double max) =>

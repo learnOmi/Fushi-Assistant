@@ -26,6 +26,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- 噪点贴图打包进程序集，Shared.xaml 用 pack URI 引用（128×128 平铺，见 M3.5 §8.2 GrainOpacity） -->
+    <Resource Include="Assets\noise.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\FuShi.Domain\FuShi.Domain.csproj" />
     <ProjectReference Include="..\FuShi.Infrastructure\FuShi.Infrastructure.csproj" />
   </ItemGroup>

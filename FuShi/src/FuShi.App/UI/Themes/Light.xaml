@@ -56,6 +56,11 @@
     <Color x:Key="AccentDeepColor">#1C8C42</Color>
     <Color x:Key="AccentGlowColor">#242FB85A</Color>
 
+    <!-- 语义色：危险 / 警告。与强调色分开，避免把「删除」染成主操作绿 -->
+    <SolidColorBrush x:Key="DangerBrush" Color="#C0392B"/>
+    <SolidColorBrush x:Key="DangerSoftBrush" Color="#12E05C5C"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="#B07A1F"/>
+
     <!-- 交互底色 -->
     <SolidColorBrush x:Key="HoverBrush" Color="#0B14141A"/>
     <SolidColorBrush x:Key="HoverStrongBrush" Color="#0F14141A"/>

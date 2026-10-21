@@ -12,8 +12,8 @@ public static class ModelDefaults
     /// <summary>自举阶段的默认名称（首次进入课表页、无生效阶段时创建）。</summary>
     public const string DEFAULT_PHASE_NAME = "默认课表";
 
-    /// <summary>科目默认颜色（强调色），用户未选色时使用。</summary>
-    public const string DEFAULT_SUBJECT_COLOR = "#FF8A5B";
+    /// <summary>科目默认颜色（调色板首色：湖蓝），用户未选色时使用。M3.5 起不再用橙红，避免与状态色混淆。</summary>
+    public const string DEFAULT_SUBJECT_COLOR = "#3FA7D6";
 
     /// <summary>默认主题名（设计基线为暗色）。</summary>
     public const string DEFAULT_THEME = "dark";

@@ -9,6 +9,12 @@
 
     <FontFamily x:Key="AppFont">Segoe UI, Microsoft YaHei UI, Microsoft YaHei</FontFamily>
 
+    <!-- 时刻与数字：Bahnschrift 的等宽数字让列对齐；缺失时回退 Segoe UI -->
+    <FontFamily x:Key="FontFamilyNumeric">Bahnschrift, Segoe UI</FontFamily>
+
+    <!-- 大写字距标签（列头角落、状态栏） -->
+    <FontFamily x:Key="FontFamilyLabel">Consolas, Segoe UI</FontFamily>
+
     <!-- 四档字阶：正文 / 次级 / 说明 / 微标 -->
     <sys:Double x:Key="FontSizeTitle">14</sys:Double>
     <sys:Double x:Key="FontSizeBody">12.5</sys:Double>
@@ -29,5 +35,11 @@
         <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
         <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
     </Style>
+
+    <!-- 噪点贴图（128×128 平铺，中性灰、随机 alpha）：明暗两套主题共用一张，
+         只有强度（GrainOpacity）随主题变。不平铺缩放，避免 125% DPI 下出现摩尔纹。 -->
+    <ImageBrush x:Key="GrainBrush" TileMode="Tile" Stretch="Fill"
+                ViewportUnits="Absolute" Viewport="0,0,128,128"
+                ImageSource="pack://application:,,,/Assets/noise.png"/>
 
 </ResourceDictionary>

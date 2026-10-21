@@ -16,6 +16,7 @@
              ============================================================ -->
         <ResourceDictionary.MergedDictionaries>
             <ResourceDictionary Source="UI/Themes/Shared.xaml"/>
+            <ResourceDictionary Source="UI/Themes/Controls.xaml"/>
         </ResourceDictionary.MergedDictionaries>
 
         <!-- 布尔 → 可见性 转换器：折叠态要素的显隐全靠它 -->
