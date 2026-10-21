@@ -9,8 +9,17 @@ internal static class WindowText
     /// <summary>主窗口标题。</summary>
     public const string WINDOW_TITLE = "浮时 · 课表";
 
+    /// <summary>标题栏品牌名。</summary>
+    public const string BRAND_NAME = "浮时";
+
     /// <summary>「课表」页签标题。</summary>
     public const string TAB_SCHEDULE = "课表";
+
+    /// <summary>「事项」页签标题（M4 落地，当前仅占位显示）。</summary>
+    public const string TAB_ITEMS = "事项";
+
+    /// <summary>「统计」页签标题（M4 落地，当前仅占位显示）。</summary>
+    public const string TAB_STATS = "统计";
 
     /// <summary>「设置」页签标题。</summary>
     public const string TAB_SETTINGS = "设置";
@@ -56,8 +65,8 @@ internal static class WindowText
     /// <summary>设置页：主题标签。</summary>
     public const string SETTINGS_THEME = "主题";
 
-    /// <summary>设置页：主题说明。</summary>
-    public const string SETTINGS_THEME_HINT = "M3b 仅存值，亮色主题界面留后续版本。";
+    /// <summary>设置页：主题说明。切换即预览，保存后下次启动沿用。</summary>
+    public const string SETTINGS_THEME_HINT = "切换后立即生效；点「保存设置」后下次启动沿用。";
 
     /// <summary>主题名：暗色（基线）。</summary>
     public const string SETTINGS_THEME_DARK = "dark";
@@ -89,8 +98,8 @@ internal static class WindowText
     /// <summary>周网格「周一…周日」列头，索引 0..6 对应周一打头。</summary>
     public static readonly string[] WEEKDAY_COLUMN_LABELS = { "周一", "周二", "周三", "周四", "周五", "周六", "周日" };
 
-    /// <summary>阶段名显示格式：{0} = 阶段名。</summary>
-    public const string PHASE_FORMAT = "阶段：{0}";
+    /// <summary>阶段名显示格式：{0} = 阶段名。胶囊里已有「当前阶段」的语义，不再重复「阶段：」前缀。</summary>
+    public const string PHASE_FORMAT = "{0}";
 
     /// <summary>空课表（无任何模板）时的提示。</summary>
     public const string EMPTY_GRID_HINT = "还没有任何时段。点「＋ 添加时段」开始排课。";

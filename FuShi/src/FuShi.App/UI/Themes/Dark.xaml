@@ -1,0 +1,79 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- ============================================================
+         暗 · 夜航（M3.5 实施计划 §8.3）
+         键集合必须与 Light.xaml 完全一致，ThemeService 启动时会比对。
+         强调色取悬浮组件「黑团子」眼屏的薄荷光 #7DEBAA。
+         ============================================================ -->
+
+    <!-- 表面与材质 -->
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#C215151B"/>
+    <SolidColorBrush x:Key="Surface2Brush" Color="#F02C2C2E"/>
+    <SolidColorBrush x:Key="WindowInnerHighlightBrush" Color="#1AFFFFFF"/>
+
+    <!-- 主窗口实色表面（M3.5 §3.7）：不带 alpha，避免合成到黑色后比设计稿更暗。 -->
+    <SolidColorBrush x:Key="WindowSurfaceBrush" Color="#17171D"/>
+
+    <LinearGradientBrush x:Key="WindowStrokeBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#38FFFFFF" Offset="0"/>
+        <GradientStop Color="#14FFFFFF" Offset="0.34"/>
+        <GradientStop Color="#08FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="SpecularBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#0DFFFFFF" Offset="0"/>
+        <GradientStop Color="#00FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+
+    <Color x:Key="ShadowNearColor">#59000000</Color>
+    <Color x:Key="ShadowMidColor">#73000000</Color>
+    <Color x:Key="ShadowFarColor">#9E000000</Color>
+
+    <!-- 文字灰阶 -->
+    <SolidColorBrush x:Key="LabelBrush" Color="#F3F3F6"/>
+    <SolidColorBrush x:Key="Label2Brush" Color="#C2C2CB"/>
+    <SolidColorBrush x:Key="Label3Brush" Color="#8A8A95"/>
+    <SolidColorBrush x:Key="TextQuaternaryBrush" Color="#5D5D67"/>
+
+    <!-- 发丝线 -->
+    <SolidColorBrush x:Key="SepBrush" Color="#10FFFFFF"/>
+    <SolidColorBrush x:Key="DividerStrongBrush" Color="#1DFFFFFF"/>
+
+    <!-- 强调色 -->
+    <SolidColorBrush x:Key="AccentBrush" Color="#7DEBAA"/>
+    <SolidColorBrush x:Key="AccentDeepBrush" Color="#5FD894"/>
+    <SolidColorBrush x:Key="AccentInkBrush" Color="#062117"/>
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="#247DEBAA"/>
+
+    <!-- 主按钮渐变的两个端点颜色与投影辉光（见 Light.xaml 同组注释） -->
+    <Color x:Key="AccentColor">#7DEBAA</Color>
+    <Color x:Key="AccentDeepColor">#5FD894</Color>
+    <Color x:Key="AccentGlowColor">#247DEBAA</Color>
+
+    <!-- 交互底色 -->
+    <SolidColorBrush x:Key="HoverBrush" Color="#0CFFFFFF"/>
+    <SolidColorBrush x:Key="HoverStrongBrush" Color="#12FFFFFF"/>
+    <SolidColorBrush x:Key="SegmentedBackgroundBrush" Color="#0EFFFFFF"/>
+    <SolidColorBrush x:Key="SegmentedActiveBrush" Color="#1CFFFFFF"/>
+
+    <!-- 当前格与当日车道 -->
+    <SolidColorBrush x:Key="CurrentBackgroundBrush" Color="#137DEBAA"/>
+    <SolidColorBrush x:Key="CurrentRingBrush" Color="#737DEBAA"/>
+    <Color x:Key="CurrentGlowColor">#297DEBAA</Color>
+    <SolidColorBrush x:Key="TodayWashBrush" Color="#0D7DEBAA"/>
+
+    <!-- 单元格透明度 -->
+    <sys:Double x:Key="ChipTintOpacity">0.10</sys:Double>
+    <sys:Double x:Key="ChipTintHoverOpacity">0.155</sys:Double>
+    <sys:Double x:Key="ChipLineOpacity">0.10</sys:Double>
+    <sys:Double x:Key="ChipLineHoverOpacity">0.18</sys:Double>
+    <sys:Double x:Key="SubjectBarOpacity">0.95</sys:Double>
+
+    <!-- 噪点与圆角 -->
+    <sys:Double x:Key="GrainOpacity">0.035</sys:Double>
+    <CornerRadius x:Key="WindowCornerRadius">20</CornerRadius>
+    <CornerRadius x:Key="CardCornerRadius">10</CornerRadius>
+
+</ResourceDictionary>

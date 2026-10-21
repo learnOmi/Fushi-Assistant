@@ -5,25 +5,18 @@
              xmlns:conv="clr-namespace:FuShi.UI.Converters"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
+        <ResourceDictionary>
 
         <!-- ============================================================
-             浮时 · 设计令牌（来自 浮时-智能助手原型.html v5 定稿）
-             表面：近黑不纯黑 · 文字：Apple 系统灰阶 · 强调色只给主操作
+             设计令牌分三份（M3.5 实施计划 §3.3）：
+             Shared.xaml 结构性、Light/Dark 主题、Controls 控件样式。
+             主题字典不由 XAML 固定指定，而是由 ThemeService 在启动时
+             插入到 MergedDictionaries 的索引 1（0=Shared，2=Controls），
+             这样运行时切换只需替换槽位，其他字典索引不动。
              ============================================================ -->
-        <SolidColorBrush x:Key="SurfaceBrush" Color="#E816161C"/>
-        <SolidColorBrush x:Key="Surface2Brush" Color="#F02C2C2E"/>
-        <SolidColorBrush x:Key="LabelBrush" Color="#F5F5F7"/>
-        <SolidColorBrush x:Key="Label2Brush" Color="#A1A1A6"/>
-        <SolidColorBrush x:Key="Label3Brush" Color="#7C7C81"/>
-        <SolidColorBrush x:Key="SepBrush" Color="#38383A"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#FF8A5B"/>
-
-        <FontFamily x:Key="AppFont">Segoe UI, Microsoft YaHei UI, Microsoft YaHei</FontFamily>
-
-        <Style x:Key="AppTextBase" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
-            <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
-        </Style>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="UI/Themes/Shared.xaml"/>
+        </ResourceDictionary.MergedDictionaries>
 
         <!-- 布尔 → 可见性 转换器：折叠态要素的显隐全靠它 -->
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
@@ -54,5 +47,6 @@
                         LeftClickCommand="{Binding OpenMainWindowCommand}"
                         NoLeftClickDelay="True"/>
 
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

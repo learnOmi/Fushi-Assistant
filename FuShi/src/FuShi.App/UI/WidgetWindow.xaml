@@ -9,7 +9,7 @@
         ResizeMode="NoResize"
         MouseLeftButtonDown="OnGrab"
         MouseEnter="OnHoverEnter" MouseLeave="OnHoverLeave">
-    <Border x:Name="Root" CornerRadius="12" Background="{StaticResource SurfaceBrush}"
+    <Border x:Name="Root" CornerRadius="12" Background="{DynamicResource SurfaceBrush}"
             BorderThickness="1" BorderBrush="#26FFFFFF" Padding="10,9,12,9">
         <StackPanel>
             <!-- 收起态：圆角卡片（非胶囊），四要素 = 科目 / 倒计时 / 进度条 / 下一节（设计文档第 6 章）
@@ -34,18 +34,18 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" x:Name="SubjectText" Text="{Binding SubjectText}"
                                    FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"
-                                   Foreground="{StaticResource LabelBrush}" TextTrimming="CharacterEllipsis"/>
+                                   Foreground="{DynamicResource LabelBrush}" TextTrimming="CharacterEllipsis"/>
                         <Border Grid.Column="1" x:Name="ShiftBadge" Margin="6,0,0,0" Padding="5,1" CornerRadius="4"
                                 Background="#33FF8A5B" VerticalAlignment="Center"
                                 Visibility="{Binding IsShifted, Converter={StaticResource BoolToVisibility}}">
                             <TextBlock x:Name="ShiftBadgeText" Text="{x:Static core:WidgetText.SHIFTED_BADGE}"
-                                       FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
+                                       FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
                         </Border>
                     </Grid>
 
                     <!-- 要素② 倒计时 -->
                     <TextBlock x:Name="CountdownText" Text="{Binding CountdownText}" FontSize="16" FontWeight="Bold"
-                               Foreground="{StaticResource LabelBrush}" Margin="0,3,0,0"
+                               Foreground="{DynamicResource LabelBrush}" Margin="0,3,0,0"
                                Visibility="{Binding HasCountdown, Converter={StaticResource BoolToVisibility}}"/>
 
                     <!-- 要素③ 进度条：两列星号布局，填充列宽度 = 进度百分比 -->
@@ -63,7 +63,7 @@
 
                     <!-- 要素④ 下一节：空课表时退化为引导文案（设计文档 5.8） -->
                     <TextBlock x:Name="NextText" Text="{Binding NextText}" FontSize="11.5"
-                               Foreground="{StaticResource Label2Brush}" Margin="0,3,0,0"
+                               Foreground="{DynamicResource Label2Brush}" Margin="0,3,0,0"
                                TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
             </Grid>
@@ -74,11 +74,11 @@
                     Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibility}}">
                 <StackPanel>
                     <TextBlock x:Name="DateText" Text="{Binding DateText}" FontSize="12" FontWeight="SemiBold"
-                               Foreground="{StaticResource Label2Brush}"/>
+                               Foreground="{DynamicResource Label2Brush}"/>
                     <TextBlock x:Name="ExpandedTitle" Text="{Binding ExpandedTitle}" FontSize="20" FontWeight="Bold"
-                               Foreground="{StaticResource LabelBrush}" Margin="0,6,0,2"/>
+                               Foreground="{DynamicResource LabelBrush}" Margin="0,6,0,2"/>
                     <TextBlock x:Name="ExpandedBody" Text="{Binding ExpandedBody}"
-                               FontSize="12" Foreground="{StaticResource Label2Brush}"
+                               FontSize="12" Foreground="{DynamicResource Label2Brush}"
                                TextWrapping="Wrap" LineHeight="19" Margin="0,2,0,0"/>
 
                     <!-- 展开态「打开课表」：唤起主窗口（设计 5.3 / 第 6 章） -->
@@ -86,7 +86,7 @@
                             Click="OnOpenSchedule" HorizontalAlignment="Left"
                             Margin="0,10,0,0" Padding="12,6" Cursor="Hand"
                             Foreground="#FFFFFFFF" BorderThickness="0"
-                            Background="{StaticResource AccentBrush}"/>
+                            Background="{DynamicResource AccentBrush}"/>
                 </StackPanel>
             </Border>
         </StackPanel>

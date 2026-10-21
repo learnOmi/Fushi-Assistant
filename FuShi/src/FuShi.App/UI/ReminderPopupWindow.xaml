@@ -11,7 +11,7 @@
     <Window.Resources>
         <!-- 动作按钮：三枚等宽，弱底 + 强调描边，扫描成本低 -->
         <Style x:Key="PopupActionButton" TargetType="Button">
-            <Setter Property="Foreground" Value="{StaticResource LabelBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource LabelBrush}"/>
             <Setter Property="Padding" Value="12,7"/>
             <Setter Property="Margin" Value="0,0,8,0"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -41,7 +41,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bd" CornerRadius="8" Padding="{TemplateBinding Padding}"
-                                Background="{StaticResource AccentBrush}">
+                                Background="{DynamicResource AccentBrush}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -57,7 +57,7 @@
 
     <!-- 自绘弹窗（ADR-4 主通道）：左侧强调色边条 + 标题 + 正文 +（M3b）动作按钮。
          文案由构造参数注入；按钮仅在「有归属实例」时出现，汇总类通知退化为哑壳。 -->
-    <Border CornerRadius="12" Background="{StaticResource Surface2Brush}"
+    <Border CornerRadius="12" Background="{DynamicResource Surface2Brush}"
             BorderThickness="1" BorderBrush="#26FFFFFF" Padding="16,14,16,14">
         <Grid>
             <Grid.ColumnDefinitions>
@@ -65,12 +65,12 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Width="4" CornerRadius="2" Background="{StaticResource AccentBrush}"/>
+            <Border Grid.Column="0" Width="4" CornerRadius="2" Background="{DynamicResource AccentBrush}"/>
 
             <StackPanel Grid.Column="1" Margin="12,0,0,0">
                 <TextBlock x:Name="TitleText" FontSize="15.5" FontWeight="SemiBold"
-                           Foreground="{StaticResource LabelBrush}" TextWrapping="Wrap"/>
-                <TextBlock x:Name="BodyText" FontSize="12.5" Foreground="{StaticResource Label2Brush}"
+                           Foreground="{DynamicResource LabelBrush}" TextWrapping="Wrap"/>
+                <TextBlock x:Name="BodyText" FontSize="12.5" Foreground="{DynamicResource Label2Brush}"
                            Margin="0,6,0,0" TextWrapping="Wrap" LineHeight="19"/>
 
                 <!-- 动作区：内容在代码后置里按「是否有归属实例」决定显隐与文案 -->

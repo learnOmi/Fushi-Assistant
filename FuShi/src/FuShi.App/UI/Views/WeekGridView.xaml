@@ -19,7 +19,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="{x:Static core:WindowText.TIME_COLUMN_HEADER}" Width="{x:Static core:UiConstants.GRID_TIME_COLUMN_WIDTH}"
-                           Foreground="{StaticResource Label3Brush}" FontSize="11.5" VerticalAlignment="Center"/>
+                           Foreground="{DynamicResource Label3Brush}" FontSize="11.5" VerticalAlignment="Center"/>
                 <ItemsControl Grid.Column="1" Grid.ColumnSpan="7" ItemsSource="{Binding DayHeaders}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -29,7 +29,7 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" HorizontalAlignment="Center"
-                                       Foreground="{StaticResource Label2Brush}" FontSize="12" FontWeight="SemiBold"/>
+                                       Foreground="{DynamicResource Label2Brush}" FontSize="12" FontWeight="SemiBold"/>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -53,7 +53,7 @@
 
                             <TextBlock Grid.Column="0" Text="{Binding TimeText}"
                                        Width="{x:Static core:UiConstants.GRID_TIME_COLUMN_WIDTH}"
-                                       Foreground="{StaticResource Label2Brush}" FontSize="12"
+                                       Foreground="{DynamicResource Label2Brush}" FontSize="12"
                                        VerticalAlignment="Center"/>
 
                             <ItemsControl Grid.Column="1" Grid.ColumnSpan="7" ItemsSource="{Binding Cells}">
@@ -82,7 +82,7 @@
                                                                               HorizontalAlignment="Left"/>
                                                         </Border>
                                                         <Border x:Name="CurrentRing" CornerRadius="{x:Static core:UiConstants.GRID_CELL_CORNER_RADIUS}"
-                                                                BorderThickness="2" BorderBrush="{StaticResource AccentBrush}"
+                                                                BorderThickness="2" BorderBrush="{DynamicResource AccentBrush}"
                                                                 Background="Transparent" IsHitTestVisible="False"
                                                                 Visibility="{Binding IsCurrent, Converter={StaticResource BoolToVisibility}}"/>
                                                     </Grid>
@@ -95,7 +95,7 @@
                                             </Button.Template>
                                             <StackPanel>
                                                 <TextBlock Text="{Binding SubjectName}"
-                                                           Foreground="{StaticResource LabelBrush}"
+                                                           Foreground="{DynamicResource LabelBrush}"
                                                            FontSize="12.5" FontWeight="SemiBold"
                                                            TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock Text="{Binding TimeRangeText}"

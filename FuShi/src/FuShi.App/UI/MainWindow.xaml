@@ -10,30 +10,139 @@
         MinWidth="{x:Static core:UiConstants.MAIN_WINDOW_MIN_WIDTH}"
         MinHeight="{x:Static core:UiConstants.MAIN_WINDOW_MIN_HEIGHT}"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource SurfaceBrush}"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        Background="{DynamicResource WindowSurfaceBrush}"
         FontFamily="{StaticResource AppFont}">
+
+    <!-- ============================================================
+         无边框外壳（M3.5 §3.2 / §4.4）
+         CaptionHeight 取标题栏高度：整条顶部即系统拖拽区，双击可最大化。
+         窗口按钮在 chrome 上单独放开命中（IsHitTestVisibleInChrome）。
+         ============================================================ -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="{StaticResource TitleBarHeight}"
+                      ResizeBorderThickness="{StaticResource WindowResizeBorderThickness}"
+                      GlassFrameThickness="0"
+                      UseAeroCaptionButtons="False"
+                      CornerRadius="0"/>
+    </WindowChrome.WindowChrome>
+
     <Window.Resources>
         <!-- 布尔取反 → 可见性：空态提示与网格互斥显示 -->
         <conv:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility"/>
 
-        <!-- 主操作按钮（强调色） -->
-        <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
-            <Setter Property="Foreground" Value="#FFFFFFFF"/>
-            <Setter Property="Padding" Value="14,8"/>
+        <!-- 窗口按钮（标题栏右侧） -->
+        <Style x:Key="WindowButton" TargetType="Button">
+            <Setter Property="Width" Value="42"/>
+            <Setter Property="Height" Value="30"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontSize" Value="12.5"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextQuaternaryBrush}"/>
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
-                                Padding="{TemplateBinding Padding}">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverStrongBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Label2Brush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 关闭：悬停变系统红（不随主题变化，桌面级约定） -->
+        <Style x:Key="WindowCloseButton" TargetType="Button" BasedOn="{StaticResource WindowButton}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#DC4346"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 最大化按钮：窗口状态决定图标（样式触发器优先级高于 Setter、低于本地值，
+             故这里刻意不在 XAML 实例上写 Content）。点击走代码后置，见 MainWindow.xaml.cs。 -->
+        <Style x:Key="WindowMaximizeButton" TargetType="Button" BasedOn="{StaticResource WindowButton}">
+            <Setter Property="Content" Value="&#xE922;"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}"
+                             Value="Maximized">
+                    <Setter Property="Content" Value="&#xE923;"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 窗口圆角：最大化时窗口贴满工作区，圆角应归零，否则四条边会露出一圈内嵌弧线 -->
+        <Style x:Key="WindowCornerStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="{DynamicResource WindowCornerRadius}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}"
+                             Value="Maximized">
+                    <Setter Property="CornerRadius" Value="0"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 主操作按钮：强调色渐变 + 顶部内高光 + 主题辉光 -->
+        <Style x:Key="PrimaryActionButton" TargetType="Button">
+            <Setter Property="Height" Value="{StaticResource ToolbarHeight}"/>
+            <Setter Property="Padding" Value="15,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentInkBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="{DynamicResource CardCornerRadius}" Padding="{TemplateBinding Padding}">
+                            <Border.Background>
+                                <!-- GradientStop.Color 只收 Color，故主题里额外准备了 AccentColor / AccentDeepColor -->
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="{DynamicResource AccentColor}" Offset="0"/>
+                                    <GradientStop Color="{DynamicResource AccentDeepColor}" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Border.Effect>
+                                <DropShadowEffect Color="{DynamicResource AccentGlowColor}"
+                                                  BlurRadius="12" ShadowDepth="3" Direction="270" Opacity="1"/>
+                            </Border.Effect>
+                            <Grid>
+                                <!-- 顶部内高光：模拟按钮厚度，不额外占布局 -->
+                                <Border CornerRadius="{DynamicResource CardCornerRadius}" IsHitTestVisible="False">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#4DFFFFFF" Offset="0"/>
+                                            <GradientStop Color="#00FFFFFF" Offset="0.45"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.94"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
@@ -44,24 +153,72 @@
             </Setter>
         </Style>
 
-        <!-- 深色页签：与整体暗色主题一致 -->
-        <Style x:Key="DarkTabItem" TargetType="TabItem">
-            <Setter Property="Foreground" Value="{StaticResource Label2Brush}"/>
+        <!-- 胶囊分段控件（替代下划线页签，M3.5 §4.4） -->
+        <Style x:Key="SegmentedTabControl" TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid KeyboardNavigation.TabNavigation="Local">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 轨道：22px 外边距与网格内容左右对齐 -->
+                            <Border Grid.Row="0" Margin="22,0,22,13" Padding="3"
+                                    HorizontalAlignment="Left"
+                                    Background="{DynamicResource SegmentedBackgroundBrush}"
+                                    CornerRadius="999">
+                                <StackPanel Orientation="Horizontal" IsItemsHost="True"/>
+                            </Border>
+
+                            <!-- 名称是 TabControl 的模板契约：缺了它，页面内容既不被 UIA 暴露，
+                                 也拿不到 SelectedContent 的正确宿主。 -->
+                            <ContentPresenter x:Name="PART_SelectedContentHost"
+                                              Grid.Row="1" Margin="22,4,22,16"
+                                              ContentSource="SelectedContent"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SegmentedTabItem" TargetType="TabItem">
+            <Setter Property="Foreground" Value="{DynamicResource Label3Brush}"/>
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+            <Setter Property="MinHeight" Value="{StaticResource SegmentedHeight}"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
-                        <Border x:Name="Bd" Background="Transparent" CornerRadius="6"
-                                Padding="14,8" Margin="0,0,6,0"
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="999"
+                                Padding="15,6" Margin="1,0"
                                 TextElement.Foreground="{TemplateBinding Foreground}">
-                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center"/>
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#1FFFFFFF"/>
-                                <Setter Property="Foreground" Value="{StaticResource LabelBrush}"/>
-                            </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#14FFFFFF"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Label2Brush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SegmentedActiveBrush}"/>
+                                <Setter TargetName="Bd" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect BlurRadius="4" ShadowDepth="1" Direction="270"
+                                                          Opacity="0.20" Color="#000000"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Foreground" Value="{DynamicResource LabelBrush}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                            <!-- 未落地的页签：禁用态压到最弱的灰阶（事项 / 统计，M4 才接入） -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource TextQuaternaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -70,43 +227,116 @@
         </Style>
     </Window.Resources>
 
-    <Grid Margin="18">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <Grid>
+        <!-- 圆角底板：Win11 由 DWM 裁掉窗口外角，Win10 退化为直角外框（内部圆角仍在） -->
+        <Border Style="{StaticResource WindowCornerStyle}"
+                Background="{DynamicResource WindowSurfaceBrush}"
+                BorderBrush="{DynamicResource WindowStrokeBrush}"
+                BorderThickness="1"/>
 
-        <!-- 顶部工具栏：阶段名 + 主操作 -->
-        <Grid Grid.Row="0" Margin="0,0,0,14">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="{Binding PhaseText}" VerticalAlignment="Center"
-                       Foreground="{StaticResource LabelBrush}" FontSize="16" FontWeight="SemiBold"/>
-            <Button Grid.Column="1" Content="{x:Static core:WindowText.ADD_ENTRY}"
-                    Style="{StaticResource PrimaryButton}" Command="{Binding AddEntryCommand}"/>
-        </Grid>
+        <!-- 顶部镜面高光：只铺窗口上沿，落到底部透明 -->
+        <Border Height="132" VerticalAlignment="Top"
+                Style="{StaticResource WindowCornerStyle}"
+                Background="{DynamicResource SpecularBrush}"
+                IsHitTestVisible="False"/>
 
-        <!-- 页签：课表 / 设置（设置项在 M3b 落地） -->
-        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" Padding="0">
-            <TabItem Header="{x:Static core:WindowText.TAB_SCHEDULE}" Style="{StaticResource DarkTabItem}">
-                <Grid Margin="0,12,0,0">
+        <Grid Margin="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- 标题栏：品牌点 + 拖拽区 + 窗口按钮 -->
+            <Border Grid.Row="0" Height="{StaticResource TitleBarHeight}" Background="Transparent"
+                    BorderBrush="{DynamicResource SepBrush}" BorderThickness="0,0,0,1">
+                <Grid Margin="20,0,8,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- 品牌点：8px 实心圆 + 3px 强调色软环 -->
+                        <Grid Width="8" Height="8" Margin="0,0,8,0">
+                            <Ellipse Width="14" Height="14" Fill="{DynamicResource AccentSoftBrush}"/>
+                            <Ellipse Width="8" Height="8" Fill="{DynamicResource AccentBrush}"/>
+                        </Grid>
+                        <TextBlock Text="{x:Static core:WindowText.BRAND_NAME}"
+                                   Foreground="{DynamicResource LabelBrush}"
+                                   FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Style="{StaticResource WindowButton}"
+                                Content="&#xE921;"
+                                Click="OnMinimizeClick"
+                                ToolTip="最小化"/>
+                        <Button Style="{StaticResource WindowMaximizeButton}"
+                                Click="OnMaximizeRestoreClick"
+                                ToolTip="最大化 / 还原"/>
+                        <Button Style="{StaticResource WindowCloseButton}"
+                                Content="&#xE8BB;"
+                                Click="OnCloseClick"
+                                ToolTip="关闭"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- 工具栏：当前阶段 + 主操作 -->
+            <Grid Grid.Row="1" Margin="22,20,22,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Padding="10,6,12,6" CornerRadius="999"
+                        BorderThickness="1" BorderBrush="{DynamicResource DividerStrongBrush}"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="5" Height="5" Fill="{DynamicResource AccentBrush}" Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding PhaseText}"
+                                   Foreground="{DynamicResource LabelBrush}"
+                                   FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+
+                <Button Grid.Column="2" Content="{x:Static core:WindowText.ADD_ENTRY}"
+                        Style="{StaticResource PrimaryActionButton}"
+                        Command="{Binding AddEntryCommand}"/>
+            </Grid>
+
+            <!-- 分段页签 + 页面内容 -->
+            <TabControl Grid.Row="2" Style="{StaticResource SegmentedTabControl}">
+                <TabItem Header="{x:Static core:WindowText.TAB_SCHEDULE}"
+                         Style="{StaticResource SegmentedTabItem}" IsSelected="True">
                     <!-- 可见性绑「窗口 VM」的 IsEmpty；网格自身绑「网格 VM」（Grid 属性）。
                          若 WeekGridView 直接继承窗口 VM，其内部 Rows/Cells 将找不到绑定源而整片空白。 -->
-                    <Grid Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}">
-                        <views:WeekGridView DataContext="{Binding Grid}"/>
+                    <Grid>
+                        <Grid Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}">
+                            <views:WeekGridView DataContext="{Binding Grid}"/>
+                        </Grid>
+                        <TextBlock Text="{x:Static core:WindowText.EMPTY_GRID_HINT}"
+                                   Foreground="{DynamicResource Label3Brush}" FontSize="13"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}"/>
                     </Grid>
-                    <TextBlock Text="{x:Static core:WindowText.EMPTY_GRID_HINT}"
-                               Foreground="{StaticResource Label3Brush}" FontSize="13"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"
-                               Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}"/>
-                </Grid>
-            </TabItem>
-            <TabItem Header="{x:Static core:WindowText.TAB_SETTINGS}" Style="{StaticResource DarkTabItem}">
-                <!-- 显式绑 DataContext 到设置视图模型：WeekGridView 曾因继承错误 DataContext 而整片空白（缺陷 2），此处不重蹈。 -->
-                <views:SettingsView DataContext="{Binding Settings}"/>
-            </TabItem>
-        </TabControl>
+                </TabItem>
+
+                <!-- 占位页签：M4 落地，禁用态避免误点 -->
+                <TabItem Header="{x:Static core:WindowText.TAB_ITEMS}"
+                         Style="{StaticResource SegmentedTabItem}" IsEnabled="False"/>
+                <TabItem Header="{x:Static core:WindowText.TAB_STATS}"
+                         Style="{StaticResource SegmentedTabItem}" IsEnabled="False"/>
+
+                <TabItem Header="{x:Static core:WindowText.TAB_SETTINGS}"
+                         Style="{StaticResource SegmentedTabItem}">
+                    <!-- 显式绑 DataContext 到设置视图模型：WeekGridView 曾因继承错误 DataContext 而整片空白（缺陷 2），此处不重蹈。 -->
+                    <views:SettingsView DataContext="{Binding Settings}"/>
+                </TabItem>
+            </TabControl>
+        </Grid>
     </Grid>
 </Window>

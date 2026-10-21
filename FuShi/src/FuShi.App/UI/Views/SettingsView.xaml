@@ -31,7 +31,7 @@
             <Setter Property="Margin" Value="0,4,0,2"/>
         </Style>
         <Style x:Key="AccentButton" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="Foreground" Value="#FFFFFFFF"/>
             <Setter Property="Padding" Value="18,8"/>
             <Setter Property="Cursor" Value="Hand"/>

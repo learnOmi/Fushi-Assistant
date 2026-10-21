@@ -58,6 +58,9 @@ public partial class App : Application
     private NotificationService? _notifications;
     private ReminderEngine? _engine;
 
+    /// <summary>主题服务：启动时应用一次，设置页切换主题时再次调用。</summary>
+    private ThemeService? _themeService;
+
     /// <summary>悬浮组件数据兜底重载定时器（跨天滚动与引擎事件之外的安全网）。</summary>
     private DispatcherTimer? _widgetReloadTimer;
 
@@ -90,6 +93,14 @@ public partial class App : Application
         var settingsRepository = _host.Services.GetRequiredService<AppSettingRepository>();
         var settings = settingsRepository.GetAsync().GetAwaiter().GetResult();
         LogTimeZoneResolution(settings.TimezoneId);
+
+        // 主题必须早于任何窗口创建：托盘图标、悬浮窗与主窗口都会在加载时解析令牌，
+        // 晚于窗口创建会让首帧先按旧主题渲染再闪一下。
+        _themeService = new ThemeService(this, _logger);
+#if DEBUG
+        _themeService.VerifyKeyParity();
+#endif
+        _themeService.Apply(settings.Theme);
 
         CreateTray();
         CreateWidget(settingsRepository, settings);
@@ -561,7 +572,7 @@ public partial class App : Application
         return new MainWindow(viewModel);
     }
 
-    /// <summary>装配设置页视图模型：注入仓储、引擎，以及本宿主的两个即时生效回调。</summary>
+    /// <summary>装配设置页视图模型：注入仓储、引擎，以及本宿主的三个即时生效回调。</summary>
     private SettingsViewModel CreateSettingsViewModel()
     {
         return new SettingsViewModel(
@@ -569,8 +580,13 @@ public partial class App : Application
             _host.Services.GetRequiredService<ReminderEngine>(),
             ReloadWidget,
             ApplyWidgetOpacity,
+            ApplyTheme,
             _logger);
     }
+
+    /// <summary>把主题应用到整个应用（设置页即时切换与启动回放共用）。</summary>
+    /// <param name="theme">主题存储值（dark / light）。</param>
+    private void ApplyTheme(string theme) => _themeService?.Apply(theme);
 
     /// <summary>把不透明度应用到悬浮窗（设置页实时预览与启动回放共用）。</summary>
     /// <param name="opacity">不透明度（0.3~1.0）。</param>

@@ -24,9 +24,32 @@ public partial class MainWindow : Window
         _viewModel = viewModel;
         DataContext = viewModel;
 
+        SourceInitialized += OnSourceInitialized;
         Loaded += OnLoaded;
         Closing += OnClosing;
     }
+
+    /// <summary>句柄就绪后挂无边框窗口适配：最大化边界修正 + DWM 圆角（Win10 上圆角失败即保持直角，属预期降级）。</summary>
+    private void OnSourceInitialized(object? sender, EventArgs e) => WindowChromeHelper.Attach(this);
+
+    /// <summary>标题栏：最小化。</summary>
+    private void OnMinimizeClick(object sender, RoutedEventArgs e) => SystemCommands.MinimizeWindow(this);
+
+    /// <summary>标题栏：最大化 / 还原切换（图标由样式按 WindowState 切换）。</summary>
+    private void OnMaximizeRestoreClick(object sender, RoutedEventArgs e)
+    {
+        if (WindowState == WindowState.Maximized)
+        {
+            SystemCommands.RestoreWindow(this);
+        }
+        else
+        {
+            SystemCommands.MaximizeWindow(this);
+        }
+    }
+
+    /// <summary>标题栏：关闭。走系统关闭语义，由 <see cref="OnClosing"/> 转为收起到后台。</summary>
+    private void OnCloseClick(object sender, RoutedEventArgs e) => SystemCommands.CloseWindow(this);
 
     /// <summary>每次显示都重新载入（自举阶段 + 拉最新课表），保证数据不过期。</summary>
     private async void OnLoaded(object sender, RoutedEventArgs e) => await _viewModel.LoadAsync();

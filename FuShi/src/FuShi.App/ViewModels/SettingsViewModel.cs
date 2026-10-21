@@ -31,6 +31,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly ReminderEngine _engine;
     private readonly Action _reloadWidget;
     private readonly Action<double> _applyWidgetOpacity;
+    private readonly Action<string> _applyTheme;
     private readonly ILogger _logger;
 
     /// <summary>当前设置快照：读入后复用，保存时只覆盖本页管辖的字段，其余（位置/自启）原样保留。</summary>
@@ -95,7 +96,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         .Select(static zone => zone.Id)
         .ToList();
 
-    /// <summary>可选主题（M3b 只存值，界面仍只有暗色一套）。</summary>
+    /// <summary>可选主题（切换即刻生效，见 <see cref="OnSelectedThemeChanged"/>）。</summary>
     public IReadOnlyList<ThemeOption> ThemeOptions { get; } = new[]
     {
         new ThemeOption(WindowText.SETTINGS_THEME_DARK, WindowText.SETTINGS_THEME_DARK_LABEL),
@@ -110,18 +111,21 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <param name="engine">提醒引擎（保存后请求重排）。</param>
     /// <param name="reloadWidget">刷新悬浮组件的回调（由宿主提供）。</param>
     /// <param name="applyWidgetOpacity">应用悬浮窗透明度的回调（由宿主设置窗口 Opacity）。</param>
+    /// <param name="applyTheme">应用主题的回调（由宿主替换应用级资源字典）。</param>
     /// <param name="logger">Serilog 日志器。</param>
     public SettingsViewModel(
         AppSettingRepository repository,
         ReminderEngine engine,
         Action reloadWidget,
         Action<double> applyWidgetOpacity,
+        Action<string> applyTheme,
         ILogger logger)
     {
         _repository = repository;
         _engine = engine;
         _reloadWidget = reloadWidget;
         _applyWidgetOpacity = applyWidgetOpacity;
+        _applyTheme = applyTheme;
         _logger = logger;
 
         // 下拉默认项先占位，真正的取值由 LoadAsync 回填。
@@ -280,5 +284,11 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     partial void OnSelectedTimezoneChanged(string value) => HasSaved = false;
 
-    partial void OnSelectedThemeChanged(ThemeOption value) => HasSaved = false;
+    partial void OnSelectedThemeChanged(ThemeOption value)
+    {
+        // 即时预览：与不透明度滑块同构——改下拉立刻换肤，点「保存」才落库。
+        // 载入设置回填下拉时也会走到这里，ThemeService 对同值调用是空操作。
+        _applyTheme(value.Value);
+        HasSaved = false;
+    }
 }
