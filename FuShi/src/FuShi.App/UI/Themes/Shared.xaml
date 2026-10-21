@@ -27,6 +27,10 @@
     <sys:Double x:Key="SegmentedHeight">28</sys:Double>
     <sys:Double x:Key="CellMinHeight">66</sys:Double>
 
+    <!-- 分段控件内项圆角：轨道有 3px 内边距，内项取「轨道圆角 − 3」才是同心圆角，
+         否则选中底色会在轨道两端戳出角。轨道圆角用 CardCornerRadius。 -->
+    <CornerRadius x:Key="SegmentedItemCornerRadius">7</CornerRadius>
+
     <!-- 无边框窗口的可缩放热区（四边各 6px）。类型必须是 Thickness：
          WindowChrome.ResizeBorderThickness 不收 Double，传错会在加载期抛类型转换异常。 -->
     <Thickness x:Key="WindowResizeBorderThickness">6</Thickness>

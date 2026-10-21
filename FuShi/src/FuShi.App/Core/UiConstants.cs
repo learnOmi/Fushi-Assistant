@@ -91,4 +91,9 @@ internal static class UiConstants
 
     /// <summary>免打扰默认结束分钟。</summary>
     public const int QUIET_DEFAULT_END_MINUTE = 0;
+
+    /// <summary>
+    /// 「设置已保存」提示的停留时长（毫秒）。到时自动淡出，避免提示永久挂在页面上。
+    /// </summary>
+    public const int SAVED_HINT_DURATION_MILLISECONDS = 3000;
 }

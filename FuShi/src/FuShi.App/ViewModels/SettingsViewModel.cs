@@ -39,6 +39,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>当前设置快照：读入后复用，保存时只覆盖本页管辖的字段，其余（位置/自启）原样保留。</summary>
     private AppSetting _setting = new();
 
+    /// <summary>「设置已保存」提示的倒计时；重复保存时取消上一轮，保证提示不会提前熄灭或叠加。</summary>
+    private CancellationTokenSource? _savedHintCts;
+
     /// <summary>悬浮窗不透明度（<c>MIN_OPACITY</c>~<c>MAX_OPACITY</c>）。</summary>
     [ObservableProperty]
     private double _opacity = ModelDefaults.DEFAULT_OPACITY;
@@ -200,6 +203,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             _reloadWidget();
 
             HasSaved = true;
+            ScheduleSavedHintDismiss();
             _logger.Information(
                 "设置已保存：不透明度 {Opacity}，提前 {Lead} 分钟，时区 {Timezone}，主题 {Theme}",
                 Opacity,
@@ -211,6 +215,38 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             _logger.Error(ex, "保存设置失败");
             HasSaved = false;
+        }
+    }
+
+    /// <summary>
+    /// 安排「设置已保存」提示自动消失。每次保存都重置倒计时，避免连续保存时提示被上一轮提前清掉。
+    /// <para>
+    /// 用 <see cref="Task.Delay(int, CancellationToken)"/> 而非 <c>DispatcherTimer</c>：
+    /// <see cref="Save"/> 在 UI 线程同步执行，await 会捕获 WPF 同步上下文，续体自然回到 UI 线程改属性；
+    /// 视图模型因此不必引用 <c>Dispatcher</c>，也便于单测。失败只可能是取消，属正常覆盖，无需记日志。
+    /// </para>
+    /// </summary>
+    private void ScheduleSavedHintDismiss()
+    {
+        _savedHintCts?.Cancel();
+        _savedHintCts?.Dispose();
+        _savedHintCts = new CancellationTokenSource();
+
+        _ = DismissSavedHintAsync(_savedHintCts.Token);
+    }
+
+    /// <summary>等待提示时长后清除「已保存」；被新一次保存取消时直接退出。</summary>
+    /// <param name="token">本轮倒计时的取消令牌。</param>
+    private async Task DismissSavedHintAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(UiConstants.SAVED_HINT_DURATION_MILLISECONDS, token);
+            HasSaved = false;
+        }
+        catch (OperationCanceledException)
+        {
+            // 新一次保存接管了提示，本轮倒计时作废。
         }
     }
 

@@ -171,7 +171,7 @@
                             <Border Grid.Row="0" Margin="22,0,22,13" Padding="3"
                                     HorizontalAlignment="Left"
                                     Background="{DynamicResource SegmentedBackgroundBrush}"
-                                    CornerRadius="999">
+                                    CornerRadius="{DynamicResource CardCornerRadius}">
                                 <StackPanel Orientation="Horizontal" IsItemsHost="True"/>
                             </Border>
 
@@ -194,7 +194,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
-                        <Border x:Name="Bd" Background="Transparent" CornerRadius="999"
+                        <Border x:Name="Bd" Background="Transparent"
+                                CornerRadius="{StaticResource SegmentedItemCornerRadius}"
                                 Padding="15,6" Margin="1,0"
                                 TextElement.Foreground="{TemplateBinding Foreground}">
                             <ContentPresenter ContentSource="Header" HorizontalAlignment="Center"
@@ -299,7 +300,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Padding="10,6,12,6" CornerRadius="999"
+                <Border Grid.Column="0" Padding="10,6,12,6" CornerRadius="{DynamicResource CardCornerRadius}"
                         BorderThickness="1" BorderBrush="{DynamicResource DividerStrongBrush}"
                         VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">

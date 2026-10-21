@@ -78,7 +78,9 @@
 
     <!-- 噪点与圆角 -->
     <sys:Double x:Key="GrainOpacity">0.035</sys:Double>
-    <CornerRadius x:Key="WindowCornerRadius">20</CornerRadius>
+    <!-- 窗口外圆角必须与 Win11 DWM 系统圆角同值：系统自身会裁一圈 8 DIP 的弧，
+         两层不同曲率的弧叠在一起会看到「双圆角」。8 DIP 随 DPI 缩放，与系统弧重合。 -->
+    <CornerRadius x:Key="WindowCornerRadius">8</CornerRadius>
     <CornerRadius x:Key="CardCornerRadius">10</CornerRadius>
 
 </ResourceDictionary>
