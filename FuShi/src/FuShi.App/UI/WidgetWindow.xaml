@@ -22,7 +22,7 @@
                 </Grid.ColumnDefinitions>
 
                 <local:BotView Grid.Column="0" x:Name="Bot" Width="44" Height="44"
-                               VerticalAlignment="Center" Margin="2,0,0,0" Mood="Idle"/>
+                               VerticalAlignment="Center" Margin="2,0,0,0" Expression="Idle"/>
 
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,2,0">
                     <!-- 要素① 科目：右邻「已顺延」徽标，仅当本次被「稍后」当日顺延过才点亮（M3c）。
