@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using FuShi.Core;
+using FuShi.Domain.Assistant;
 using FuShi.Domain.Entities;
 using FuShi.Domain.Enums;
 using FuShi.Domain.Scheduling;
@@ -23,6 +24,27 @@ public partial class WidgetViewModel : ObservableObject
 
     /// <summary>缓存的时段表（升序）；由宿主推送，刷新时只读。</summary>
     private IReadOnlyList<TimelineSlot> _slots = Array.Empty<TimelineSlot>();
+
+    /// <summary>最后一次用户交互时刻（悬停、拖动、双击）；用于「长期未交互」的困倦表情。</summary>
+    private DateTime _lastInteractionAt = DateTime.Now;
+
+    /// <summary>冲突瞬态的上升沿闩锁：条件消失后复位，避免每秒重播惊讶。</summary>
+    private bool _conflictLatched;
+
+    /// <summary>今日已庆祝过的日期；换一天自然失效，避免「整日完成」的大笑被反复插播。</summary>
+    private DateOnly? _celebratedDate;
+
+    /// <summary>助手稳态表情（由课程状态机算出，M4.5d 起驱动悬浮窗）。</summary>
+    [ObservableProperty]
+    private BotExpression _expression = BotExpression.Idle;
+
+    /// <summary>要插播的瞬态表情（冲突/全勤等一次性反馈）。</summary>
+    [ObservableProperty]
+    private BotExpression _transientExpression = BotExpression.Idle;
+
+    /// <summary>瞬态请求序号：自增即代表「再播一次」，同一种情绪连续触发也能重新播放。</summary>
+    [ObservableProperty]
+    private int _transientSequence;
 
     /// <summary>要素① 科目名（或空态文案）。</summary>
     [ObservableProperty]
@@ -116,6 +138,7 @@ public partial class WidgetViewModel : ObservableObject
     public void Refresh(DateTime now)
     {
         UpdateDateText(now);
+        RefreshBot(now);
 
         var view = ScheduleTimeline.Select(_slots, now);
         var focus = view.Current ?? view.Next; // 主位：当前没有正在上的课，就聚焦「下一节」。
@@ -196,6 +219,60 @@ public partial class WidgetViewModel : ObservableObject
         OccurrenceStatus.Skipped => WidgetText.STATUS_SKIPPED,
         _ => null,
     };
+
+    /// <summary>
+    /// 记一次用户交互（悬停进入、开始拖动、双击打开课表）。
+    /// 「长期未交互」的判定只依赖这一个时间戳，不引入全局鼠标钩子。
+    /// </summary>
+    /// <param name="now">交互时刻（由视图传入，便于与 <see cref="Refresh"/> 用同一时间基准）。</param>
+    public void RecordInteraction(DateTime now)
+    {
+        _lastInteractionAt = now;
+
+        // 交互即「醒过来」：若此刻正因为久未互动而困倦，下一帧就会由 Refresh 拉回 Idle。
+    }
+
+    /// <summary>
+    /// 重算助手表情：把时段表与交互时间提炼成信号，交给状态机出稳态；
+    /// 再把冲突 / 整日完成这两个一次性事件转成瞬态脉冲。全程纯计算，无 IO。
+    /// </summary>
+    /// <param name="now">当前时刻。</param>
+    private void RefreshBot(DateTime now)
+    {
+        var signals = BotSignalBuilder.Build(_slots, now, _lastInteractionAt);
+        Expression = BotExpressionDirector.ResolveSteady(signals, _settings.LeadTimeMinutes);
+
+        var today = DateOnly.FromDateTime(now);
+
+        // 日程冲突：只在条件从 false 变 true 的那一秒插播一次惊讶。
+        if (signals.HasConflict)
+        {
+            if (!_conflictLatched)
+            {
+                _conflictLatched = true;
+                Pulse(BotExpression.Surprise);
+            }
+        }
+        else
+        {
+            _conflictLatched = false;
+        }
+
+        // 整日全部完成：一天只庆祝一次；跨天后 _celebratedDate 自然失配。
+        if (signals.AllDoneToday && _celebratedDate != today)
+        {
+            _celebratedDate = today;
+            Pulse(BotExpression.Laugh);
+        }
+    }
+
+    /// <summary>请求插播一次瞬态：序号自增，使同一种情绪连续触发也能重新播放。</summary>
+    /// <param name="expression">瞬态情绪。</param>
+    private void Pulse(BotExpression expression)
+    {
+        TransientExpression = expression;
+        TransientSequence++;
+    }
 
     /// <summary>更新日期文本（如「10月18日 周六」）。</summary>
     private void UpdateDateText(DateTime now)

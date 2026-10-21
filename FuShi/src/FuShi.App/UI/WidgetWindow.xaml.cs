@@ -49,7 +49,11 @@ public partial class WidgetWindow : Window
     private void OnCountdownTick(object? sender, EventArgs e) => _viewModel.Refresh(DateTime.Now);
 
     // ---------- 悬停展开 / 移开收起 ----------
-    private void OnHoverEnter(object sender, MouseEventArgs e) => ScheduleExpand(true);
+    private void OnHoverEnter(object sender, MouseEventArgs e)
+    {
+        _viewModel.RecordInteraction(DateTime.Now); // 悬停即「醒过来」，让困倦表情立刻退回待机
+        ScheduleExpand(true);
+    }
 
     private void OnHoverLeave(object sender, MouseEventArgs e) => ScheduleExpand(false);
 
@@ -106,6 +110,8 @@ public partial class WidgetWindow : Window
     // ---------- 左键拖动移动位置 ----------
     private void OnGrab(object sender, MouseButtonEventArgs e)
     {
+        _viewModel.RecordInteraction(DateTime.Now); // 按下即交互，拖动/双击都算
+
         // 双击 = 打开课表（设计 5.3）；与单击拖动区分开，命中时不做拖动。
         if (e.ClickCount == 2)
         {
