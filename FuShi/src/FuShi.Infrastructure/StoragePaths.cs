@@ -17,6 +17,12 @@ public static class StoragePaths
     /// <summary>日志子目录名。</summary>
     public const string LOG_FOLDER_NAME = "logs";
 
+    /// <summary>数据库备份子目录名（M5a）。</summary>
+    public const string BACKUP_FOLDER_NAME = "backups";
+
+    /// <summary>CSV 导出子目录名（M5a）。</summary>
+    public const string EXPORT_FOLDER_NAME = "export";
+
     /// <summary>日志文件名模式（Serilog 按天滚动）。</summary>
     public const string LOG_FILE_TEMPLATE = "fushi-.log";
 
@@ -33,6 +39,12 @@ public static class StoragePaths
 
     /// <summary>日志目录绝对路径。</summary>
     public static string LogDirectory => Path.Combine(AppDataDirectory, LOG_FOLDER_NAME);
+
+    /// <summary>备份目录绝对路径（M5a）。</summary>
+    public static string BackupDirectory => Path.Combine(AppDataDirectory, BACKUP_FOLDER_NAME);
+
+    /// <summary>CSV 导出目录绝对路径（M5a）。</summary>
+    public static string ExportDirectory => Path.Combine(AppDataDirectory, EXPORT_FOLDER_NAME);
 
     /// <summary>SQLite 连接字符串。</summary>
     public static string ConnectionString => $"Data Source={DatabasePath}";

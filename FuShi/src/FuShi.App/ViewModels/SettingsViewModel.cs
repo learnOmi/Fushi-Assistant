@@ -1,11 +1,14 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using FuShi.Core;
 using FuShi.Domain;
 using FuShi.Domain.Entities;
 using FuShi.Domain.Time;
 using FuShi.Infrastructure;
+using FuShi.Infrastructure.Data;
 using FuShi.Infrastructure.Platform;
 using FuShi.Infrastructure.Scheduling;
 using Serilog;
@@ -33,6 +36,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly AppSettingRepository _repository;
     private readonly ReminderEngine _engine;
     private readonly AutostartService _autostartService;
+    private readonly BackupService _backupService;
+    private readonly ExportService _exportService;
     private readonly Action _reloadWidget;
     private readonly Action<double> _applyWidgetOpacity;
     private readonly Action<string> _applyTheme;
@@ -88,12 +93,37 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _autostart;
 
-    /// <summary>开机自启写入失败时的错误文本；空串表示无错误。</summary>
+    /// <summary>操作成功提示（绿色）；空串表示无提示。</summary>
     [ObservableProperty]
-    private string _autostartError = string.Empty;
+    private string _statusMessage = string.Empty;
 
-    /// <summary>是否展示开机自启错误提示。</summary>
-    public bool HasAutostartError => !string.IsNullOrEmpty(AutostartError);
+    /// <summary>操作失败提示（红色）；空串表示无错误。</summary>
+    [ObservableProperty]
+    private string _statusError = string.Empty;
+
+    /// <summary>是否展示成功提示（绿色）。</summary>
+    public bool HasStatusMessage => !string.IsNullOrEmpty(StatusMessage);
+
+    /// <summary>是否展示失败提示（红色）。</summary>
+    public bool HasStatusError => !string.IsNullOrEmpty(StatusError);
+
+    /// <summary>上次备份时间的展示文本（含「尚无备份」占位）。</summary>
+    [ObservableProperty]
+    private string _lastBackupText = WindowText.SETTINGS_BACKUP_NEVER;
+
+    /// <summary>数据库文件绝对路径（诊断区只读展示）。</summary>
+    public string DatabasePathText => StoragePaths.DatabasePath;
+
+    /// <summary>备份目录绝对路径（诊断区只读展示）。</summary>
+    public string BackupDirectoryText => _backupService.BackupDirectory;
+
+    /// <summary>日志目录绝对路径（诊断区只读展示）。</summary>
+    public string LogDirectoryText => StoragePaths.LogDirectory;
+
+    /// <summary>版本号展示文本（如 v0.5.0）。</summary>
+    public string VersionText { get; } = string.Format(
+        WindowText.SETTINGS_VERSION_FORMAT,
+        typeof(SettingsViewModel).Assembly.GetName().Version?.ToString(3) ?? string.Empty);
 
     /// <summary>可选小时（0~23）。</summary>
     public IReadOnlyList<int> HourOptions { get; } = Enumerable.Range(0, UiConstants.HOURS_PER_DAY).ToList();
@@ -134,6 +164,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <param name="repository">设置仓储。</param>
     /// <param name="engine">提醒引擎（保存后请求重排）。</param>
     /// <param name="autostart">开机自启服务（保存开关时写 HKCU Run）。</param>
+    /// <param name="backupService">数据库备份服务（立即备份 / 上次备份时间）。</param>
+    /// <param name="exportService">CSV 导出服务。</param>
     /// <param name="reloadWidget">刷新悬浮组件的回调（由宿主提供）。</param>
     /// <param name="applyWidgetOpacity">应用悬浮窗透明度的回调（由宿主设置窗口 Opacity）。</param>
     /// <param name="applyTheme">应用主题的回调（由宿主替换应用级资源字典）。</param>
@@ -142,6 +174,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         AppSettingRepository repository,
         ReminderEngine engine,
         AutostartService autostart,
+        BackupService backupService,
+        ExportService exportService,
         Action reloadWidget,
         Action<double> applyWidgetOpacity,
         Action<string> applyTheme,
@@ -150,6 +184,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         _repository = repository;
         _engine = engine;
         _autostartService = autostart;
+        _backupService = backupService;
+        _exportService = exportService;
         _reloadWidget = reloadWidget;
         _applyWidgetOpacity = applyWidgetOpacity;
         _applyTheme = applyTheme;
@@ -171,11 +207,14 @@ public sealed partial class SettingsViewModel : ObservableObject
             _setting = await _repository.GetAsync();
             ApplySetting(_setting);
             HasSaved = false;
+            ClearStatus();
+            RefreshLastBackup();
         }
         catch (Exception ex)
         {
-            // 加载失败不吞异常：记日志后保留当前（默认）界面值，避免把异常抛进 async void 加载链。
+            // 加载失败不吞异常：记日志并在统一错误位提示，避免把异常抛进 async void 加载链。
             _logger.Error(ex, "加载设置失败");
+            StatusError = string.Format(WindowText.SETTINGS_LOAD_FAILED_FORMAT, ex.Message);
         }
     }
 
@@ -186,6 +225,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void Save()
     {
+        ClearStatus();
+
         try
         {
             // 重读最新单行设置后再写本页管辖的字段：悬浮窗拖动会写位置三列，
@@ -228,7 +269,8 @@ public sealed partial class SettingsViewModel : ObservableObject
                 }
             }
 
-            AutostartError = string.Empty;
+            // 自启成功：清掉上一轮可能残留的错误提示（状态位统一，M5a 合并 AutostartError）。
+            ClearStatus();
 
             // 时区/提前量会影响展开与触发点；无条件重排一次最简且幂等（代价小）。
             _engine.RequestRescan();
@@ -247,6 +289,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.Error(ex, "保存设置失败");
+            StatusError = string.Format(WindowText.SETTINGS_SAVE_FAILED_FORMAT, ex.Message);
             HasSaved = false;
         }
     }
@@ -265,7 +308,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _setting = setting;
         Autostart = previousAutostart;
 
-        AutostartError = string.Format(WindowText.SETTINGS_AUTOSTART_ERROR_FORMAT, error);
+        StatusError = string.Format(WindowText.SETTINGS_AUTOSTART_ERROR_FORMAT, error);
         HasSaved = false;
         _logger.Warning("开机自启设置失败，已回滚为 {Autostart}：{Error}", previousAutostart, error);
 
@@ -273,6 +316,82 @@ public sealed partial class SettingsViewModel : ObservableObject
         // 回滚只针对自启这一项，不连坐其他设置。
         _engine.RequestRescan();
         _reloadWidget();
+    }
+
+    /// <summary>
+    /// 打开数据目录（资源管理器）。只做「打开」这一件事，失败原因写进统一错误位。
+    /// </summary>
+    [RelayCommand]
+    private void OpenDataDirectory()
+    {
+        try
+        {
+            Directory.CreateDirectory(StoragePaths.AppDataDirectory);
+            Process.Start(new ProcessStartInfo(StoragePaths.AppDataDirectory) { UseShellExecute = true });
+            ClearStatus();
+        }
+        catch (Exception ex)
+        {
+            _logger.Warning(ex, "打开数据目录失败");
+            StatusError = string.Format(WindowText.SETTINGS_OPEN_FOLDER_FAILED_FORMAT, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// 立即备份：手动备份永不被自动清理。点击是用户主动行为，允许同步等待（数据库很小）。
+    /// </summary>
+    [RelayCommand]
+    private void BackupNow()
+    {
+        ClearStatus();
+
+        var result = _backupService.CreateManualAsync(DateTime.Now).GetAwaiter().GetResult();
+        if (result.Success)
+        {
+            StatusMessage = string.Format(WindowText.SETTINGS_BACKUP_DONE_FORMAT, result.FilePath);
+            RefreshLastBackup();
+            _logger.Information("手动备份完成：{Path}", result.FilePath);
+        }
+        else
+        {
+            StatusError = string.Format(WindowText.SETTINGS_BACKUP_FAILED_FORMAT, result.Error);
+        }
+    }
+
+    /// <summary>
+    /// 导出两份 CSV。导出目录固定为 %APPDATA%\FuShi\export，成功后提示目录而非单个文件。
+    /// </summary>
+    [RelayCommand]
+    private void ExportCsv()
+    {
+        ClearStatus();
+
+        var result = _exportService.ExportAsync(DateTime.Now).GetAwaiter().GetResult();
+        if (result.Success)
+        {
+            StatusMessage = string.Format(WindowText.SETTINGS_EXPORT_DONE_FORMAT, _exportService.ExportDirectory);
+            _logger.Information("CSV 导出完成：{Schedule} / {Tasks}", result.SchedulePath, result.TaskPath);
+        }
+        else
+        {
+            StatusError = string.Format(WindowText.SETTINGS_EXPORT_FAILED_FORMAT, result.Error);
+        }
+    }
+
+    /// <summary>清空成功/失败提示（每次操作前调用，避免旧结果干扰判断）。</summary>
+    private void ClearStatus()
+    {
+        StatusMessage = string.Empty;
+        StatusError = string.Empty;
+    }
+
+    /// <summary>刷新「上次备份」展示文本。</summary>
+    private void RefreshLastBackup()
+    {
+        var last = _backupService.GetLastBackupTime();
+        LastBackupText = last is { } time
+            ? string.Format(WindowText.SETTINGS_BACKUP_TIME_FORMAT, time)
+            : WindowText.SETTINGS_BACKUP_NEVER;
     }
 
     /// <summary>
@@ -336,7 +455,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         SelectedTheme = ThemeOptions.FirstOrDefault(option => option.Value == setting.Theme) ?? ThemeOptions[0];
 
         Autostart = setting.Autostart;
-        AutostartError = string.Empty;
+        ClearStatus();
     }
 
     /// <summary>若提前量不在预设档位内，补齐一个选项并保持升序（保留库中原值）。</summary>
@@ -395,9 +514,14 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     partial void OnAutostartChanged(bool value) => HasSaved = false;
 
-    partial void OnAutostartErrorChanged(string value)
+    partial void OnStatusMessageChanged(string value)
     {
-        OnPropertyChanged(nameof(HasAutostartError));
+        OnPropertyChanged(nameof(HasStatusMessage));
+    }
+
+    partial void OnStatusErrorChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasStatusError));
     }
 
     partial void OnSelectedTimezoneChanged(string value) => HasSaved = false;

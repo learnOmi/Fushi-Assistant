@@ -98,6 +98,68 @@ internal static class WindowText
     /// <summary>设置页：开机自启失败提示格式（参数为失败原因）。</summary>
     public const string SETTINGS_AUTOSTART_ERROR_FORMAT = "开机自启设置失败，已恢复原状态：{0}";
 
+    // ---------- 设置页「数据与诊断」（M5a） ----------
+
+    /// <summary>数据与诊断分组标题。</summary>
+    public const string SETTINGS_DATA_TITLE = "数据与诊断";
+
+    /// <summary>数据与诊断说明。</summary>
+    public const string SETTINGS_DATA_HINT = "数据全部保存在本机；备份是单个 .db 文件，改名为 fushi.db 即可手工恢复。";
+
+    /// <summary>数据库路径标签。</summary>
+    public const string SETTINGS_DATABASE_PATH = "数据库";
+
+    /// <summary>备份目录标签。</summary>
+    public const string SETTINGS_BACKUP_DIRECTORY = "备份目录";
+
+    /// <summary>上次备份标签。</summary>
+    public const string SETTINGS_LAST_BACKUP = "上次备份";
+
+    /// <summary>日志目录标签。</summary>
+    public const string SETTINGS_LOG_DIRECTORY = "日志目录";
+
+    /// <summary>版本号标签。</summary>
+    public const string SETTINGS_VERSION = "版本";
+
+    /// <summary>版本号显示格式：{0} = 版本号（如 0.5.0）。</summary>
+    public const string SETTINGS_VERSION_FORMAT = "v{0}";
+
+    /// <summary>尚无备份时的占位文案。</summary>
+    public const string SETTINGS_BACKUP_NEVER = "尚无备份";
+
+    /// <summary>上次备份时间显示格式。</summary>
+    public const string SETTINGS_BACKUP_TIME_FORMAT = "{0:yyyy-MM-dd HH:mm}";
+
+    /// <summary>「打开数据目录」按钮。</summary>
+    public const string SETTINGS_OPEN_DATA_DIRECTORY = "打开数据目录";
+
+    /// <summary>「立即备份」按钮。</summary>
+    public const string SETTINGS_BACKUP_NOW = "立即备份";
+
+    /// <summary>「导出 CSV」按钮。</summary>
+    public const string SETTINGS_EXPORT_CSV = "导出 CSV";
+
+    /// <summary>备份成功提示格式：{0} = 文件路径。</summary>
+    public const string SETTINGS_BACKUP_DONE_FORMAT = "已备份到 {0}";
+
+    /// <summary>备份失败提示格式：{0} = 原因。</summary>
+    public const string SETTINGS_BACKUP_FAILED_FORMAT = "备份失败：{0}";
+
+    /// <summary>导出成功提示格式：{0} = 导出目录。</summary>
+    public const string SETTINGS_EXPORT_DONE_FORMAT = "已导出到 {0}";
+
+    /// <summary>导出失败提示格式：{0} = 原因。</summary>
+    public const string SETTINGS_EXPORT_FAILED_FORMAT = "导出失败：{0}";
+
+    /// <summary>打开目录失败提示格式：{0} = 原因。</summary>
+    public const string SETTINGS_OPEN_FOLDER_FAILED_FORMAT = "打开目录失败：{0}";
+
+    /// <summary>保存设置失败提示格式：{0} = 原因。</summary>
+    public const string SETTINGS_SAVE_FAILED_FORMAT = "保存失败：{0}";
+
+    /// <summary>加载设置失败提示格式：{0} = 原因。</summary>
+    public const string SETTINGS_LOAD_FAILED_FORMAT = "加载设置失败：{0}";
+
     /// <summary>时刻分隔符（时:分）。</summary>
     public const string TIME_SEPARATOR = ":";
 

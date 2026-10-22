@@ -8,6 +8,7 @@ using FuShi.Domain;
 using FuShi.Domain.Entities;
 using FuShi.Domain.Time;
 using FuShi.Infrastructure;
+using FuShi.Infrastructure.Data;
 using FuShi.Infrastructure.Platform;
 using FuShi.Infrastructure.Scheduling;
 using FuShi.Infrastructure.Statistics;
@@ -92,6 +93,7 @@ public partial class App : Application
 
         _host = BuildHost();
         InitializeDatabase();
+        TryCreateDailyBackup();
 
         var settingsRepository = _host.Services.GetRequiredService<AppSettingRepository>();
         var settings = settingsRepository.GetAsync().GetAwaiter().GetResult();
@@ -255,6 +257,8 @@ public partial class App : Application
         builder.Services.AddSingleton<Serilog.ILogger>(_logger);
         builder.Services.AddSingleton<AppSettingRepository>();
         builder.Services.AddSingleton<AutostartService>();
+        builder.Services.AddSingleton<BackupService>();
+        builder.Services.AddSingleton<ExportService>();
 
         builder.Services.AddSingleton<ScheduleService>();
         builder.Services.AddSingleton<ScheduleEditService>();
@@ -275,6 +279,35 @@ public partial class App : Application
     {
         var factory = _host!.Services.GetRequiredService<IDbContextFactory<FuShiDbContext>>();
         DatabaseInitializer.MigrateOrRebuild(factory, _logger);
+    }
+
+    /// <summary>
+    /// 启动时的每日自动备份（M5a）：一天一份，失败只记警告、不阻断启动。
+    /// <para>
+    /// 必须放在 <see cref="InitializeDatabase"/> 之后：迁移完成再快照，备份内容才是最新结构；
+    /// 数据库很小，同步等待一次 <c>VACUUM INTO</c> 的耗时在毫秒级，换启动流程的确定性。
+    /// </para>
+    /// </summary>
+    private void TryCreateDailyBackup()
+    {
+        try
+        {
+            var result = _host!.Services
+                .GetRequiredService<BackupService>()
+                .CreateDailyIfNeededAsync(DateTime.Now)
+                .GetAwaiter()
+                .GetResult();
+
+            if (!result.Success)
+            {
+                _logger.Warning("每日备份失败（不影响启动）：{Error}", result.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            // 备份服务内部已兜底，这里再兜一层：任何意外都不能拦住应用启动。
+            _logger.Warning(ex, "每日备份失败（不影响启动）");
+        }
     }
 
     /// <summary>解析时区；若走了兜底，记一条警告，不静默降级。</summary>
@@ -671,6 +704,8 @@ public partial class App : Application
             _host!.Services.GetRequiredService<AppSettingRepository>(),
             _host.Services.GetRequiredService<ReminderEngine>(),
             _host.Services.GetRequiredService<AutostartService>(),
+            _host.Services.GetRequiredService<BackupService>(),
+            _host.Services.GetRequiredService<ExportService>(),
             ReloadWidget,
             ApplyWidgetOpacity,
             ApplyTheme,
