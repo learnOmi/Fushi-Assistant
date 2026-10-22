@@ -101,6 +101,65 @@ internal static class WindowText
     /// <summary>阶段名显示格式：{0} = 阶段名。胶囊里已有「当前阶段」的语义，不再重复「阶段：」前缀。</summary>
     public const string PHASE_FORMAT = "{0}";
 
+    // ---------- 阶段管理（M4a） ----------
+
+    /// <summary>阶段徽标的悬停提示。</summary>
+    public const string PHASE_SWITCH_TOOLTIP = "切换或管理阶段";
+
+    /// <summary>阶段下拉里的「管理阶段…」项。</summary>
+    public const string PHASE_MENU_MANAGE = "管理阶段…";
+
+    /// <summary>阶段管理对话框标题。</summary>
+    public const string PHASE_MANAGER_TITLE = "阶段管理";
+
+    /// <summary>阶段管理对话框的说明文字。</summary>
+    public const string PHASE_MANAGER_HINT = "当前阶段决定课表与提醒；切换后立即按新阶段重排。";
+
+    /// <summary>阶段名输入框的占位/提示标签。</summary>
+    public const string PHASE_NAME_LABEL = "阶段名";
+
+    /// <summary>阶段列表项：生效标记。</summary>
+    public const string PHASE_ACTIVE_BADGE = "当前";
+
+    /// <summary>阶段列表项：起始日格式（{0} = 日期）。</summary>
+    public const string PHASE_START_DATE_FORMAT = "{0:yyyy-MM-dd} 起";
+
+    /// <summary>新建按钮。</summary>
+    public const string BUTTON_CREATE = "新建";
+
+    /// <summary>重命名按钮。</summary>
+    public const string BUTTON_RENAME = "重命名";
+
+    /// <summary>设为当前（切换生效）按钮。</summary>
+    public const string BUTTON_ACTIVATE = "设为当前";
+
+    /// <summary>关闭按钮。</summary>
+    public const string BUTTON_CLOSE = "关闭";
+
+    /// <summary>校验错误：阶段名为空。</summary>
+    public const string ERROR_PHASE_NAME_REQUIRED = "阶段名不能为空。";
+
+    /// <summary>校验错误：未选中阶段。</summary>
+    public const string ERROR_PHASE_NOT_SELECTED = "请先选择一个阶段。";
+
+    /// <summary>删除阶段确认弹窗标题。</summary>
+    public const string PHASE_DELETE_CONFIRM_TITLE = "删除阶段";
+
+    /// <summary>删除阶段确认弹窗正文。</summary>
+    public const string PHASE_DELETE_CONFIRM_BODY = "确定删除这个阶段吗？该阶段的课表会一并删除，已发生的提醒记录不受影响。";
+
+    /// <summary>删除失败：生效中的阶段。</summary>
+    public const string PHASE_DELETE_ACTIVE = "当前生效的阶段不能删除，请先切换到其他阶段。";
+
+    /// <summary>删除失败：已有完成记录。</summary>
+    public const string PHASE_DELETE_HAS_HISTORY = "该阶段已有完成记录，不能删除。";
+
+    /// <summary>删除失败：阶段已不存在。</summary>
+    public const string PHASE_DELETE_NOT_FOUND = "该阶段已不存在，请关闭后重新打开。";
+
+    /// <summary>阶段操作失败的通用提示（详细原因在日志里）。</summary>
+    public const string PHASE_OPERATION_FAILED = "操作失败，请查看日志后重试。";
+
     /// <summary>空课表（无任何模板）时的提示。</summary>
     public const string EMPTY_GRID_HINT = "还没有任何时段。点「＋ 添加时段」开始排课。";
 

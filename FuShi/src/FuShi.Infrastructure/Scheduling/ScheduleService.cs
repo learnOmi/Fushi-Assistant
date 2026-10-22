@@ -279,6 +279,67 @@ public sealed class ScheduleService
     }
 
     /// <summary>
+    /// <b>全量</b>对账（M4a 阶段切换专用）：先把所有来源为课表条目的「未来待触发」实例清掉，
+    /// 再按当前生效阶段重新展开并落库。
+    /// <para>
+    /// 与 <see cref="ReconcileAsync"/> 的区别只在作用域：后者按「本次编辑涉及的条目」局部对账，
+    /// 本方法不关心来源，整片未来都重建——阶段切换会整体换掉课表，局部对账无法覆盖旧阶段的全部条目。
+    /// 历史记录（Fired / Done / Skipped / Missed）一律不动。
+    /// </para>
+    /// <para>
+    /// 调用方必须在<b>切换生效阶段之后</b>调用，否则展开出来的还是旧阶段。
+    /// </para>
+    /// </summary>
+    /// <param name="now">当前时刻（对账分界线与展开起点）。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>重新展开后新增落库的实例条数。</returns>
+    public async Task<int> ReconcileAllAsync(DateTime now, CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory
+            .CreateDbContextAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        // ① 清掉所有未来待触发实例（顺延过的 Pending 也属"未来待触发"，口径与局部对账一致）。
+        var removed = await context.Occurrences
+            .Where(o => o.SourceType == OwnerType.ScheduleEntry
+                        && o.Status == OccurrenceStatus.Pending
+                        && (o.PlannedAt > now || o.ShiftMinutes > 0))
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        _logger.Information("全量对账：清除 {Removed} 条未来待触发实例", removed);
+
+        // ② 按切换后的生效阶段重新展开。
+        var phase = await GetActivePhaseAsync(context, cancellationToken).ConfigureAwait(false);
+        if (phase is null)
+        {
+            return 0;
+        }
+
+        var entries = await context.ScheduleEntries
+            .Where(e => e.PhaseId == phase.Id)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (entries.Count == 0)
+        {
+            return 0;
+        }
+
+        var timeZone = await ResolveTimeZoneAsync(cancellationToken).ConfigureAwait(false);
+        var from = DateOnly.FromDateTime(now);
+        var to = from.AddDays(TimeDefaults.EXPANSION_HORIZON_DAYS - 1);
+        var expansion = Expand(entries, phase, from, to, timeZone);
+
+        return await PersistExpansionAsync(
+            context,
+            expansion,
+            from.ToDateTime(TimeOnly.MinValue),
+            to.ToDateTime(TimeOnly.MaxValue),
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// 展开出上屏时间线：给定日期区间内、带科目名与颜色的时段，按开始时刻升序。
     /// </summary>
     /// <param name="from">区间起（含）。</param>

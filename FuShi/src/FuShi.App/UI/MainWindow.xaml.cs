@@ -1,5 +1,8 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using FuShi.Core;
 using FuShi.ViewModels;
 
 namespace FuShi.UI;
@@ -53,6 +56,50 @@ public partial class MainWindow : Window
 
     /// <summary>每次显示都重新载入（自举阶段 + 拉最新课表），保证数据不过期。</summary>
     private async void OnLoaded(object sender, RoutedEventArgs e) => await _viewModel.LoadAsync();
+
+    /// <summary>
+    /// 阶段徽标点击（M4a）：在徽标下方弹出阶段下拉。
+    /// <para>
+    /// 菜单项按当前阶段列表<b>动态构建</b>，而不是把 <c>ItemsSource</c> 与「管理阶段…」这一固定项混排——
+    /// <see cref="ContextMenu"/> 的 Items 与 ItemsSource 互斥，动态构建是同时容纳「阶段项 + 分隔线 + 固定项」最简单可靠的做法。
+    /// 菜单项的 <c>Command</c> 取自视图模型，明细绑定只在这里做。
+    /// </para>
+    /// </summary>
+    private void OnPhaseBadgeClick(object sender, RoutedEventArgs e)
+    {
+        var menu = new ContextMenu
+        {
+            PlacementTarget = PhaseBadgeButton,
+            Placement = PlacementMode.Bottom,
+            // 显式 false：菜单在选中项或点外部后立即收起，避免残留在界面上（M3 托盘菜单的同类教训）。
+            StaysOpen = false,
+        };
+
+        foreach (var phase in _viewModel.PhaseOptions)
+        {
+            menu.Items.Add(new MenuItem
+            {
+                Header = phase.Name,
+                IsCheckable = true,
+                IsChecked = phase.IsActive,
+                Command = _viewModel.SwitchPhaseCommand,
+                CommandParameter = phase.Id,
+            });
+        }
+
+        if (menu.Items.Count > 0)
+        {
+            menu.Items.Add(new Separator());
+        }
+
+        menu.Items.Add(new MenuItem
+        {
+            Header = WindowText.PHASE_MENU_MANAGE,
+            Command = _viewModel.OpenPhaseManagerCommand,
+        });
+
+        menu.IsOpen = true;
+    }
 
     /// <summary>关闭按钮 → 收起到后台（真正退出由宿主调用 <see cref="ForceClose"/>）。</summary>
     private void OnClosing(object? sender, CancelEventArgs e)

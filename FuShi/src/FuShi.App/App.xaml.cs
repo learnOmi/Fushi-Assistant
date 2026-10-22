@@ -253,6 +253,7 @@ public partial class App : Application
 
         builder.Services.AddSingleton<ScheduleService>();
         builder.Services.AddSingleton<ScheduleEditService>();
+        builder.Services.AddSingleton<PhaseService>();
         builder.Services.AddSingleton<ReminderResponseService>();
         builder.Services.AddSingleton<ToastNotificationChannel>();
         builder.Services.AddSingleton<NotificationService>();
@@ -561,11 +562,13 @@ public partial class App : Application
         var viewModel = new MainWindowViewModel(
             _host!.Services.GetRequiredService<ScheduleEditService>(),
             _host.Services.GetRequiredService<ScheduleService>(),
+            _host.Services.GetRequiredService<PhaseService>(),
             _host.Services.GetRequiredService<ReminderEngine>(),
             CreateSettingsViewModel(),
             ReloadWidget,
             ShowEntryEditor,
             ShowSubjectEditor,
+            ShowPhaseManager,
             _logger);
 
         _mainWindowViewModel = viewModel;
@@ -610,6 +613,18 @@ public partial class App : Application
     private bool ShowSubjectEditor(SubjectEditorViewModel viewModel)
     {
         var dialog = new SubjectEditorDialog(viewModel) { Owner = ActiveOwnerWindow() };
+        ApplyCaptionTheme(dialog);
+        return dialog.ShowDialog() == true;
+    }
+
+    /// <summary>
+    /// 弹出阶段管理对话框。此对话框没有「确定」语义（操作即时落库），
+    /// 故以 <see cref="PhaseManagerViewModel.HasChanges"/> 作为返回值：改过才算 true，调用方据此决定是否重排。
+    /// </summary>
+    /// <param name="viewModel">阶段管理视图模型。</param>
+    private bool ShowPhaseManager(PhaseManagerViewModel viewModel)
+    {
+        var dialog = new PhaseManagerDialog(viewModel) { Owner = ActiveOwnerWindow() };
         ApplyCaptionTheme(dialog);
         return dialog.ShowDialog() == true;
     }

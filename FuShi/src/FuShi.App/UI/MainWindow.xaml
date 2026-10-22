@@ -104,6 +104,36 @@
             </Style.Triggers>
         </Style>
 
+        <!-- 阶段徽标：整块可点开阶段下拉（M4a）。外观与 M3.5 的只读徽标一致，仅补悬停反馈与下拉指示 -->
+        <Style x:Key="PhaseBadgeButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Padding="10,6,12,6"
+                                CornerRadius="{DynamicResource CardCornerRadius}"
+                                BorderThickness="1" BorderBrush="{DynamicResource DividerStrongBrush}"
+                                Background="Transparent">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse Width="5" Height="5" Fill="{DynamicResource AccentBrush}" Margin="0,0,8,0"/>
+                                <TextBlock Text="{Binding PhaseText}"
+                                           Foreground="{DynamicResource LabelBrush}"
+                                           FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold"/>
+                                <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="8"
+                                           Margin="6,1,0,0" Foreground="{DynamicResource Label3Brush}"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- 主操作按钮：强调色渐变 + 顶部内高光 + 主题辉光 -->
         <Style x:Key="PrimaryActionButton" TargetType="Button">
             <Setter Property="Height" Value="{StaticResource ToolbarHeight}"/>
@@ -300,16 +330,11 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Padding="10,6,12,6" CornerRadius="{DynamicResource CardCornerRadius}"
-                        BorderThickness="1" BorderBrush="{DynamicResource DividerStrongBrush}"
-                        VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Ellipse Width="5" Height="5" Fill="{DynamicResource AccentBrush}" Margin="0,0,8,0"/>
-                        <TextBlock Text="{Binding PhaseText}"
-                                   Foreground="{DynamicResource LabelBrush}"
-                                   FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold"/>
-                    </StackPanel>
-                </Border>
+                <Button Grid.Column="0" x:Name="PhaseBadgeButton"
+                        Style="{StaticResource PhaseBadgeButton}"
+                        Click="OnPhaseBadgeClick"
+                        ToolTip="{x:Static core:WindowText.PHASE_SWITCH_TOOLTIP}"
+                        VerticalAlignment="Center"/>
 
                 <Button Grid.Column="2" Content="{x:Static core:WindowText.ADD_ENTRY}"
                         Style="{StaticResource PrimaryActionButton}"

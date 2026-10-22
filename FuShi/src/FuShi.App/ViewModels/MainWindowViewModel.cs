@@ -20,18 +20,27 @@ public sealed partial class MainWindowViewModel : ObservableObject
 {
     private readonly ScheduleEditService _editService;
     private readonly ScheduleService _scheduleService;
+    private readonly PhaseService _phaseService;
     private readonly ReminderEngine _engine;
     private readonly SettingsViewModel _settings;
     private readonly Action _reloadWidget;
     private readonly Func<EntryEditorViewModel, bool> _showEntryEditor;
     private readonly Func<SubjectEditorViewModel, bool> _showSubjectEditor;
+    private readonly Func<PhaseManagerViewModel, bool> _showPhaseManager;
     private readonly ILogger _logger;
 
     private Phase? _phase;
 
+    /// <summary>阶段下拉项：主键、名称、是否生效。</summary>
+    public sealed record PhaseOption(int Id, string Name, bool IsActive);
+
     /// <summary>阶段名显示文本。</summary>
     [ObservableProperty]
     private string _phaseText = string.Empty;
+
+    /// <summary>阶段下拉的全部选项（含当前生效标记）。</summary>
+    [ObservableProperty]
+    private IReadOnlyList<PhaseOption> _phaseOptions = Array.Empty<PhaseOption>();
 
     /// <summary>当前周网格。</summary>
     [ObservableProperty]
@@ -40,29 +49,35 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>构造。</summary>
     /// <param name="editService">课表写服务。</param>
     /// <param name="scheduleService">课表读服务。</param>
+    /// <param name="phaseService">阶段管理服务。</param>
     /// <param name="engine">提醒引擎（改动后请求重排）。</param>
     /// <param name="settings">设置页视图模型（供设置页签绑定）。</param>
     /// <param name="reloadWidget">刷新悬浮组件的回调（由宿主提供）。</param>
     /// <param name="showEntryEditor">弹出时段编辑对话框的委托。</param>
     /// <param name="showSubjectEditor">弹出新建科目对话框的委托。</param>
+    /// <param name="showPhaseManager">弹出阶段管理对话框的委托。</param>
     /// <param name="logger">Serilog 日志器。</param>
     public MainWindowViewModel(
         ScheduleEditService editService,
         ScheduleService scheduleService,
+        PhaseService phaseService,
         ReminderEngine engine,
         SettingsViewModel settings,
         Action reloadWidget,
         Func<EntryEditorViewModel, bool> showEntryEditor,
         Func<SubjectEditorViewModel, bool> showSubjectEditor,
+        Func<PhaseManagerViewModel, bool> showPhaseManager,
         ILogger logger)
     {
         _editService = editService;
         _scheduleService = scheduleService;
+        _phaseService = phaseService;
         _engine = engine;
         _settings = settings;
         _reloadWidget = reloadWidget;
         _showEntryEditor = showEntryEditor;
         _showSubjectEditor = showSubjectEditor;
+        _showPhaseManager = showPhaseManager;
         _logger = logger;
     }
 
@@ -82,6 +97,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             _phase = await _editService.EnsureActivePhaseAsync();
             PhaseText = string.Format(WindowText.PHASE_FORMAT, _phase.Name);
+            await ReloadPhaseOptionsAsync();
             await ReloadGridAsync();
             await _settings.LoadAsync();
         }
@@ -90,6 +106,84 @@ public sealed partial class MainWindowViewModel : ObservableObject
             // 载入失败不吞异常：记日志后保留空态，避免 async void 事件处理器把异常抛成进程崩溃。
             _logger.Error(ex, "加载主窗口课表失败");
         }
+    }
+
+    /// <summary>载入阶段下拉选项（含生效标记）。</summary>
+    private async Task ReloadPhaseOptionsAsync()
+    {
+        var phases = await _phaseService.GetPhasesAsync();
+        PhaseOptions = phases
+            .Select(static p => new PhaseOption(p.Id, p.Name, p.IsActive))
+            .ToList();
+    }
+
+    /// <summary>
+    /// 切换生效阶段（阶段下拉里选中某一项）。
+    /// 与同一阶段重复点击时直接返回，避免无意义的全量重排。
+    /// </summary>
+    /// <param name="phaseId">目标阶段主键。</param>
+    [RelayCommand]
+    private async Task SwitchPhaseAsync(int phaseId)
+    {
+        try
+        {
+            if (_phase?.Id == phaseId)
+            {
+                return;
+            }
+
+            if (!await _phaseService.ActivateAsync(phaseId))
+            {
+                // 阶段已被并发删除：只回读下拉，不打断当前课表。
+                await ReloadPhaseOptionsAsync();
+                return;
+            }
+
+            await AfterPhaseChangedAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "切换阶段失败");
+            await ReloadPhaseOptionsAsync();
+        }
+    }
+
+    /// <summary>打开阶段管理对话框；对话框报告改过才做切换收口。</summary>
+    [RelayCommand]
+    private async Task OpenPhaseManagerAsync()
+    {
+        try
+        {
+            var managerVm = new PhaseManagerViewModel(_phaseService, _logger);
+            if (!_showPhaseManager(managerVm))
+            {
+                return;
+            }
+
+            await AfterPhaseChangedAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "打开阶段管理失败");
+            await ReloadPhaseOptionsAsync();
+        }
+    }
+
+    /// <summary>
+    /// 阶段变更后的统一收口：回读生效阶段 → 刷新下拉与徽标 → <b>先</b>全量对账删旧实例并展开新阶段
+    /// → <b>再</b>唤醒引擎重排 → 刷新悬浮组件 → 重载网格。
+    /// 顺序不能反：若先 <c>RequestRescan</c>，引擎可能在旧实例尚未清除时先扫到旧阶段的提醒并弹出来。
+    /// </summary>
+    private async Task AfterPhaseChangedAsync()
+    {
+        _phase = await _editService.EnsureActivePhaseAsync();
+        PhaseText = string.Format(WindowText.PHASE_FORMAT, _phase.Name);
+
+        await ReloadPhaseOptionsAsync();
+        await _scheduleService.ReconcileAllAsync(DateTime.Now);
+        _engine.RequestRescan();
+        _reloadWidget();
+        await ReloadGridAsync();
     }
 
     /// <summary>「添加时段」：以"今天 + 下一刻（向上取整）"预填一条新时段。</summary>
