@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore FuShi/FuShi.sln
+
+      # 警告即错误：本地基线与 CI 用同一条命令，避免“本地绿、CI 黄”。
+      - name: Build
+        run: dotnet build FuShi/FuShi.sln -c Release --no-restore -warnaserror
+
+      - name: Test
+        run: dotnet test FuShi/FuShi.sln -c Release --no-build

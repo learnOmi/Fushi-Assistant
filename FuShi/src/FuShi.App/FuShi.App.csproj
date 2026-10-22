@@ -14,7 +14,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>FuShi</AssemblyName>
     <RootNamespace>FuShi</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.5.0</Version>
     <SatelliteResourceLanguages>zh-Hans</SatelliteResourceLanguages>
   </PropertyGroup>
 
