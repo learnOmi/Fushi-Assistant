@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:core="clr-namespace:FuShi.Core"
         Title="{x:Static core:WindowText.SUBJECT_NEW_TITLE}"
+        Icon="pack://application:,,,/Assets/fushi.ico"
         Width="360" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         Background="{DynamicResource Surface2Brush}"

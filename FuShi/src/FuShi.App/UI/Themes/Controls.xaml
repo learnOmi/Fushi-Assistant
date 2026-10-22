@@ -368,4 +368,84 @@
         </Style.Triggers>
     </Style>
 
+    <!-- ============================================================
+         菜单（M5.1）：阶段徽标下拉与托盘右键菜单共用同一套隐式样式。
+         WPF 默认菜单是白底直角 + 系统蓝高亮，与明暗主题割裂；
+         这里只覆盖本项目实际用到的形态：叶子项 + 复选标记 + 分隔线。
+         不支持二级子菜单（当前没有使用）；若将来需要，须补 Popup 与子项模板。
+         ============================================================ -->
+    <Style TargetType="ContextMenu">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource LabelBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContextMenu">
+                    <!-- 用 WindowSurfaceBrush（不透明）而非 SurfaceBrush（半透明）：
+                         菜单直接盖在桌面/其他窗口上，半透明会透出底下的文字。 -->
+                    <Border Background="{DynamicResource WindowSurfaceBrush}"
+                            BorderBrush="{DynamicResource DividerStrongBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="4"
+                            SnapsToDevicePixels="True">
+                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="MenuItem">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="Foreground" Value="{DynamicResource LabelBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="Row" Background="Transparent" CornerRadius="5"
+                            Padding="8,6" SnapsToDevicePixels="True">
+                        <Grid>
+                            <!-- 固定 16px 勾选列：无论是否可复选，文字都从同一位置起排 -->
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Path x:Name="Check" Grid.Column="0"
+                                  Data="M 1,5 L 4,8 L 10,1"
+                                  Stroke="{DynamicResource AccentDeepBrush}" StrokeThickness="1.6"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Visibility="Collapsed"/>
+                            <ContentPresenter Grid.Column="1" ContentSource="Header"
+                                              RecognizesAccessKey="True" VerticalAlignment="Center"
+                                              TextElement.Foreground="{DynamicResource LabelBrush}"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Row" Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Separator">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Separator">
+                    <Border Height="1" Margin="6,4" Background="{DynamicResource DividerStrongBrush}"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

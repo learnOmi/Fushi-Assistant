@@ -5,6 +5,7 @@
         xmlns:conv="clr-namespace:FuShi.UI.Converters"
         xmlns:core="clr-namespace:FuShi.Core"
         Title="{x:Static core:WindowText.WINDOW_TITLE}"
+        Icon="pack://application:,,,/Assets/fushi.ico"
         Width="{x:Static core:UiConstants.MAIN_WINDOW_WIDTH}"
         Height="{x:Static core:UiConstants.MAIN_WINDOW_HEIGHT}"
         MinWidth="{x:Static core:UiConstants.MAIN_WINDOW_MIN_WIDTH}"
