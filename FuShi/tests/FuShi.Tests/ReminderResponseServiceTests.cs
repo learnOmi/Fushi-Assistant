@@ -187,6 +187,23 @@ public sealed class ReminderResponseServiceTests : IDisposable
         earlier[0].TriggerAt.Should().Be(plannedAt.AddMinutes(-5));
     }
 
+    [Fact]
+    public async Task Finish_ShouldSnapshotCurrentSubjectId()
+    {
+        var (id, plannedAt) = await MaterializeTodayAsync(new TimeOnly(9, 0), new TimeOnly(10, 0));
+        await _schedule.MarkFiredAsync(id, plannedAt);
+
+        await _response.RespondFinishAsync(id, plannedAt.AddMinutes(45));
+
+        int subjectId;
+        using (var context = _db.CreateContext())
+        {
+            subjectId = context.Subjects.Single().Id;
+        }
+
+        ReadSingleCompletionLog().SubjectId.Should().Be(subjectId, "落账时写入当时的科目快照（M4b）");
+    }
+
     // ---------- 测试辅助 ----------
 
     /// <summary>种一条「今天生效、今天有课」的最小课表，展开后返回唯一实例的主键与计划时刻。</summary>

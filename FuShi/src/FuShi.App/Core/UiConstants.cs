@@ -96,4 +96,18 @@ internal static class UiConstants
     /// 「设置已保存」提示的停留时长（毫秒）。到时自动淡出，避免提示永久挂在页面上。
     /// </summary>
     public const int SAVED_HINT_DURATION_MILLISECONDS = 3000;
+
+    // ---------- M4b 统计页 ----------
+
+    /// <summary>最近 7 天柱状条的高度（设备无关单位）。</summary>
+    public const double STATS_DAY_CHART_HEIGHT = 64.0;
+
+    /// <summary>科目分布横条的厚度。</summary>
+    public const double STATS_SUBJECT_BAR_HEIGHT = 6.0;
+
+    /// <summary>周网格/统计共用的「一周七天」偏移：周日 = 0 映射到周一打头的下标。</summary>
+    public const int DAYS_FROM_SUNDAY_TO_MONDAY = 6;
+
+    /// <summary>百分比满值（横条/柱状条按 0~100 归一）。</summary>
+    public const double STATS_PERCENT_FULL = 100.0;
 }

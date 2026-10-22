@@ -284,6 +284,8 @@ public sealed class ReminderResponseService
         {
             Date = DateOnly.FromDateTime(occurrence.PlannedAt),
             EntryId = occurrence.SourceId,
+            // 科目快照（M4b）：落账时取「当时」的科目，之后条目被删或改科目都不会追溯改写历史统计。
+            SubjectId = entry?.SubjectId,
             PlannedMin = plannedMinutes,
             ActualMin = actualMinutes,
             Status = status,

@@ -80,7 +80,14 @@ namespace FuShi.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("SubjectId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("SubjectId");
 
                     b.ToTable("CompletionLogs", (string)null);
                 });

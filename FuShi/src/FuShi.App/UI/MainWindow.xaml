@@ -342,7 +342,8 @@
             </Grid>
 
             <!-- 分段页签 + 页面内容 -->
-            <TabControl Grid.Row="2" Style="{StaticResource SegmentedTabControl}">
+            <TabControl Grid.Row="2" Style="{StaticResource SegmentedTabControl}"
+                        SelectionChanged="OnTabSelectionChanged">
                 <TabItem Header="{x:Static core:WindowText.TAB_SCHEDULE}"
                          Style="{StaticResource SegmentedTabItem}" IsSelected="True">
                     <!-- 可见性绑「窗口 VM」的 IsEmpty；网格自身绑「网格 VM」（Grid 属性）。
@@ -358,11 +359,15 @@
                     </Grid>
                 </TabItem>
 
-                <!-- 占位页签：M4 落地，禁用态避免误点 -->
+                <!-- 占位页签：M4c 落地，禁用态避免误点 -->
                 <TabItem Header="{x:Static core:WindowText.TAB_ITEMS}"
                          Style="{StaticResource SegmentedTabItem}" IsEnabled="False"/>
-                <TabItem Header="{x:Static core:WindowText.TAB_STATS}"
-                         Style="{StaticResource SegmentedTabItem}" IsEnabled="False"/>
+
+                <!-- 统计页（M4b）：进入时重算，视图模型只做投影 -->
+                <TabItem x:Name="StatsTab" Header="{x:Static core:WindowText.TAB_STATS}"
+                         Style="{StaticResource SegmentedTabItem}">
+                    <views:StatsView DataContext="{Binding Stats}"/>
+                </TabItem>
 
                 <TabItem Header="{x:Static core:WindowText.TAB_SETTINGS}"
                          Style="{StaticResource SegmentedTabItem}">

@@ -15,10 +15,10 @@ internal static class WindowText
     /// <summary>「课表」页签标题。</summary>
     public const string TAB_SCHEDULE = "课表";
 
-    /// <summary>「事项」页签标题（M4 落地，当前仅占位显示）。</summary>
+    /// <summary>「事项」页签标题（M4c 落地，当前仅占位显示）。</summary>
     public const string TAB_ITEMS = "事项";
 
-    /// <summary>「统计」页签标题（M4 落地，当前仅占位显示）。</summary>
+    /// <summary>「统计」页签标题。</summary>
     public const string TAB_STATS = "统计";
 
     /// <summary>「设置」页签标题。</summary>
@@ -264,4 +264,84 @@ internal static class WindowText
 
     /// <summary>删除失败提示（科目被引用等）。</summary>
     public const string DELETE_FAILED = "删除失败：该科目仍被时段引用。";
+
+    // ---------- 统计页（M4b） ----------
+
+    /// <summary>区间：本周。</summary>
+    public const string STATS_RANGE_THIS_WEEK = "本周";
+
+    /// <summary>区间：本月。</summary>
+    public const string STATS_RANGE_THIS_MONTH = "本月";
+
+    /// <summary>区间：自定义。</summary>
+    public const string STATS_RANGE_CUSTOM = "自定义";
+
+    /// <summary>自定义区间的「应用」按钮。</summary>
+    public const string STATS_APPLY_RANGE = "应用";
+
+    /// <summary>自定义区间输入框之间的分隔文案。</summary>
+    public const string STATS_FROM_TO_SEPARATOR = "至";
+
+    /// <summary>自定义日期输入格式。</summary>
+    public const string STATS_DATE_FORMAT = "yyyy-MM-dd";
+
+    /// <summary>数字卡：完成率。</summary>
+    public const string STATS_CARD_RATE = "完成率";
+
+    /// <summary>数字卡：已投入时长。</summary>
+    public const string STATS_CARD_ACTUAL = "已投入";
+
+    /// <summary>数字卡：完成次数。</summary>
+    public const string STATS_CARD_DONE = "完成次数";
+
+    /// <summary>科目分布分组标题。</summary>
+    public const string STATS_TITLE_SUBJECTS = "科目分布";
+
+    /// <summary>最近 7 天分组标题。</summary>
+    public const string STATS_TITLE_RECENT = "最近 7 天";
+
+    /// <summary>空态标题。</summary>
+    public const string STATS_EMPTY = "还没有完成记录";
+
+    /// <summary>空态说明。</summary>
+    public const string STATS_EMPTY_HINT = "完成或跳过一节课程后，这里会自动汇总。";
+
+    /// <summary>完成率显示格式：{0} = 百分比数值。</summary>
+    public const string STATS_RATE_FORMAT = "{0:F0}%";
+
+    /// <summary>时长显示格式（小时）：{0} = 小时数。</summary>
+    public const string STATS_HOURS_FORMAT = "{0:0.#} h";
+
+    /// <summary>记录总数副标题格式：{0} = 记录条数。</summary>
+    public const string STATS_RECORD_COUNT_FORMAT = "共 {0} 次记录";
+
+    /// <summary>计划时长副标题格式：{0} = 小时数。</summary>
+    public const string STATS_PLANNED_FORMAT = "计划 {0:0.#} h";
+
+    /// <summary>跳过/错过副标题格式。</summary>
+    public const string STATS_SKIP_MISSED_FORMAT = "跳过 {0} · 错过 {1}";
+
+    /// <summary>科目横条明细格式：{0} = 占比百分比，{1} = 计划分钟数。</summary>
+    public const string STATS_SUBJECT_DETAIL_FORMAT = "{0:F0}% · {1} 分钟";
+
+    /// <summary>统计区间显示格式：{0} = 起，{1} = 止。</summary>
+    public const string STATS_RANGE_FORMAT = "{0:MM-dd} ~ {1:MM-dd}";
+
+    /// <summary>最近 7 天的日期标签格式。</summary>
+    public const string STATS_DAY_LABEL_FORMAT = "MM-dd";
+
+    /// <summary>最近 7 天的单日完成率格式。</summary>
+    public const string STATS_DAY_PERCENT_FORMAT = "{0:F0}%";
+
+    /// <summary>当天没有记录时的占位文本。</summary>
+    public const string STATS_NO_DATA = "—";
+
+    /// <summary>自定义日期格式错误。</summary>
+    public const string STATS_INVALID_DATE = "请输入 yyyy-MM-dd 格式的起止日期。";
+
+    /// <summary>自定义区间起止颠倒。</summary>
+    public const string STATS_INVALID_RANGE = "起始日期不能晚于结束日期。";
+
+    /// <summary>统计加载失败的提示。</summary>
+    public const string STATS_LOAD_FAILED = "统计数据加载失败，请查看日志。";
 }

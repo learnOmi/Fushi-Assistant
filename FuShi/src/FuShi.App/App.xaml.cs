@@ -9,6 +9,7 @@ using FuShi.Domain.Entities;
 using FuShi.Domain.Time;
 using FuShi.Infrastructure;
 using FuShi.Infrastructure.Scheduling;
+using FuShi.Infrastructure.Statistics;
 using FuShi.Notifications;
 using FuShi.UI;
 using FuShi.UI.Dialogs;
@@ -255,6 +256,7 @@ public partial class App : Application
         builder.Services.AddSingleton<ScheduleEditService>();
         builder.Services.AddSingleton<PhaseService>();
         builder.Services.AddSingleton<ReminderResponseService>();
+        builder.Services.AddSingleton<StatisticsService>();
         builder.Services.AddSingleton<ToastNotificationChannel>();
         builder.Services.AddSingleton<NotificationService>();
         builder.Services.AddSingleton<INotificationChannel>(provider => provider.GetRequiredService<NotificationService>());
@@ -565,6 +567,7 @@ public partial class App : Application
             _host.Services.GetRequiredService<PhaseService>(),
             _host.Services.GetRequiredService<ReminderEngine>(),
             CreateSettingsViewModel(),
+            new StatsViewModel(_host.Services.GetRequiredService<StatisticsService>(), _logger),
             ReloadWidget,
             ShowEntryEditor,
             ShowSubjectEditor,

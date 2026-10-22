@@ -23,6 +23,9 @@ public static class TimeDefaults
     /// <summary>「稍后」的默认延后分钟数（设计文档 5.4：稍后 10 分钟）。</summary>
     public const int DEFAULT_SNOOZE_MINUTES = 10;
 
+    /// <summary>一小时的分钟数（统计页把分钟换算成小时时使用）。</summary>
+    public const int MINUTES_PER_HOUR = 60;
+
     /// <summary>
     /// 顺延取数窗口的最大回看宽度（分钟，一天）。
     /// M3c「稍后」改为当日顺延后，实例的<b>有效触发点</b> = <c>PlannedAt + ShiftMinutes − 提前量</c>，

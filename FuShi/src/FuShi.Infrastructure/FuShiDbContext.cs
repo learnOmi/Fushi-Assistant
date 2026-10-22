@@ -87,5 +87,14 @@ public class FuShiDbContext : DbContext
         // 课表条目按 (PhaseId, DayOfWeek) 查询，建组合索引。
         modelBuilder.Entity<ScheduleEntry>()
             .HasIndex(e => new { e.PhaseId, e.DayOfWeek });
+
+        // 统计按日期区间聚合（M4b）：Date 是每次查询的过滤列。
+        modelBuilder.Entity<CompletionLog>()
+            .HasIndex(l => l.Date);
+
+        // 统计按科目分组（M4b）。SubjectId 是<b>快照列</b>，刻意不建外键：
+        // 科目被删除后历史记录仍要保留归属，不能被级联删除或置空。
+        modelBuilder.Entity<CompletionLog>()
+            .HasIndex(l => l.SubjectId);
     }
 }
