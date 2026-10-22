@@ -38,12 +38,28 @@ public static class MissedCompensator
         DateTime since,
         int graceMinutes,
         int leadMinutes = 0)
+        => Evaluate(pending.Select(occurrence => (occurrence, leadMinutes)), now, since, graceMinutes);
+
+    /// <summary>
+    /// 每个实例各带提前量的补偿判决（M4c）：事项可挂自己的 <c>ReminderRule</c>，
+    /// 其触发点与课表的全局提前量不同，不能再用一个全局值统一计算。
+    /// 判决口径与上面的重载完全一致，只是「提前量」逐条取自 <paramref name="pending"/>。
+    /// </summary>
+    /// <param name="pending">本轮涉及的实例及其提前量（分钟）。</param>
+    /// <param name="now">当前时刻（本地墙钟）。</param>
+    /// <param name="since">本轮扫描窗口起点（上次正常扫描时刻）。</param>
+    /// <param name="graceMinutes">宽限期（分钟）。</param>
+    public static CompensationResult Evaluate(
+        IEnumerable<(Occurrence Occurrence, int LeadMinutes)> pending,
+        DateTime now,
+        DateTime since,
+        int graceMinutes)
     {
         var toResend = new List<Occurrence>();
         var toMarkMissed = new List<Occurrence>();
         var graceStart = now.AddMinutes(-graceMinutes);
 
-        foreach (var occurrence in pending)
+        foreach (var (occurrence, leadMinutes) in pending)
         {
             if (occurrence.FiredAt is not null)
             {
@@ -58,7 +74,7 @@ public static class MissedCompensator
                 continue;
             }
 
-            var triggerAt = occurrence.PlannedAt.AddMinutes(occurrence.ShiftMinutes - leadMinutes);
+            var triggerAt = occurrence.PlannedAt.AddMinutes(occurrence.ShiftMinutes - Math.Max(0, leadMinutes));
 
             if (triggerAt < since || triggerAt > now)
             {

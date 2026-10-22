@@ -192,7 +192,7 @@ public sealed class ReminderEngine : IDisposable
                 var created = await _schedule.MaterializeAsync(now, token).ConfigureAwait(false);
                 if (created > 0)
                 {
-                    _logger.Information("课表展开：新增 {Count} 条计划实例", created);
+                    _logger.Information("展开完成：新增 {Count} 条计划实例（课表 + 事项）", created);
                     ScheduleChanged?.Invoke(this, EventArgs.Empty);
                 }
 
@@ -266,16 +266,14 @@ public sealed class ReminderEngine : IDisposable
             return;
         }
 
-        // 补偿判决按「实际触发时刻」比对：全局提前量与顺延量（Occurrence.ShiftMinutes）都由它内部消化。
-        var lead = await _schedule.GetLeadMinutesAsync(token).ConfigureAwait(false);
-
+        // 补偿判决按「实际触发时刻」比对：提前量逐条取（M4c 起事项可挂自己的规则），
+        // 顺延量（Occurrence.ShiftMinutes）仍由补偿算法内部消化。
         var byId = due.ToDictionary(static item => item.Occurrence.Id);
         var verdict = MissedCompensator.Evaluate(
-            due.Select(static item => item.Occurrence),
+            due.Select(static item => (item.Occurrence, item.LeadMinutes)),
             now,
             since,
-            grace,
-            lead);
+            grace);
 
         foreach (var occurrence in verdict.ToResend)
         {
@@ -333,9 +331,12 @@ public sealed class ReminderEngine : IDisposable
         var firedAt = DateTime.Now;
         await _schedule.MarkFiredAsync(reminder.Occurrence.Id, firedAt, token).ConfigureAwait(false);
 
-        // 正文展示「课程开始时刻」（PlannedAt），而非实际触发点——提前量/稍后都不改变用户认知里的上课时间。
+        // 正文展示「课程开始时刻 / 事项截止时刻」（PlannedAt），而非实际触发点——提前量/稍后都不改变用户认知里的时间。
         var plannedAt = reminder.Occurrence.PlannedAt;
-        var body = string.Format(EngineConstants.REMINDER_BODY_FORMAT, plannedAt.ToString(EngineConstants.CLOCK_FORMAT));
+        var bodyFormat = reminder.IsTask
+            ? EngineConstants.TASK_REMINDER_BODY_FORMAT
+            : EngineConstants.REMINDER_BODY_FORMAT;
+        var body = string.Format(bodyFormat, plannedAt.ToString(EngineConstants.CLOCK_FORMAT));
         _notifications.Dispatch(new ReminderMessage(
             reminder.SubjectName,
             body,

@@ -344,4 +344,111 @@ internal static class WindowText
 
     /// <summary>统计加载失败的提示。</summary>
     public const string STATS_LOAD_FAILED = "统计数据加载失败，请查看日志。";
+
+    // ---------- 事项页与事项编辑（M4c） ----------
+
+    /// <summary>事项页：新增按钮。</summary>
+    public const string ITEMS_ADD = "＋ 添加事项";
+
+    /// <summary>事项页：空态提示。</summary>
+    public const string ITEMS_EMPTY_HINT = "还没有事项。点「＋ 添加事项」记一条。";
+
+    /// <summary>事项页头：待办计数格式：{0} = 条数。</summary>
+    public const string ITEMS_COUNT_FORMAT = "{0} 条待办";
+
+    /// <summary>事项页：加载失败提示。</summary>
+    public const string ITEMS_LOAD_FAILED = "事项加载失败，请查看日志。";
+
+    /// <summary>事项分组：今天。</summary>
+    public const string ITEMS_GROUP_TODAY_FORMAT = "今天 · {0:MM-dd}";
+
+    /// <summary>事项分组：明天。</summary>
+    public const string ITEMS_GROUP_TOMORROW_FORMAT = "明天 · {0:MM-dd}";
+
+    /// <summary>事项分组：已逾期。</summary>
+    public const string ITEMS_GROUP_OVERDUE_FORMAT = "已逾期 · {0:MM-dd}";
+
+    /// <summary>事项分组：普通日期格式（月日 + 周几）。</summary>
+    public const string ITEMS_GROUP_DATE_FORMAT = "{0:MM-dd} {1}";
+
+    /// <summary>事项分组：无截止。</summary>
+    public const string ITEMS_GROUP_NO_DUE = "无截止";
+
+    /// <summary>事项行：无截止占位。</summary>
+    public const string ITEMS_NO_DUE = "无截止";
+
+    /// <summary>事项状态：待办。</summary>
+    public const string ITEMS_STATUS_PENDING = "待办";
+
+    /// <summary>事项状态：已完成。</summary>
+    public const string ITEMS_STATUS_DONE = "已完成";
+
+    /// <summary>事项状态：已跳过。</summary>
+    public const string ITEMS_STATUS_SKIPPED = "已跳过";
+
+    /// <summary>事项行操作：完成。</summary>
+    public const string ITEMS_ACTION_DONE = "完成";
+
+    /// <summary>事项行操作：跳过。</summary>
+    public const string ITEMS_ACTION_SKIP = "跳过";
+
+    /// <summary>事项行操作：编辑。</summary>
+    public const string ITEMS_ACTION_EDIT = "编辑";
+
+    /// <summary>事项编辑：新建标题。</summary>
+    public const string TASK_EDITOR_NEW_TITLE = "新建事项";
+
+    /// <summary>事项编辑：编辑标题。</summary>
+    public const string TASK_EDITOR_EDIT_TITLE = "编辑事项";
+
+    /// <summary>事项编辑：标题字段。</summary>
+    public const string FIELD_TASK_TITLE = "标题";
+
+    /// <summary>事项编辑：截止字段。</summary>
+    public const string FIELD_TASK_DUE = "截止";
+
+    /// <summary>事项编辑：优先级字段。</summary>
+    public const string FIELD_TASK_PRIORITY = "优先级";
+
+    /// <summary>事项编辑：重复字段。</summary>
+    public const string FIELD_TASK_REPEAT = "重复";
+
+    /// <summary>事项编辑：截止时刻勾选项（取消勾选则只显示不提醒）。</summary>
+    public const string FIELD_TASK_NO_DUE = "有截止时刻";
+
+    /// <summary>优先级：高。</summary>
+    public const string TASK_PRIORITY_HIGH = "高";
+
+    /// <summary>优先级：普通。</summary>
+    public const string TASK_PRIORITY_NORMAL = "普通";
+
+    /// <summary>优先级：低。</summary>
+    public const string TASK_PRIORITY_LOW = "低";
+
+    /// <summary>重复：不重复。</summary>
+    public const string TASK_REPEAT_NONE = "不重复";
+
+    /// <summary>重复：每天。</summary>
+    public const string TASK_REPEAT_DAILY = "每天";
+
+    /// <summary>重复：每周。</summary>
+    public const string TASK_REPEAT_WEEKLY = "每周";
+
+    /// <summary>事项截止日期输入格式。</summary>
+    public const string TASK_DATE_FORMAT = "yyyy-MM-dd";
+
+    /// <summary>事项编辑：标题为空。</summary>
+    public const string ERROR_TASK_TITLE_REQUIRED = "事项标题不能为空。";
+
+    /// <summary>事项编辑：日期格式错误。</summary>
+    public const string ERROR_TASK_DUE_INVALID = "请输入 yyyy-MM-dd 格式的截止日期。";
+
+    /// <summary>事项编辑：事项已被删除。</summary>
+    public const string ERROR_TASK_MISSING = "事项已不存在，可能已被删除。";
+
+    /// <summary>删除事项确认框标题。</summary>
+    public const string TASK_DELETE_CONFIRM_TITLE = "删除事项";
+
+    /// <summary>删除事项确认框正文。</summary>
+    public const string TASK_DELETE_CONFIRM_BODY = "确定删除这条事项吗？已完成的历史记录会保留。";
 }

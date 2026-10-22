@@ -23,8 +23,11 @@ internal static class EngineConstants
     /// <summary>循环内发生异常后的重试间隔（毫秒）。</summary>
     public const int ERROR_RETRY_DELAY_MILLISECONDS = 5000;
 
-    /// <summary>通知正文格式：{0} = 计划时刻（HH:mm）。</summary>
+    /// <summary>通知正文模板（课表）：{0} = 开始时刻（HH:mm）。</summary>
     public const string REMINDER_BODY_FORMAT = "{0} 开始";
+
+    /// <summary>通知正文模板（事项，M4c）：{0} = 截止时刻（HH:mm）。</summary>
+    public const string TASK_REMINDER_BODY_FORMAT = "{0} 截止";
 
     /// <summary>引擎内部时间显示格式。</summary>
     public const string CLOCK_FORMAT = "HH:mm";

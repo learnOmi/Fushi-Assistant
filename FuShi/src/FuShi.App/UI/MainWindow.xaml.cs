@@ -102,25 +102,29 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// 切到统计页签时重新聚合：窗口隐藏期间完成/跳过的课程，也能在进入页面时立即反映。
+    /// 切到统计 / 事项页签时重新载入：窗口隐藏期间发生的完成/跳过，也能在进入页面时立即反映。
     /// <para>
-    /// 统计是只读且无缓存的查询，个人数据量级下每次进页重算比维护失效逻辑更可靠。
+    /// 两页都是只读且无缓存的查询，个人数据量级下每次进页重算比维护失效逻辑更可靠。
     /// </para>
     /// </summary>
     private void OnTabSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         // SelectionChanged 会从页签内部的控件冒泡上来，先确认事件源是 TabControl；
-        // 同时只在「统计」页签被选中时刷新，切换课表/设置不做多余查询。
-        if (sender is not TabControl tab || !ReferenceEquals(tab.SelectedItem, StatsTab))
+        // 同时只在目标页签被选中时刷新，切换课表/设置不做多余查询。
+        if (sender is not TabControl tab || DataContext is not MainWindowViewModel viewModel)
         {
             return;
         }
 
-        // 初始化阶段 DataContext 尚未赋值，此时跳过；RefreshAsync 内部已捕获异常，
+        // 初始化阶段 DataContext 尚未赋值时跳过；两个 RefreshAsync 内部已捕获异常，
         // 这里 fire-and-forget 不会产生未观察异常。
-        if (DataContext is MainWindowViewModel viewModel)
+        if (ReferenceEquals(tab.SelectedItem, StatsTab))
         {
             _ = viewModel.Stats.RefreshAsync();
+        }
+        else if (ReferenceEquals(tab.SelectedItem, ItemsTab))
+        {
+            _ = viewModel.Items.RefreshAsync();
         }
     }
 

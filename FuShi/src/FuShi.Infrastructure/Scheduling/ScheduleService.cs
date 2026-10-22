@@ -42,9 +42,13 @@ public sealed class ScheduleService
     }
 
     /// <summary>
-    /// 展开当前生效阶段的课表并落库为 Occurrence（幂等）。
+    /// 展开「当前生效阶段的课表」与「待办事项」，落库为 Occurrence（幂等）。
     /// 「幂等」由两层保证：算法层 <see cref="OccurrenceDeduplicator"/> 先剔除已存在的三元组，
     /// 数据库层 (SourceType, SourceId, PlannedAt) 唯一索引兜底并发/重放。
+    /// <para>
+    /// M4c 起事项与课表共用账本：即使没有生效阶段或课表为空，仍要展开事项实例，
+    /// 因此这里不能像 M3 那样在无阶段时直接返回。
+    /// </para>
     /// </summary>
     /// <param name="now">当前时刻（决定展开起点）。</param>
     /// <param name="cancellationToken">取消令牌。</param>
@@ -55,39 +59,38 @@ public sealed class ScheduleService
             .CreateDbContextAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        var phase = await GetActivePhaseAsync(context, cancellationToken).ConfigureAwait(false);
-        if (phase is null)
-        {
-            return 0;
-        }
-
-        var entries = await context.ScheduleEntries
-            .Where(e => e.PhaseId == phase.Id)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        if (entries.Count == 0)
-        {
-            return 0;
-        }
-
         var timeZone = await ResolveTimeZoneAsync(cancellationToken).ConfigureAwait(false);
         var from = DateOnly.FromDateTime(now);
         // Expand 的区间是「双闭区间」，故视野止点取 from + (视野天数 - 1)：
         // 这样恰好覆盖含今天在内的 EXPANSION_HORIZON_DAYS 天，同一个周几在视野内只落一次。
         var to = from.AddDays(TimeDefaults.EXPANSION_HORIZON_DAYS - 1);
-        var expansion = Expand(entries, phase, from, to, timeZone);
-        if (expansion.Occurrences.Count == 0)
+        var rangeStart = from.ToDateTime(TimeOnly.MinValue);
+        var rangeEnd = to.ToDateTime(TimeOnly.MaxValue);
+
+        var created = 0;
+
+        // ① 课表条目：无生效阶段或无条目时跳过，但不影响下面的事项展开。
+        var phase = await GetActivePhaseAsync(context, cancellationToken).ConfigureAwait(false);
+        if (phase is not null)
         {
-            return 0;
+            var entries = await context.ScheduleEntries
+                .Where(e => e.PhaseId == phase.Id)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (entries.Count > 0)
+            {
+                var expansion = Expand(entries, phase, from, to, timeZone);
+                created += await PersistExpansionAsync(context, expansion, rangeStart, rangeEnd, cancellationToken)
+                    .ConfigureAwait(false);
+            }
         }
 
-        return await PersistExpansionAsync(
-            context,
-            expansion,
-            from.ToDateTime(TimeOnly.MinValue),
-            to.ToDateTime(TimeOnly.MaxValue),
-            cancellationToken).ConfigureAwait(false);
+        // ② 事项（M4c）：只展开待办且有截止时刻的；截止为空的事项「只显示不提醒」。
+        created += await MaterializeTasksAsync(context, from, to, rangeStart, rangeEnd, timeZone, cancellationToken)
+            .ConfigureAwait(false);
+
+        return created;
     }
 
     /// <summary>
@@ -340,6 +343,95 @@ public sealed class ScheduleService
     }
 
     /// <summary>
+    /// <b>事项对账</b>（M4c）：改标题/截止/重复/状态后，只重建该事项的未来实例。
+    /// 口径与课表对账一致：<b>「改模板只影响未来，已发生的账本不改写」</b>。
+    /// <list type="number">
+    /// <item>删除该事项「未来待触发」的 Pending（<c>PlannedAt &gt; now</c> 或 <c>ShiftMinutes &gt; 0</c>）。</item>
+    /// <item>事项仍为待办且截止非空时，在未来视野内重新展开并落库；已完成/已跳过/无截止则只清不建。</item>
+    /// <item>历史（Fired / Done / Skipped / Missed）一律不动，统计口径不受编辑影响。</item>
+    /// </list>
+    /// </summary>
+    /// <param name="taskId">事项主键。</param>
+    /// <param name="now">当前时刻（对账分界线）。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>重新展开后新增落库的实例条数。</returns>
+    public async Task<int> ReconcileTaskAsync(
+        int taskId,
+        DateTime now,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory
+            .CreateDbContextAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var removed = await context.Occurrences
+            .Where(o => o.SourceType == OwnerType.Task
+                        && o.SourceId == taskId
+                        && o.Status == OccurrenceStatus.Pending
+                        && (o.PlannedAt > now || o.ShiftMinutes > 0))
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        _logger.Information("事项对账：清除 {Removed} 条未来待触发实例（事项 {TaskId}）", removed, taskId);
+
+        var task = await context.Tasks
+            .FirstOrDefaultAsync(t => t.Id == taskId, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (task is null || task.Status != TaskItemStatus.Pending || task.DueAt is null)
+        {
+            return 0;
+        }
+
+        var timeZone = await ResolveTimeZoneAsync(cancellationToken).ConfigureAwait(false);
+        var from = DateOnly.FromDateTime(now);
+        var to = from.AddDays(TimeDefaults.EXPANSION_HORIZON_DAYS - 1);
+        var expansion = TaskRecurrenceExpander.Expand(task, from, to, timeZone);
+        LogAdjustments(expansion.Adjustments);
+
+        return await PersistExpansionAsync(
+            context,
+            expansion,
+            from.ToDateTime(TimeOnly.MinValue),
+            to.ToDateTime(TimeOnly.MaxValue),
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// 展开「待办且截止非空」的事项（M4c），落库为 Occurrence。
+    /// 截止为空的事项只显示不提醒，因此不参与展开。
+    /// </summary>
+    private async Task<int> MaterializeTasksAsync(
+        FuShiDbContext context,
+        DateOnly from,
+        DateOnly to,
+        DateTime rangeStart,
+        DateTime rangeEnd,
+        TimeZoneInfo timeZone,
+        CancellationToken cancellationToken)
+    {
+        var tasks = await context.Tasks
+            .Where(t => t.Status == TaskItemStatus.Pending && t.DueAt != null)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (tasks.Count == 0)
+        {
+            return 0;
+        }
+
+        var expansion = TaskRecurrenceExpander.Expand(tasks, from, to, timeZone);
+        if (expansion.Occurrences.Count == 0)
+        {
+            return 0;
+        }
+
+        LogAdjustments(expansion.Adjustments);
+        return await PersistExpansionAsync(context, expansion, rangeStart, rangeEnd, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// 展开出上屏时间线：给定日期区间内、带科目名与颜色的时段，按开始时刻升序。
     /// </summary>
     /// <param name="from">区间起（含）。</param>
@@ -431,21 +523,23 @@ public sealed class ScheduleService
         DateTime now,
         CancellationToken cancellationToken = default)
     {
-        var lead = await GetLeadMinutesAsync(cancellationToken).ConfigureAwait(false);
-
         await using var context = await _contextFactory
             .CreateDbContextAsync(cancellationToken)
             .ConfigureAwait(false);
 
+        // M4c 起提前量可能逐物主不同（事项可挂 ReminderRule），SQL 窗口必须按「最大提前量」放宽，
+        // 再在内存里用每一行自己的提前量精筛，否则提前量大的实例会漏出窗口。
+        var leads = await LoadLeadContextAsync(context, cancellationToken).ConfigureAwait(false);
+
         // 有效触发点 ∈ [since, now]。因 ShiftMinutes 会把触发点往后移，SQL 下界放宽一个常量（内存再精筛）。
-        var pendingLower = since.AddMinutes(lead - TimeDefaults.SHIFT_WINDOW_SLACK_MINUTES);
-        var pendingUpper = now.AddMinutes(lead);
+        var pendingLower = since.AddMinutes(leads.MaxLeadMinutes - TimeDefaults.SHIFT_WINDOW_SLACK_MINUTES);
+        var pendingUpper = now.AddMinutes(leads.MaxLeadMinutes);
 
         var rows = await SelectPendingRowsAsync(context, pendingLower, pendingUpper, cancellationToken)
             .ConfigureAwait(false);
 
         return rows
-            .Select(row => Map(row.Occurrence, row.SubjectName, row.Note, row.EndTime, lead))
+            .Select(row => Map(row, leads))
             .Where(reminder => reminder.TriggerAt >= since && reminder.TriggerAt <= now)
             .OrderBy(static reminder => reminder.TriggerAt)
             .ToList();
@@ -462,20 +556,20 @@ public sealed class ScheduleService
         DateTime now,
         CancellationToken cancellationToken = default)
     {
-        var lead = await GetLeadMinutesAsync(cancellationToken).ConfigureAwait(false);
-
         await using var context = await _contextFactory
             .CreateDbContextAsync(cancellationToken)
             .ConfigureAwait(false);
 
+        var leads = await LoadLeadContextAsync(context, cancellationToken).ConfigureAwait(false);
+
         // 有效触发点 > now；因 ShiftMinutes 会把触发点往后移，SQL 下界放宽一个常量（内存再精筛）。
-        var pendingCutoff = now.AddMinutes(lead - TimeDefaults.SHIFT_WINDOW_SLACK_MINUTES);
+        var pendingCutoff = now.AddMinutes(leads.MaxLeadMinutes - TimeDefaults.SHIFT_WINDOW_SLACK_MINUTES);
 
         var rows = await SelectUpcomingRowsAsync(context, pendingCutoff, cancellationToken)
             .ConfigureAwait(false);
 
         return rows
-            .Select(row => Map(row.Occurrence, row.SubjectName, row.Note, row.EndTime, lead))
+            .Select(row => Map(row, leads))
             .Where(reminder => reminder.TriggerAt > now)
             .OrderBy(static reminder => reminder.TriggerAt)
             .ToList();
@@ -655,11 +749,63 @@ public sealed class ScheduleService
             .OrderByDescending(p => p.StartDate)
             .FirstOrDefaultAsync(cancellationToken);
 
-    /// <summary>查询行：账本行 + 上屏/组装所需的模板与科目上下文。</summary>
-    private sealed record PendingRow(Occurrence Occurrence, string SubjectName, string? Note, TimeOnly EndTime);
+    /// <summary>查询行：账本行 + 上屏/组装所需的模板与科目（事项）上下文。</summary>
+    /// <param name="Occurrence">账本行。</param>
+    /// <param name="Title">标题：课表科目名或事项标题。</param>
+    /// <param name="Note">备注（课表条目备注；事项无备注，为 null）。</param>
+    /// <param name="EndTime">课表模板结束时刻；事项没有时长，为 null。</param>
+    /// <param name="IsTask">是否来自事项。</param>
+    private sealed record PendingRow(
+        Occurrence Occurrence,
+        string Title,
+        string? Note,
+        TimeOnly? EndTime,
+        bool IsTask);
 
     /// <summary>
-    /// 关联查询「本轮到期」的候选行：Occurrence ⋈ ScheduleEntry ⋈ Subject。
+    /// 每物主提前量上下文（M4c）：全局值 + 各 (来源类型, 来源主键) 解析后的提前量 + 窗口用最大值。
+    /// </summary>
+    /// <param name="GlobalLeadMinutes">全局提前量。</param>
+    /// <param name="MaxLeadMinutes">本轮所有规则与全局值中的最大提前量（仅用于放宽 SQL 窗口）。</param>
+    /// <param name="ByOwner">按物主解析后的提前量。</param>
+    private sealed record LeadContext(
+        int GlobalLeadMinutes,
+        int MaxLeadMinutes,
+        IReadOnlyDictionary<(OwnerType OwnerType, int OwnerId), int> ByOwner)
+    {
+        /// <summary>取某个物主的提前量；没有规则时回落全局。</summary>
+        public int Resolve(OwnerType ownerType, int ownerId) =>
+            ByOwner.TryGetValue((ownerType, ownerId), out var lead) ? lead : GlobalLeadMinutes;
+    }
+
+    /// <summary>
+    /// 载入提前量上下文：全局 <c>LeadTimeMinutes</c> + 全部 <c>ReminderRule</c>。
+    /// 规则按物主分组后交给 <see cref="ReminderRuleResolver"/> 解析，口径唯一。
+    /// </summary>
+    private async Task<LeadContext> LoadLeadContextAsync(
+        FuShiDbContext context,
+        CancellationToken cancellationToken)
+    {
+        var globalLead = await GetLeadMinutesAsync(cancellationToken).ConfigureAwait(false);
+        var rules = await context.ReminderRules
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var byOwner = rules
+            .GroupBy(static rule => (rule.OwnerType, rule.OwnerId))
+            .ToDictionary(
+                static group => group.Key,
+                group => ReminderRuleResolver.ResolveLeadMinutes(group, globalLead));
+
+        return new LeadContext(
+            globalLead,
+            ReminderRuleResolver.ResolveMaxLeadMinutes(rules, globalLead),
+            byOwner);
+    }
+
+    /// <summary>
+    /// 关联查询「本轮到期」的候选行：课表实例（Occurrence ⋈ ScheduleEntry ⋈ Subject）
+    /// 与事项实例（Occurrence ⋈ TaskItem）两路合并。
     /// 谓词见 <see cref="GetDueAsync"/> 注释：待触发实例按计划时刻落在放宽后的窗口内（有效触发点由内存精筛）。
     /// 注意：参数不取名 from/to——`from` 是查询表达式的上下文关键字，会与 `from ... in` 冲突。
     /// </summary>
@@ -669,23 +815,34 @@ public sealed class ScheduleService
         DateTime pendingUpper,
         CancellationToken cancellationToken)
     {
-        var rows = await (from occurrence in context.Occurrences
-                          join entry in context.ScheduleEntries on occurrence.SourceId equals entry.Id
-                          join subject in context.Subjects on entry.SubjectId equals subject.Id
-                          where occurrence.SourceType == OwnerType.ScheduleEntry
-                                && occurrence.Status == OccurrenceStatus.Pending
-                                && occurrence.FiredAt == null
-                                && occurrence.PlannedAt >= pendingLower
-                                && occurrence.PlannedAt <= pendingUpper
-                          select new PendingRow(occurrence, subject.Name, entry.Note, entry.EndTime))
+        var scheduleRows = await (from occurrence in context.Occurrences
+                                  join entry in context.ScheduleEntries on occurrence.SourceId equals entry.Id
+                                  join subject in context.Subjects on entry.SubjectId equals subject.Id
+                                  where occurrence.SourceType == OwnerType.ScheduleEntry
+                                        && occurrence.Status == OccurrenceStatus.Pending
+                                        && occurrence.FiredAt == null
+                                        && occurrence.PlannedAt >= pendingLower
+                                        && occurrence.PlannedAt <= pendingUpper
+                                  select new PendingRow(occurrence, subject.Name, entry.Note, entry.EndTime, false))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        return rows;
+        var taskRows = await (from occurrence in context.Occurrences
+                              join task in context.Tasks on occurrence.SourceId equals task.Id
+                              where occurrence.SourceType == OwnerType.Task
+                                    && occurrence.Status == OccurrenceStatus.Pending
+                                    && occurrence.FiredAt == null
+                                    && occurrence.PlannedAt >= pendingLower
+                                    && occurrence.PlannedAt <= pendingUpper
+                              select new PendingRow(occurrence, task.Title, null, null, true))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return scheduleRows.Concat(taskRows).ToList();
     }
 
     /// <summary>
-    /// 关联查询「未来待触发」的候选行：待触发实例计划时刻在 <paramref name="pendingCutoff"/> 之后
+    /// 关联查询「未来待触发」的候选行（课表 + 事项）：待触发实例计划时刻在 <paramref name="pendingCutoff"/> 之后
     /// （有效触发点由内存精筛）。
     /// </summary>
     private static async Task<IReadOnlyList<PendingRow>> SelectUpcomingRowsAsync(
@@ -693,34 +850,49 @@ public sealed class ScheduleService
         DateTime pendingCutoff,
         CancellationToken cancellationToken)
     {
-        var rows = await (from occurrence in context.Occurrences
-                          join entry in context.ScheduleEntries on occurrence.SourceId equals entry.Id
-                          join subject in context.Subjects on entry.SubjectId equals subject.Id
-                          where occurrence.SourceType == OwnerType.ScheduleEntry
-                                && occurrence.Status == OccurrenceStatus.Pending
-                                && occurrence.FiredAt == null
-                                && occurrence.PlannedAt > pendingCutoff
-                          select new PendingRow(occurrence, subject.Name, entry.Note, entry.EndTime))
+        var scheduleRows = await (from occurrence in context.Occurrences
+                                  join entry in context.ScheduleEntries on occurrence.SourceId equals entry.Id
+                                  join subject in context.Subjects on entry.SubjectId equals subject.Id
+                                  where occurrence.SourceType == OwnerType.ScheduleEntry
+                                        && occurrence.Status == OccurrenceStatus.Pending
+                                        && occurrence.FiredAt == null
+                                        && occurrence.PlannedAt > pendingCutoff
+                                  select new PendingRow(occurrence, subject.Name, entry.Note, entry.EndTime, false))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        return rows;
+        var taskRows = await (from occurrence in context.Occurrences
+                              join task in context.Tasks on occurrence.SourceId equals task.Id
+                              where occurrence.SourceType == OwnerType.Task
+                                    && occurrence.Status == OccurrenceStatus.Pending
+                                    && occurrence.FiredAt == null
+                                    && occurrence.PlannedAt > pendingCutoff
+                              select new PendingRow(occurrence, task.Title, null, null, true))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return scheduleRows.Concat(taskRows).ToList();
     }
 
     /// <summary>把查询行组装成引擎用的计划实例，并算出有效触发点与有效结束时刻。</summary>
-    private static PendingReminder Map(
-        Occurrence occurrence,
-        string subjectName,
-        string? note,
-        TimeOnly endTime,
-        int leadMinutes)
+    private static PendingReminder Map(PendingRow row, LeadContext leads)
     {
+        var occurrence = row.Occurrence;
+        var leadMinutes = leads.Resolve(occurrence.SourceType, occurrence.SourceId);
+
+        // 事项没有时长（M4c）：结束时刻就等于顺延后的截止时刻，不参与「进行中」自动完成。
+        var endsAt = row.IsTask
+            ? occurrence.PlannedAt.AddMinutes(occurrence.ShiftMinutes)
+            : ComputeEndsAt(occurrence.PlannedAt, row.EndTime ?? TimeOnly.MinValue, occurrence.ShiftMinutes);
+
         return new PendingReminder(
             occurrence,
-            subjectName,
-            note,
+            row.Title,
+            row.Note,
             EffectiveTriggerAt(occurrence, leadMinutes),
-            ComputeEndsAt(occurrence.PlannedAt, endTime, occurrence.ShiftMinutes));
+            endsAt,
+            leadMinutes,
+            row.IsTask);
     }
 
     /// <summary>

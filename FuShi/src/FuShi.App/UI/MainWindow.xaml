@@ -359,9 +359,11 @@
                     </Grid>
                 </TabItem>
 
-                <!-- 占位页签：M4c 落地，禁用态避免误点 -->
-                <TabItem Header="{x:Static core:WindowText.TAB_ITEMS}"
-                         Style="{StaticResource SegmentedTabItem}" IsEnabled="False"/>
+                <!-- 事项页（M4c）：进入时重载列表，视图模型只做投影 -->
+                <TabItem x:Name="ItemsTab" Header="{x:Static core:WindowText.TAB_ITEMS}"
+                         Style="{StaticResource SegmentedTabItem}">
+                    <views:ItemsView DataContext="{Binding Items}"/>
+                </TabItem>
 
                 <!-- 统计页（M4b）：进入时重算，视图模型只做投影 -->
                 <TabItem x:Name="StatsTab" Header="{x:Static core:WindowText.TAB_STATS}"

@@ -107,6 +107,13 @@ public sealed class ReminderResponseService
             return;
         }
 
+        // 事项（M4c）没有「同日课程序列」，顺延只作用于自己这一条，且只封顶当日 23:59。
+        if (target.SourceType == OwnerType.Task)
+        {
+            await SnoozeTaskAsync(context, target, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         // 取「当天」的待触发/已触发实例（含被点那条与其后的课），组装成链式顺延输入。
         // 终态（Done/Skipped/Missed）与进行中不参与，避免回写历史或挪动已开始的课。
         var day = target.PlannedAt.Date;
@@ -208,6 +215,12 @@ public sealed class ReminderResponseService
         }
 
         occurrence.Status = OccurrenceStatus.Skipped;
+        if (occurrence.SourceType == OwnerType.Task)
+        {
+            await CompleteTaskAsync(context, occurrence, TaskItemStatus.Skipped, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         await AppendCompletionLogAsync(context, occurrence, CompletionStatus.Skipped, MIN_ACTUAL_MINUTES, cancellationToken)
             .ConfigureAwait(false);
     }
@@ -233,7 +246,20 @@ public sealed class ReminderResponseService
         }
 
         occurrence.Status = OccurrenceStatus.Done;
-        var actualMinutes = ComputeActualMinutes(occurrence.FiredAt, now);
+
+        // 事项没有「实际耗时」语义：统计只计入条数，实际时长固定 0，
+        // 否则「提醒弹出后 3 分钟点完成」会被当成上了 3 分钟课。
+        var isTask = occurrence.SourceType == OwnerType.Task;
+        var actualMinutes = isTask
+            ? MIN_ACTUAL_MINUTES
+            : ComputeActualMinutes(occurrence.FiredAt, now);
+
+        if (isTask)
+        {
+            await CompleteTaskAsync(context, occurrence, TaskItemStatus.Done, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         await AppendCompletionLogAsync(context, occurrence, CompletionStatus.Done, actualMinutes, cancellationToken)
             .ConfigureAwait(false);
     }
@@ -262,6 +288,80 @@ public sealed class ReminderResponseService
     }
 
     /// <summary>
+    /// 事项「稍后」：只顺延这一条，回退 Pending 并清 FiredAt，到新触发点重弹。
+    /// 双重封顶只保留「当日 23:59」——事项没有时长，不存在「课程原结束时刻」这一层。
+    /// 触顶时不动状态（否则会在旧触发点立即重弹）。
+    /// </summary>
+    private async Task SnoozeTaskAsync(
+        FuShiDbContext context,
+        Occurrence target,
+        CancellationToken cancellationToken)
+    {
+        if (target.Status is OccurrenceStatus.Done or OccurrenceStatus.Skipped or OccurrenceStatus.Missed)
+        {
+            _logger.Debug("稍后：事项实例 {OccurrenceId} 已是终态 {Status}，忽略", target.Id, target.Status);
+            return;
+        }
+
+        var newShift = target.ShiftMinutes + TimeDefaults.DEFAULT_SNOOZE_MINUTES;
+        var shifted = target.PlannedAt.AddMinutes(newShift);
+        var dayEnd = target.PlannedAt.Date.AddDays(1);
+
+        if (shifted >= dayEnd)
+        {
+            _logger.Information(
+                "稍后未生效：事项实例 {OccurrenceId} 顺延落点 {Shifted:yyyy-MM-dd HH:mm} 越过当日 23:59",
+                target.Id,
+                shifted);
+            return;
+        }
+
+        await context.Occurrences
+            .Where(o => o.Id == target.Id)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(o => o.ShiftMinutes, newShift)
+                    .SetProperty(o => o.Status, OccurrenceStatus.Pending)
+                    .SetProperty(o => o.FiredAt, (DateTime?)null),
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        _logger.Information(
+            "稍后（事项顺延）：实例 {OccurrenceId} 累计顺延 {Minutes} 分钟",
+            target.Id,
+            newShift);
+    }
+
+    /// <summary>
+    /// 事项完成/跳过的统一收尾：任务状态置为 Done/Skipped，并删除「本条之后」的未来待触发实例。
+    /// 重复事项到此结束，不再继续提醒；历史（本条及更早）不动。
+    /// </summary>
+    private static async Task CompleteTaskAsync(
+        FuShiDbContext context,
+        Occurrence occurrence,
+        TaskItemStatus status,
+        CancellationToken cancellationToken)
+    {
+        var task = await context.Tasks
+            .FirstOrDefaultAsync(t => t.Id == occurrence.SourceId, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (task is not null && task.Status == TaskItemStatus.Pending)
+        {
+            task.Status = status;
+        }
+
+        await context.Occurrences
+            .Where(o => o.SourceType == OwnerType.Task
+                        && o.SourceId == occurrence.SourceId
+                        && o.Id != occurrence.Id
+                        && o.Status == OccurrenceStatus.Pending
+                        && o.PlannedAt > occurrence.PlannedAt)
+            .ExecuteDeleteAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// 追加一条完成记录并保存：计划时长取模板「起止之间」的分钟数（跨午夜顺延），
     /// 日期取实例的计划日期，条目 = 实例来源。
     /// </summary>
@@ -272,9 +372,15 @@ public sealed class ReminderResponseService
         int actualMinutes,
         CancellationToken cancellationToken)
     {
-        var entry = await context.ScheduleEntries
-            .FirstOrDefaultAsync(e => e.Id == occurrence.SourceId, cancellationToken)
-            .ConfigureAwait(false);
+        // 事项（M4c）：没有科目与计划时长，科目快照留空，归入统计页的「未分类」桶。
+        // 注意必须按 SourceType 分流——若不分流，事项 Id 可能撞上同号的课表条目，把别人的科目写进历史。
+        ScheduleEntry? entry = null;
+        if (occurrence.SourceType != OwnerType.Task)
+        {
+            entry = await context.ScheduleEntries
+                .FirstOrDefaultAsync(e => e.Id == occurrence.SourceId, cancellationToken)
+                .ConfigureAwait(false);
+        }
 
         var plannedMinutes = entry is null
             ? MIN_ACTUAL_MINUTES

@@ -24,6 +24,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly ReminderEngine _engine;
     private readonly SettingsViewModel _settings;
     private readonly StatsViewModel _stats;
+    private readonly ItemsViewModel _items;
     private readonly Action _reloadWidget;
     private readonly Func<EntryEditorViewModel, bool> _showEntryEditor;
     private readonly Func<SubjectEditorViewModel, bool> _showSubjectEditor;
@@ -54,6 +55,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <param name="engine">提醒引擎（改动后请求重排）。</param>
     /// <param name="settings">设置页视图模型（供设置页签绑定）。</param>
     /// <param name="stats">统计页视图模型（供统计页签绑定）。</param>
+    /// <param name="items">事项页视图模型（供事项页签绑定）。</param>
     /// <param name="reloadWidget">刷新悬浮组件的回调（由宿主提供）。</param>
     /// <param name="showEntryEditor">弹出时段编辑对话框的委托。</param>
     /// <param name="showSubjectEditor">弹出新建科目对话框的委托。</param>
@@ -66,6 +68,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ReminderEngine engine,
         SettingsViewModel settings,
         StatsViewModel stats,
+        ItemsViewModel items,
         Action reloadWidget,
         Func<EntryEditorViewModel, bool> showEntryEditor,
         Func<SubjectEditorViewModel, bool> showSubjectEditor,
@@ -78,6 +81,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _engine = engine;
         _settings = settings;
         _stats = stats;
+        _items = items;
         _reloadWidget = reloadWidget;
         _showEntryEditor = showEntryEditor;
         _showSubjectEditor = showSubjectEditor;
@@ -90,6 +94,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>统计页视图模型（统计页签的数据上下文）。</summary>
     public StatsViewModel Stats => _stats;
+
+    /// <summary>事项页视图模型（事项页签的数据上下文）。</summary>
+    public ItemsViewModel Items => _items;
 
     /// <summary>是否空课表（驱动空态提示）。</summary>
     public bool IsEmpty => Grid?.IsEmpty ?? true;
@@ -108,6 +115,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             await ReloadGridAsync();
             await _settings.LoadAsync();
             await _stats.RefreshAsync();
+            await _items.RefreshAsync();
         }
         catch (Exception ex)
         {

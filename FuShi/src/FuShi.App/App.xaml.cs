@@ -10,6 +10,7 @@ using FuShi.Domain.Time;
 using FuShi.Infrastructure;
 using FuShi.Infrastructure.Scheduling;
 using FuShi.Infrastructure.Statistics;
+using FuShi.Infrastructure.Tasks;
 using FuShi.Notifications;
 using FuShi.UI;
 using FuShi.UI.Dialogs;
@@ -257,6 +258,7 @@ public partial class App : Application
         builder.Services.AddSingleton<PhaseService>();
         builder.Services.AddSingleton<ReminderResponseService>();
         builder.Services.AddSingleton<StatisticsService>();
+        builder.Services.AddSingleton<TaskService>();
         builder.Services.AddSingleton<ToastNotificationChannel>();
         builder.Services.AddSingleton<NotificationService>();
         builder.Services.AddSingleton<INotificationChannel>(provider => provider.GetRequiredService<NotificationService>());
@@ -561,13 +563,22 @@ public partial class App : Application
     /// <summary>按需装配主窗口：注入写/读服务、引擎、悬浮组件刷新回调与对话框委托。</summary>
     private MainWindow CreateMainWindow()
     {
+        var engine = _host!.Services.GetRequiredService<ReminderEngine>();
+        var items = new ItemsViewModel(
+            _host.Services.GetRequiredService<TaskService>(),
+            engine,
+            ReloadWidget,
+            ShowTaskEditor,
+            _logger);
+
         var viewModel = new MainWindowViewModel(
-            _host!.Services.GetRequiredService<ScheduleEditService>(),
+            _host.Services.GetRequiredService<ScheduleEditService>(),
             _host.Services.GetRequiredService<ScheduleService>(),
             _host.Services.GetRequiredService<PhaseService>(),
-            _host.Services.GetRequiredService<ReminderEngine>(),
+            engine,
             CreateSettingsViewModel(),
             new StatsViewModel(_host.Services.GetRequiredService<StatisticsService>(), _logger),
+            items,
             ReloadWidget,
             ShowEntryEditor,
             ShowSubjectEditor,
@@ -608,6 +619,14 @@ public partial class App : Application
     private bool ShowEntryEditor(EntryEditorViewModel viewModel)
     {
         var dialog = new EntryEditorDialog(viewModel) { Owner = ActiveOwnerWindow() };
+        ApplyCaptionTheme(dialog);
+        return dialog.ShowDialog() == true;
+    }
+
+    /// <summary>弹出事项编辑对话框，返回用户是否点「确定」（删除也会返回 true）。</summary>
+    private bool ShowTaskEditor(TaskEditorViewModel viewModel)
+    {
+        var dialog = new TaskEditorDialog(viewModel) { Owner = ActiveOwnerWindow() };
         ApplyCaptionTheme(dialog);
         return dialog.ShowDialog() == true;
     }
