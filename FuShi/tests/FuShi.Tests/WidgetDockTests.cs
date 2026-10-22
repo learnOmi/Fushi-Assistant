@@ -16,6 +16,7 @@ public sealed class WidgetDockTests
         var result = WidgetDock.Snap(8, 300, WIDTH, HEIGHT, 0, 0, 1920, 1040);
         result.Left.Should().Be(0);
         result.Top.Should().Be(300, "垂直方向不受影响");
+        result.Edges.Should().Be(DockEdges.Left);
     }
 
     /// <summary>右边界在阈值内：贴合工作区右边。</summary>
@@ -25,6 +26,7 @@ public sealed class WidgetDockTests
         var left = 1920 - WIDTH - 10;
         var result = WidgetDock.Snap(left, 300, WIDTH, HEIGHT, 0, 0, 1920, 1040);
         result.Left.Should().Be(1920 - WIDTH);
+        result.Edges.Should().Be(DockEdges.Right);
     }
 
     /// <summary>上边界在阈值内：贴合工作区顶部。</summary>
@@ -33,6 +35,7 @@ public sealed class WidgetDockTests
     {
         var result = WidgetDock.Snap(500, 5, WIDTH, HEIGHT, 0, 0, 1920, 1040);
         result.Top.Should().Be(0);
+        result.Edges.Should().Be(DockEdges.Top);
     }
 
     /// <summary>下边界在阈值内：贴合工作区底部。</summary>
@@ -42,6 +45,7 @@ public sealed class WidgetDockTests
         var top = 1040 - HEIGHT - 12;
         var result = WidgetDock.Snap(500, top, WIDTH, HEIGHT, 0, 0, 1920, 1040);
         result.Top.Should().Be(1040 - HEIGHT);
+        result.Edges.Should().Be(DockEdges.Bottom);
     }
 
     /// <summary>四边都远离阈值：位置保持不变。</summary>
@@ -51,6 +55,17 @@ public sealed class WidgetDockTests
         var result = WidgetDock.Snap(400, 300, WIDTH, HEIGHT, 0, 0, 1920, 1040);
         result.Left.Should().Be(400);
         result.Top.Should().Be(300);
+        result.Edges.Should().Be(DockEdges.None);
+    }
+
+    /// <summary>贴角落时两条边同时命中（界面据此把两个角变直角、亮两条高亮线）。</summary>
+    [Fact]
+    public void Snap_AtCorner_ReportsBothEdges()
+    {
+        var result = WidgetDock.Snap(6, 8, WIDTH, HEIGHT, 0, 0, 1920, 1040);
+        result.Left.Should().Be(0);
+        result.Top.Should().Be(0);
+        result.Edges.Should().Be(DockEdges.Left | DockEdges.Top);
     }
 
     /// <summary>恰好等于阈值仍吸附；超过 1 像素则不吸附（边界判定）。</summary>

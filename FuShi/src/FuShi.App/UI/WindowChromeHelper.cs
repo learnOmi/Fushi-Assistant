@@ -126,10 +126,14 @@ internal static class WindowChromeHelper
         }
 
         var dpi = VisualTreeHelper.GetDpi(window);
+
+        // 只用窗口"左上角"物理坐标换算：工作区四边 = 左上角 + 物理差值 ÷ 缩放。
+        // 不掺 ActualWidth/ActualHeight——高度变化过程中（SizeChanged 回调里）窗口尺寸与
+        // WPF 的 ActualHeight 可能还没同步，掺进去会让算出的底边偏一个高度的差值。
         var left = window.Left + (info.rcWork.Left - rect.Left) / dpi.DpiScaleX;
         var top = window.Top + (info.rcWork.Top - rect.Top) / dpi.DpiScaleY;
-        var right = window.Left + window.ActualWidth + (info.rcWork.Right - rect.Right) / dpi.DpiScaleX;
-        var bottom = window.Top + window.ActualHeight + (info.rcWork.Bottom - rect.Bottom) / dpi.DpiScaleY;
+        var right = window.Left + (info.rcWork.Right - rect.Left) / dpi.DpiScaleX;
+        var bottom = window.Top + (info.rcWork.Bottom - rect.Top) / dpi.DpiScaleY;
 
         return new Rect(left, top, right - left, bottom - top);
     }

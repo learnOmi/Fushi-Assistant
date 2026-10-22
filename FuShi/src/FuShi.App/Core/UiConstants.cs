@@ -26,6 +26,34 @@ internal static class UiConstants
     /// <summary>托盘图标的悬停提示文本。</summary>
     public const string TRAY_TOOLTIP_TEXT = "浮时 · 课表提醒";
 
+    // ---------- 悬浮窗贴边吸附反馈（M5 视觉增强） ----------
+
+    /// <summary>吸附位移的缓动时长（毫秒）：松手后平滑滑到贴边位置，而不是瞬移。</summary>
+    public const int WIDGET_SNAP_ANIMATION_DURATION_MS = 160;
+
+    /// <summary>吸附位移缓动的帧间隔（毫秒）。16 ≈ 60fps，用 DispatcherTimer 推进。</summary>
+    public const int WIDGET_SNAP_ANIMATION_INTERVAL_MS = 16;
+
+    /// <summary>贴边高亮线的淡出时长（毫秒）。</summary>
+    public const int WIDGET_SNAP_FLASH_DURATION_MS = 250;
+
+    /// <summary>吸附回弹动画时长（毫秒）。</summary>
+    public const int WIDGET_SNAP_BOUNCE_DURATION_MS = 220;
+
+    /// <summary>回弹动画的起始缩放（先缩到 0.97 再弹回 1.0）。</summary>
+    public const double WIDGET_SNAP_BOUNCE_SCALE = 0.97;
+
+    /// <summary>回弹动画的过冲峰值（略大于 1，制造弹性感）。</summary>
+    public const double WIDGET_SNAP_BOUNCE_OVERSHOOT = 1.012;
+
+    /// <summary>
+    /// 判定「窗口底边贴着工作区底边」的容差（DIP）。
+    /// 高度变化时若变化前的底边落在此容差内，就固定底边向"上"生长，
+    /// 避免贴底后展开面板长到屏幕外。
+    /// </summary>
+    public const double WIDGET_BOTTOM_ANCHOR_TOLERANCE = 1.0;
+
+
     // ---------- M3 主窗口 / 周网格 / 编辑对话框 ----------
 
     /// <summary>主窗口初始宽度（设备无关单位）。</summary>
