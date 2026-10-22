@@ -86,6 +86,18 @@ internal static class WindowText
     /// <summary>设置页：保存成功提示。</summary>
     public const string SETTINGS_SAVED = "设置已保存";
 
+    /// <summary>设置页：开机自启标签。</summary>
+    public const string SETTINGS_AUTOSTART = "开机自启";
+
+    /// <summary>设置页：开机自启选项文案。</summary>
+    public const string SETTINGS_AUTOSTART_ENABLED = "登录 Windows 后自动启动浮时";
+
+    /// <summary>设置页：开机自启说明。</summary>
+    public const string SETTINGS_AUTOSTART_HINT = "写入当前用户注册表启动项；移动程序目录后会在下次启动时自动纠正路径。";
+
+    /// <summary>设置页：开机自启失败提示格式（参数为失败原因）。</summary>
+    public const string SETTINGS_AUTOSTART_ERROR_FORMAT = "开机自启设置失败，已恢复原状态：{0}";
+
     /// <summary>时刻分隔符（时:分）。</summary>
     public const string TIME_SEPARATOR = ":";
 

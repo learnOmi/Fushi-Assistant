@@ -6,6 +6,7 @@ using FuShi.Domain;
 using FuShi.Domain.Entities;
 using FuShi.Domain.Time;
 using FuShi.Infrastructure;
+using FuShi.Infrastructure.Platform;
 using FuShi.Infrastructure.Scheduling;
 using Serilog;
 
@@ -31,6 +32,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     private readonly AppSettingRepository _repository;
     private readonly ReminderEngine _engine;
+    private readonly AutostartService _autostartService;
     private readonly Action _reloadWidget;
     private readonly Action<double> _applyWidgetOpacity;
     private readonly Action<string> _applyTheme;
@@ -82,6 +84,17 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasSaved;
 
+    /// <summary>是否开机自启（与注册表 Run 项联动，保存时写注册表）。</summary>
+    [ObservableProperty]
+    private bool _autostart;
+
+    /// <summary>开机自启写入失败时的错误文本；空串表示无错误。</summary>
+    [ObservableProperty]
+    private string _autostartError = string.Empty;
+
+    /// <summary>是否展示开机自启错误提示。</summary>
+    public bool HasAutostartError => !string.IsNullOrEmpty(AutostartError);
+
     /// <summary>可选小时（0~23）。</summary>
     public IReadOnlyList<int> HourOptions { get; } = Enumerable.Range(0, UiConstants.HOURS_PER_DAY).ToList();
 
@@ -120,6 +133,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>构造。</summary>
     /// <param name="repository">设置仓储。</param>
     /// <param name="engine">提醒引擎（保存后请求重排）。</param>
+    /// <param name="autostart">开机自启服务（保存开关时写 HKCU Run）。</param>
     /// <param name="reloadWidget">刷新悬浮组件的回调（由宿主提供）。</param>
     /// <param name="applyWidgetOpacity">应用悬浮窗透明度的回调（由宿主设置窗口 Opacity）。</param>
     /// <param name="applyTheme">应用主题的回调（由宿主替换应用级资源字典）。</param>
@@ -127,6 +141,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     public SettingsViewModel(
         AppSettingRepository repository,
         ReminderEngine engine,
+        AutostartService autostart,
         Action reloadWidget,
         Action<double> applyWidgetOpacity,
         Action<string> applyTheme,
@@ -134,6 +149,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     {
         _repository = repository;
         _engine = engine;
+        _autostartService = autostart;
         _reloadWidget = reloadWidget;
         _applyWidgetOpacity = applyWidgetOpacity;
         _applyTheme = applyTheme;
@@ -175,11 +191,13 @@ public sealed partial class SettingsViewModel : ObservableObject
             // 重读最新单行设置后再写本页管辖的字段：悬浮窗拖动会写位置三列，
             // 若在这里回写窗口打开时的旧快照，会把刚拖动的位置覆盖回去（与 PersistPosition 对称的同一类缺陷）。
             var setting = _repository.GetAsync().GetAwaiter().GetResult();
+            var previousAutostart = setting.Autostart;
 
             setting.Opacity = Opacity;
             setting.LeadTimeMinutes = SelectedLeadOption.Minutes;
             setting.TimezoneId = SelectedTimezone;
             setting.Theme = SelectedTheme.Value;
+            setting.Autostart = Autostart;
 
             if (QuietEnabled && !IsQuietTimeEqual())
             {
@@ -198,6 +216,20 @@ public sealed partial class SettingsViewModel : ObservableObject
             // 让内存快照与库保持一致，避免下次保存/加载基于过期值。
             _setting = setting;
 
+            // 开机自启是「库 + 注册表」两处状态：先落库，再写注册表；写失败回滚库与开关，
+            // 绝不出现「界面开着、开机不启动」的静默失效（M4d 约定）。
+            if (Autostart != previousAutostart || Autostart)
+            {
+                var result = _autostartService.ApplyForCurrentProcess(Autostart);
+                if (!result.Success)
+                {
+                    RollbackAutostart(setting, previousAutostart, result.Error);
+                    return;
+                }
+            }
+
+            AutostartError = string.Empty;
+
             // 时区/提前量会影响展开与触发点；无条件重排一次最简且幂等（代价小）。
             _engine.RequestRescan();
             _reloadWidget();
@@ -205,17 +237,42 @@ public sealed partial class SettingsViewModel : ObservableObject
             HasSaved = true;
             ScheduleSavedHintDismiss();
             _logger.Information(
-                "设置已保存：不透明度 {Opacity}，提前 {Lead} 分钟，时区 {Timezone}，主题 {Theme}",
+                "设置已保存：不透明度 {Opacity}，提前 {Lead} 分钟，时区 {Timezone}，主题 {Theme}，开机自启 {Autostart}",
                 Opacity,
                 SelectedLeadOption.Minutes,
                 SelectedTimezone,
-                SelectedTheme.Value);
+                SelectedTheme.Value,
+                Autostart);
         }
         catch (Exception ex)
         {
             _logger.Error(ex, "保存设置失败");
             HasSaved = false;
         }
+    }
+
+    /// <summary>
+    /// 注册表写入失败的回滚：把库中的开关改回旧值并重写一次，界面开关同步退回。
+    /// 时序上库已先行写入新值，故这里必须再保存一次；两次写入都是单行微操作，代价可忽略。
+    /// </summary>
+    /// <param name="setting">已写入新值的设置对象。</param>
+    /// <param name="previousAutostart">库中原有的自启开关。</param>
+    /// <param name="error">注册表写入失败原因。</param>
+    private void RollbackAutostart(AppSetting setting, bool previousAutostart, string? error)
+    {
+        setting.Autostart = previousAutostart;
+        _repository.SaveAsync(setting).GetAwaiter().GetResult();
+        _setting = setting;
+        Autostart = previousAutostart;
+
+        AutostartError = string.Format(WindowText.SETTINGS_AUTOSTART_ERROR_FORMAT, error);
+        HasSaved = false;
+        _logger.Warning("开机自启设置失败，已回滚为 {Autostart}：{Error}", previousAutostart, error);
+
+        // 同一批保存里其余字段（时区 / 提前量 / 不透明度）已经落库，仍要让它们生效；
+        // 回滚只针对自启这一项，不连坐其他设置。
+        _engine.RequestRescan();
+        _reloadWidget();
     }
 
     /// <summary>
@@ -277,6 +334,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         SelectedTimezone = timezone;
 
         SelectedTheme = ThemeOptions.FirstOrDefault(option => option.Value == setting.Theme) ?? ThemeOptions[0];
+
+        Autostart = setting.Autostart;
+        AutostartError = string.Empty;
     }
 
     /// <summary>若提前量不在预设档位内，补齐一个选项并保持升序（保留库中原值）。</summary>
@@ -332,6 +392,13 @@ public sealed partial class SettingsViewModel : ObservableObject
     partial void OnQuietEndMinuteChanged(int value) => HasSaved = false;
 
     partial void OnSelectedLeadOptionChanged(LeadOption value) => HasSaved = false;
+
+    partial void OnAutostartChanged(bool value) => HasSaved = false;
+
+    partial void OnAutostartErrorChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasAutostartError));
+    }
 
     partial void OnSelectedTimezoneChanged(string value) => HasSaved = false;
 

@@ -46,14 +46,6 @@ internal static class UiConstants
     /// <summary>周网格单元格最小高度。</summary>
     public const double GRID_CELL_MIN_HEIGHT = 56.0;
 
-    /// <summary>
-    /// 周网格单元格圆角半径。<b>类型必须是 <see cref="CornerRadius"/></b>：
-    /// XAML 里 <c>{x:Static}</c> 传的是装箱对象，若声明为 <c>double</c>，
-    /// 布局阶段读 <c>Border.CornerRadius</c> 时会抛 InvalidCastException（Double → CornerRadius）。
-    /// 因结构体非编译期常量，故用 static readonly。
-    /// </summary>
-    public static readonly CornerRadius GRID_CELL_CORNER_RADIUS = new(8);
-
     /// <summary>停用条目的弱化不透明度。</summary>
     public const double GRID_DISABLED_OPACITY = 0.45;
 

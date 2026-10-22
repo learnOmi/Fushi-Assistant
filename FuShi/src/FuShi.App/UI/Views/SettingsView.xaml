@@ -67,6 +67,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- 不透明度：滑块实时预览 -->
@@ -119,8 +120,17 @@
                           SelectedItem="{Binding SelectedTheme}" Width="130" HorizontalAlignment="Left" Style="{StaticResource FormCombo}"/>
                 <TextBlock Grid.Row="11" Grid.Column="0" Grid.ColumnSpan="2" Text="{x:Static core:WindowText.SETTINGS_THEME_HINT}" Style="{StaticResource HintText}"/>
 
+                <!-- 开机自启（写入 HKCU Run；失败时回滚并就地提示原因） -->
+                <TextBlock Grid.Row="12" Grid.Column="0" Text="{x:Static core:WindowText.SETTINGS_AUTOSTART}" Style="{StaticResource FieldLabel}"/>
+                <CheckBox Grid.Row="12" Grid.Column="1" Content="{x:Static core:WindowText.SETTINGS_AUTOSTART_ENABLED}"
+                          IsChecked="{Binding Autostart}" Foreground="{DynamicResource LabelBrush}" FontSize="12.5" Margin="0,4,0,2"/>
+                <TextBlock Grid.Row="13" Grid.Column="0" Grid.ColumnSpan="2" Text="{x:Static core:WindowText.SETTINGS_AUTOSTART_HINT}" Style="{StaticResource HintText}"/>
+                <TextBlock Grid.Row="13" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding AutostartError}"
+                           Foreground="{DynamicResource DangerBrush}" FontSize="11.5" TextWrapping="Wrap" Margin="0,18,0,0"
+                           Visibility="{Binding HasAutostartError, Converter={StaticResource BoolToVisibility}}"/>
+
                 <!-- 保存 -->
-                <StackPanel Grid.Row="12" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,10,0,0">
+                <StackPanel Grid.Row="14" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,10,0,0">
                     <Button Content="{x:Static core:WindowText.SETTINGS_SAVE}"
                             Style="{StaticResource AccentButton}" Command="{Binding SaveCommand}"/>
                     <TextBlock Text="{x:Static core:WindowText.SETTINGS_SAVED}"

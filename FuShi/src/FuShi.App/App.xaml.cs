@@ -8,6 +8,7 @@ using FuShi.Domain;
 using FuShi.Domain.Entities;
 using FuShi.Domain.Time;
 using FuShi.Infrastructure;
+using FuShi.Infrastructure.Platform;
 using FuShi.Infrastructure.Scheduling;
 using FuShi.Infrastructure.Statistics;
 using FuShi.Infrastructure.Tasks;
@@ -95,6 +96,7 @@ public partial class App : Application
         var settingsRepository = _host.Services.GetRequiredService<AppSettingRepository>();
         var settings = settingsRepository.GetAsync().GetAwaiter().GetResult();
         LogTimeZoneResolution(settings.TimezoneId);
+        SyncAutostart(settings);
 
         // 主题必须早于任何窗口创建：托盘图标、悬浮窗与主窗口都会在加载时解析令牌，
         // 晚于窗口创建会让首帧先按旧主题渲染再闪一下。
@@ -252,6 +254,7 @@ public partial class App : Application
             options => options.UseSqlite(StoragePaths.ConnectionString));
         builder.Services.AddSingleton<Serilog.ILogger>(_logger);
         builder.Services.AddSingleton<AppSettingRepository>();
+        builder.Services.AddSingleton<AutostartService>();
 
         builder.Services.AddSingleton<ScheduleService>();
         builder.Services.AddSingleton<ScheduleEditService>();
@@ -283,6 +286,35 @@ public partial class App : Application
         {
             _logger.Warning("时区 {TimezoneId} 未被直接识别，已回退到 {ResolvedId}", timezoneId, lookup.Zone.Id);
         }
+    }
+
+    /// <summary>
+    /// 启动时把注册表自启项校正到库中状态（M4d）：库为准，注册表是副作用。
+    /// 处理「用户移动了程序目录」「手动删了注册表项」「库里关了但注册表还留着」三种漂移。
+    /// 失败只记警告，不阻止启动。
+    /// </summary>
+    /// <param name="settings">启动时加载的设置快照。</param>
+    private void SyncAutostart(AppSetting settings)
+    {
+        var executablePath = AutostartService.GetExecutablePath();
+        if (executablePath is null)
+        {
+            if (settings.Autostart)
+            {
+                _logger.Warning("开机自启已开启，但无法确定当前程序路径，注册表未校正");
+            }
+
+            return;
+        }
+
+        var result = _host!.Services.GetRequiredService<AutostartService>().Sync(settings.Autostart, executablePath);
+        if (!result.Success)
+        {
+            _logger.Warning("开机自启同步失败（期望 {Enabled}）：{Error}", settings.Autostart, result.Error);
+            return;
+        }
+
+        _logger.Information("开机自启已同步：{Enabled}", settings.Autostart);
     }
 
     /// <summary>从 App.xaml 取托盘控件，注入命令与图标，并强制创建（资源中声明时需显式创建）。</summary>
@@ -402,7 +434,10 @@ public partial class App : Application
         _widget.ApplySchedule(slots);
     }
 
-    /// <summary>恢复悬浮窗位置：有保存值则用之，否则落到主屏右上角。</summary>
+    /// <summary>
+    /// 恢复悬浮窗位置：有保存值则用之，否则落到主屏右上角。
+    /// 首次布局完成后再夹一次到虚拟屏幕范围，避免拔掉副屏后窗口停在不可见区域（M4d 多屏兜底）。
+    /// </summary>
     /// <param name="viewModel">悬浮窗视图模型（提供已保存位置）。</param>
     private void PositionWidget(WidgetViewModel viewModel)
     {
@@ -415,13 +450,51 @@ public partial class App : Application
         {
             _widget.Left = viewModel.WidgetX;
             _widget.Top = viewModel.WidgetY;
+        }
+        else
+        {
+            var area = SystemParameters.WorkArea;
+            // 用显式 Width 而非 ActualWidth：Show 之前尚未布局，ActualWidth 还是 0，会把窗口摆到屏幕外。
+            _widget.Left = area.Right - _widget.Width - DEFAULT_WIDGET_MARGIN;
+            _widget.Top = area.Top + DEFAULT_WIDGET_MARGIN;
+        }
+
+        ClampWidgetToScreen();
+        _widget.Loaded += (_, _) => ClampWidgetToScreen();
+    }
+
+    /// <summary>
+    /// 把悬浮窗夹进虚拟屏幕（所有显示器合并后的矩形）。窗口高度是 SizeToContent，
+    /// 首次调用时可能还为 0，此时只保证左上角不越界，Loaded 后按真实高度再夹一次。
+    /// </summary>
+    private void ClampWidgetToScreen()
+    {
+        if (_widget is null)
+        {
             return;
         }
 
-        var area = SystemParameters.WorkArea;
-        _widget.Left = area.Right - _widget.ActualWidth - DEFAULT_WIDGET_MARGIN;
-        _widget.Top = area.Top + DEFAULT_WIDGET_MARGIN;
+        var width = _widget.ActualWidth > 0 ? _widget.ActualWidth : _widget.Width;
+        var height = _widget.ActualHeight;
+
+        _widget.Left = ClampCoordinate(
+            _widget.Left,
+            SystemParameters.VirtualScreenLeft,
+            SystemParameters.VirtualScreenLeft + SystemParameters.VirtualScreenWidth - width);
+
+        _widget.Top = ClampCoordinate(
+            _widget.Top,
+            SystemParameters.VirtualScreenTop,
+            SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight - height);
     }
+
+    /// <summary>把坐标夹到 [min, max]；窗口比屏幕还大时（max &lt; min）退回 min。</summary>
+    /// <param name="value">待夹取的坐标。</param>
+    /// <param name="min">允许的最小值。</param>
+    /// <param name="max">允许的最大值。</param>
+    /// <returns>夹取后的坐标。</returns>
+    private static double ClampCoordinate(double value, double min, double max) =>
+        value < min ? min : value > max ? max : value;
 
     /// <summary>显示 / 隐藏悬浮窗。仅从 UI 线程调用（托盘命令在 UI 线程执行）。</summary>
     private void ToggleWidget()
@@ -438,6 +511,8 @@ public partial class App : Application
         else
         {
             _widget.Show();
+            // 显示时再夹一次：期间可能拔掉过副屏，窗口位置仍停在已消失的屏幕坐标上。
+            ClampWidgetToScreen();
             _widget.Activate();
         }
     }
@@ -595,6 +670,7 @@ public partial class App : Application
         return new SettingsViewModel(
             _host!.Services.GetRequiredService<AppSettingRepository>(),
             _host.Services.GetRequiredService<ReminderEngine>(),
+            _host.Services.GetRequiredService<AutostartService>(),
             ReloadWidget,
             ApplyWidgetOpacity,
             ApplyTheme,
