@@ -85,7 +85,10 @@ public sealed partial class ItemsViewModel : ObservableObject
                 today,
                 today.AddDays(TimeDefaults.EXPANSION_HORIZON_DAYS - 1));
 
-            Groups = BuildGroups(_tasks, today);
+            // 重复事项的模板永远是 Pending，行状态要看「今天这条实例」是否已终结（M5b）。
+            var todayStatuses = await _taskService.GetTodayTaskStatusesAsync(today);
+
+            Groups = BuildGroups(_tasks, today, todayStatuses);
             PendingCount = _tasks.Count(static task => task.Status == TaskItemStatus.Pending);
             ErrorText = string.Empty;
         }
@@ -139,7 +142,7 @@ public sealed partial class ItemsViewModel : ObservableObject
         await AfterChangedAsync();
     }
 
-    /// <summary>标记完成：写完成记录并清掉未来实例。</summary>
+    /// <summary>标记完成：一次性事项结束系列，重复事项只完成今天这一次（M5b）。</summary>
     /// <param name="taskId">事项主键。</param>
     [RelayCommand]
     private async Task MarkDoneAsync(int taskId)
@@ -148,7 +151,7 @@ public sealed partial class ItemsViewModel : ObservableObject
         await AfterChangedAsync();
     }
 
-    /// <summary>标记跳过：写跳过记录并清掉未来实例。</summary>
+    /// <summary>标记跳过：一次性事项结束系列，重复事项只跳过今天这一次（M5b）。</summary>
     /// <param name="taskId">事项主键。</param>
     [RelayCommand]
     private async Task MarkSkipAsync(int taskId)
@@ -166,9 +169,13 @@ public sealed partial class ItemsViewModel : ObservableObject
     }
 
     /// <summary>把事项按截止日期分组；无截止排最后，逾期排最前。</summary>
+    /// <param name="tasks">事项集合。</param>
+    /// <param name="today">今天的日期（分组标题用）。</param>
+    /// <param name="todayStatuses">今天已终结的重复事项实例状态（事项 Id → Done/Skipped）。</param>
     private static IReadOnlyList<ItemGroupRow> BuildGroups(
         IReadOnlyList<TaskItem> tasks,
-        DateOnly today)
+        DateOnly today,
+        IReadOnlyDictionary<int, OccurrenceStatus> todayStatuses)
     {
         var groups = new List<ItemGroupRow>();
 
@@ -178,19 +185,25 @@ public sealed partial class ItemsViewModel : ObservableObject
 
         foreach (var group in byDate.OrderBy(static g => g.Key ?? DateOnly.MaxValue))
         {
-            var rows = group.Select(BuildRow).ToList();
+            var rows = group.Select(task => BuildRow(task, todayStatuses)).ToList();
             groups.Add(new ItemGroupRow(BuildHeader(group.Key, today), rows));
         }
 
         return groups;
     }
 
-    /// <summary>把一条事项投影成展示行。</summary>
-    private static ItemRow BuildRow(TaskItem task)
+    /// <summary>
+    /// 把一条事项投影成展示行。
+    /// 重复事项（DAILY/WEEKLY）的模板保持 Pending，行状态改看今天实例是否已终结：
+    /// 显示「今日已完成 / 今日已跳过」，并隐藏完成/跳过按钮，避免同一天重复落账。
+    /// </summary>
+    private static ItemRow BuildRow(TaskItem task, IReadOnlyDictionary<int, OccurrenceStatus> todayStatuses)
     {
         var dueText = task.DueAt is { } due
             ? due.ToString(WindowText.TIME_FORMAT)
             : WindowText.ITEMS_NO_DUE;
+
+        var isRepeating = TaskRecurrenceExpander.NormalizeRule(task.RepeatRule) != TaskRecurrenceExpander.RULE_NONE;
 
         var statusText = task.Status switch
         {
@@ -199,6 +212,18 @@ public sealed partial class ItemsViewModel : ObservableObject
             _ => WindowText.ITEMS_STATUS_PENDING,
         };
 
+        var isPending = task.Status == TaskItemStatus.Pending;
+        var isDone = task.Status == TaskItemStatus.Done;
+        var isSkipped = task.Status == TaskItemStatus.Skipped;
+
+        if (isPending && isRepeating && todayStatuses.TryGetValue(task.Id, out var todayStatus))
+        {
+            isDone = todayStatus == OccurrenceStatus.Done;
+            isSkipped = !isDone;
+            isPending = false;
+            statusText = isDone ? WindowText.ITEMS_STATUS_TODAY_DONE : WindowText.ITEMS_STATUS_TODAY_SKIPPED;
+        }
+
         return new ItemRow(
             task.Id,
             task.Title,
@@ -206,9 +231,9 @@ public sealed partial class ItemsViewModel : ObservableObject
             GetPriorityLabel(task.Priority),
             task.Priority == TaskPriority.High,
             statusText,
-            task.Status == TaskItemStatus.Pending,
-            task.Status == TaskItemStatus.Done,
-            task.Status == TaskItemStatus.Skipped);
+            isPending,
+            isDone,
+            isSkipped);
     }
 
     /// <summary>分组标题：今天 / 明天 / 已逾期 / 月日 + 周几 / 无截止。</summary>

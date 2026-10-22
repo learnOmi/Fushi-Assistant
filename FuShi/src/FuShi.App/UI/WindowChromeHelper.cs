@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace FuShi.UI;
 
@@ -36,6 +37,9 @@ internal static class WindowChromeHelper
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern bool GetMonitorInfo(IntPtr monitor, ref MONITORINFO info);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
 
     /// <summary>
     /// 单词窗口的适配入口：句柄就绪后挂消息钩子并请求圆角。
@@ -93,6 +97,41 @@ internal static class WindowChromeHelper
 
         var enabled = useDark ? 1 : 0;
         return DwmSetWindowAttribute(handle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref enabled, sizeof(int)) == 0;
+    }
+
+    /// <summary>
+    /// 取窗口当前所在显示器的工作区，并换算到「与 <c>Window.Left/Top</c> 同一坐标系」（M5b 贴边吸附用）。
+    /// <para>
+    /// 不直接除 DPI 做绝对换算：物理坐标原点与 WPF 逻辑坐标原点的关系在混合 DPI 多屏下并不直观。
+    /// 这里用「工作区与窗口物理矩形的差值 ÷ 当前显示器缩放」得到边界相对窗口的偏移，再加回
+    /// <c>Left/Top</c>，因此跨屏（含负坐标）与不同缩放都能对齐。
+    /// </para>
+    /// </summary>
+    /// <param name="window">已创建句柄的窗口。</param>
+    /// <returns>工作区矩形（设备无关单位，与窗口位置同坐标系）；句柄未就绪时退回主屏工作区。</returns>
+    public static Rect GetWorkAreaInWindowCoordinates(Window window)
+    {
+        var fallback = SystemParameters.WorkArea;
+        var handle = new WindowInteropHelper(window).Handle;
+        if (handle == IntPtr.Zero || !GetWindowRect(handle, out var rect))
+        {
+            return fallback;
+        }
+
+        var monitor = MonitorFromWindow(handle, MONITOR_DEFAULTTONEAREST);
+        var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+        if (monitor == IntPtr.Zero || !GetMonitorInfo(monitor, ref info))
+        {
+            return fallback;
+        }
+
+        var dpi = VisualTreeHelper.GetDpi(window);
+        var left = window.Left + (info.rcWork.Left - rect.Left) / dpi.DpiScaleX;
+        var top = window.Top + (info.rcWork.Top - rect.Top) / dpi.DpiScaleY;
+        var right = window.Left + window.ActualWidth + (info.rcWork.Right - rect.Right) / dpi.DpiScaleX;
+        var bottom = window.Top + window.ActualHeight + (info.rcWork.Bottom - rect.Bottom) / dpi.DpiScaleY;
+
+        return new Rect(left, top, right - left, bottom - top);
     }
 
     /// <summary>

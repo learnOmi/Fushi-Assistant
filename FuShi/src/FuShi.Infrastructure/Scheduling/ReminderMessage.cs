@@ -15,10 +15,15 @@ namespace FuShi.Infrastructure.Scheduling;
 /// </param>
 /// <param name="PlannedAt">课程开始时刻（展示用）。</param>
 /// <param name="EndsAt">课程结束时刻（弹窗展示与「进行中」自动完成用）。</param>
+/// <param name="IsTask">
+/// 是否为事项提醒（M5b）。事项的主按钮语义是「完成」，课表是「开始」；
+/// 弹窗据此决定按钮文案与映射的动作，避免 UI 再猜一次来源类型。
+/// </param>
 public sealed record ReminderMessage(
     string Title,
     string Body,
     ReminderStrength Strength,
     int? OccurrenceId = null,
     DateTime? PlannedAt = null,
-    DateTime? EndsAt = null);
+    DateTime? EndsAt = null,
+    bool IsTask = false);

@@ -9,6 +9,9 @@ internal static class ReminderText
     /// <summary>「开始」按钮文案（进入进行中，到结束时刻自动记完成）。</summary>
     public const string ACTION_START = "开始";
 
+    /// <summary>事项弹窗的主按钮文案（M5b：完成本次）。</summary>
+    public const string ACTION_FINISH = "完成";
+
     /// <summary>「稍后」按钮文案：{0} = 延后分钟数（取 <c>TimeDefaults.DEFAULT_SNOOZE_MINUTES</c>）。</summary>
     public const string ACTION_SNOOZE_FORMAT = "稍后 {0} 分钟";
 

@@ -180,14 +180,14 @@ public sealed class TaskService
         return true;
     }
 
-    /// <summary>把事项标记为完成：同步当日实例状态、写一条完成记录、清掉未来实例。</summary>
+    /// <summary>把事项标记为完成：一次性事项结束系列；重复事项只完成当次实例（M5b）。</summary>
     /// <param name="taskId">事项主键。</param>
     /// <param name="now">当前时刻（决定统计日期与"未来"分界）。</param>
     /// <param name="cancellationToken">取消令牌。</param>
     public Task<bool> MarkDoneAsync(int taskId, DateTime now, CancellationToken cancellationToken = default) =>
         SetStatusAsync(taskId, TaskItemStatus.Done, CompletionStatus.Done, now, cancellationToken);
 
-    /// <summary>把事项标记为跳过：同步当日实例状态、写一条跳过记录、清掉未来实例。</summary>
+    /// <summary>把事项标记为跳过：一次性事项结束系列；重复事项只跳过当次实例（M5b）。</summary>
     /// <param name="taskId">事项主键。</param>
     /// <param name="now">当前时刻（决定统计日期与"未来"分界）。</param>
     /// <param name="cancellationToken">取消令牌。</param>
@@ -195,11 +195,44 @@ public sealed class TaskService
         SetStatusAsync(taskId, TaskItemStatus.Skipped, CompletionStatus.Skipped, now, cancellationToken);
 
     /// <summary>
-    /// 完成/跳过的公共实现。
+    /// 取「今天」已终结的事项实例状态（事项 Id → Done/Skipped，M5b）。
+    /// 事项页据此把重复事项显示为「今日已完成 / 今日已跳过」，而不是把整个系列标成 Done。
+    /// </summary>
+    /// <param name="today">今天的日期（本地墙钟）。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    public async Task<IReadOnlyDictionary<int, OccurrenceStatus>> GetTodayTaskStatusesAsync(
+        DateOnly today,
+        CancellationToken cancellationToken = default)
+    {
+        var dayStart = today.ToDateTime(TimeOnly.MinValue);
+        var dayEnd = dayStart.AddDays(1);
+
+        await using var context = await _contextFactory
+            .CreateDbContextAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var rows = await context.Occurrences
+            .Where(o => o.SourceType == OwnerType.Task
+                        && o.PlannedAt >= dayStart
+                        && o.PlannedAt < dayEnd
+                        && (o.Status == OccurrenceStatus.Done || o.Status == OccurrenceStatus.Skipped))
+            .Select(o => new { o.SourceId, o.Status })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        // 同一事项当天只有一条实例（DAILY/WEEKLY 展开口径），出现多条时取首条即可。
+        return rows
+            .GroupBy(static row => row.SourceId)
+            .ToDictionary(group => group.Key, group => group.First().Status);
+    }
+
+    /// <summary>
+    /// 完成/跳过的公共实现（M5b 语义分档）。
     /// <list type="number">
-    /// <item>只有 Pending 的事项可以流转（重复调用返回 false，避免重复落账）。</item>
+    /// <item>只有 Pending 的模板可以流转（重复事项完成一次后模板仍是 Pending）。</item>
     /// <item>优先把「今天」那条未终态实例置为对应终态；今天没有实例（无截止/当日未展开）则直接用今天作为统计日期。</item>
-    /// <item>删除该事项的未来待触发实例，重复事项到此结束。</item>
+    /// <item>不重复事项：模板置 Done/Skipped 并删除未来待触发实例，结束系列。</item>
+    /// <item>重复事项（DAILY/WEEKLY）：只终结当次实例并记一条完成记录；模板保持 Pending、未来实例全部保留。</item>
     /// </list>
     /// </summary>
     private async Task<bool> SetStatusAsync(
@@ -222,6 +255,7 @@ public sealed class TaskService
             return false;
         }
 
+        var isRepeating = TaskRecurrenceExpander.NormalizeRule(task.RepeatRule) != TaskRecurrenceExpander.RULE_NONE;
         var dayStart = now.Date;
         var dayEnd = dayStart.AddDays(1);
 
@@ -237,6 +271,24 @@ public sealed class TaskService
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
 
+        // 重复事项今天已经没有可处理的实例：若今天已有终态实例，说明本次已处理过，拒绝重复落账。
+        if (isRepeating && occurrence is null)
+        {
+            var handledToday = await context.Occurrences
+                .AnyAsync(o => o.SourceType == OwnerType.Task
+                               && o.SourceId == taskId
+                               && o.PlannedAt >= dayStart
+                               && o.PlannedAt < dayEnd
+                               && (o.Status == OccurrenceStatus.Done || o.Status == OccurrenceStatus.Skipped),
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (handledToday)
+            {
+                return false;
+            }
+        }
+
         var occurrenceStatus = taskStatus == TaskItemStatus.Done
             ? OccurrenceStatus.Done
             : OccurrenceStatus.Skipped;
@@ -246,7 +298,6 @@ public sealed class TaskService
             occurrence.Status = occurrenceStatus;
         }
 
-        task.Status = taskStatus;
         context.CompletionLogs.Add(new CompletionLog
         {
             Date = occurrence is null ? DateOnly.FromDateTime(now) : DateOnly.FromDateTime(occurrence.PlannedAt),
@@ -258,18 +309,26 @@ public sealed class TaskService
             Status = logStatus,
         });
 
-        // 未来实例不再提醒：保留今天这条（已置终态），删掉之后的 Pending。
-        await context.Occurrences
-            .Where(o => o.SourceType == OwnerType.Task
-                        && o.SourceId == taskId
-                        && o.Id != (occurrence == null ? 0 : occurrence.Id)
-                        && o.Status == OccurrenceStatus.Pending
-                        && (o.PlannedAt > now || o.ShiftMinutes > 0))
-            .ExecuteDeleteAsync(cancellationToken)
-            .ConfigureAwait(false);
+        if (!isRepeating)
+        {
+            task.Status = taskStatus;
+
+            // 未来实例不再提醒：保留今天这条（已置终态），删掉之后的 Pending。
+            await context.Occurrences
+                .Where(o => o.SourceType == OwnerType.Task
+                            && o.SourceId == taskId
+                            && o.Id != (occurrence == null ? 0 : occurrence.Id)
+                            && o.Status == OccurrenceStatus.Pending
+                            && (o.PlannedAt > now || o.ShiftMinutes > 0))
+                .ExecuteDeleteAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
 
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        _logger.Information("事项状态流转：{TaskId} → {Status}", taskId, taskStatus);
+        _logger.Information(
+            "事项状态流转：{TaskId} → {Status}（重复事项仅完成本次）",
+            taskId,
+            taskStatus);
         return true;
     }
 

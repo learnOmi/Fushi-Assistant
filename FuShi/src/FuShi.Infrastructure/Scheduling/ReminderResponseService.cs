@@ -1,6 +1,7 @@
 using FuShi.Domain;
 using FuShi.Domain.Entities;
 using FuShi.Domain.Enums;
+using FuShi.Domain.Recurrence;
 using FuShi.Domain.Scheduling;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -333,8 +334,14 @@ public sealed class ReminderResponseService
     }
 
     /// <summary>
-    /// 事项完成/跳过的统一收尾：任务状态置为 Done/Skipped，并删除「本条之后」的未来待触发实例。
-    /// 重复事项到此结束，不再继续提醒；历史（本条及更早）不动。
+    /// 事项完成/跳过的统一收尾（M5b 语义分档）。
+    /// <list type="bullet">
+    /// <item>不重复事项（<c>NONE</c>）：任务状态置 Done/Skipped，并删除「本条之后」的未来待触发实例，
+    ///       即完成整个系列（M4c 行为不变）。</item>
+    /// <item>重复事项（<c>DAILY</c>/<c>WEEKLY</c>）：<b>只终结当次实例</b>——实例状态由调用方置终态、
+    ///       完成记录照常写入；任务本身保持 Pending，未来实例一条都不删，次日/次周照常提醒。</item>
+    /// </list>
+    /// 历史（本条及更早）在两种分档下都不改写。
     /// </summary>
     private static async Task CompleteTaskAsync(
         FuShiDbContext context,
@@ -345,6 +352,13 @@ public sealed class ReminderResponseService
         var task = await context.Tasks
             .FirstOrDefaultAsync(t => t.Id == occurrence.SourceId, cancellationToken)
             .ConfigureAwait(false);
+
+        // 重复事项：完成本次 ≠ 结束系列。任务状态与未来实例都不动，直接返回。
+        if (task is not null
+            && TaskRecurrenceExpander.NormalizeRule(task.RepeatRule) != TaskRecurrenceExpander.RULE_NONE)
+        {
+            return;
+        }
 
         if (task is not null && task.Status == TaskItemStatus.Pending)
         {

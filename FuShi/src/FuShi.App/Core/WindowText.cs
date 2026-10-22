@@ -460,6 +460,12 @@ internal static class WindowText
     /// <summary>事项状态：已跳过。</summary>
     public const string ITEMS_STATUS_SKIPPED = "已跳过";
 
+    /// <summary>重复事项行状态：今日已完成（M5b：系列仍继续）。</summary>
+    public const string ITEMS_STATUS_TODAY_DONE = "今日已完成";
+
+    /// <summary>重复事项行状态：今日已跳过（M5b：系列仍继续）。</summary>
+    public const string ITEMS_STATUS_TODAY_SKIPPED = "今日已跳过";
+
     /// <summary>事项行操作：完成。</summary>
     public const string ITEMS_ACTION_DONE = "完成";
 

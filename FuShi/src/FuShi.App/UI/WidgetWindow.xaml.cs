@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using FuShi.Core;
+using FuShi.Domain.Layout;
 using FuShi.Domain.Scheduling;
 using FuShi.ViewModels;
 
@@ -128,11 +129,33 @@ public partial class WidgetWindow : Window
         double moved = Math.Abs(after.X - before.X) + Math.Abs(after.Y - before.Y);
         if (moved >= SystemParameters.MinimumHorizontalDragDistance + SystemParameters.MinimumVerticalDragDistance)
         {
-            SavePosition(); // 拖完记住位置
+            SnapToWorkAreaEdge();
+            SavePosition(); // 拖完记住位置（吸附后的位置）
         }
 
         // 拖动时鼠标被窗口捕获，MouseLeave 收不到；拖完按光标真实位置补一次判定
         ScheduleExpand(IsCursorInside());
+    }
+
+    /// <summary>
+    /// 拖动结束后的贴边吸附（M5b）：距当前显示器工作区边缘 ≤ 16 DIP 时贴合。
+    /// 判定用纯函数 <see cref="WidgetDock.Snap"/>，这里只负责把工作区换算到窗口坐标系并落位。
+    /// </summary>
+    private void SnapToWorkAreaEdge()
+    {
+        var workArea = WindowChromeHelper.GetWorkAreaInWindowCoordinates(this);
+        var snapped = WidgetDock.Snap(
+            Left,
+            Top,
+            ActualWidth,
+            ActualHeight,
+            workArea.Left,
+            workArea.Top,
+            workArea.Right,
+            workArea.Bottom);
+
+        Left = snapped.Left;
+        Top = snapped.Top;
     }
 
     /// <summary>把当前位置交给视图模型持久化（写入 AppSetting 单行表）。</summary>

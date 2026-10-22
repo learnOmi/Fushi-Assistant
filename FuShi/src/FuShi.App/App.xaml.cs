@@ -36,6 +36,12 @@ public partial class App : Application
     private const string MUTEX_ID = "FuShi.SingleInstance.Mutex";
 
     /// <summary>
+    /// 二次启动唤醒事件名（M5b）。主实例创建并等待它；副实例 <c>Set()</c> 一次后退出，
+    /// 主实例收到信号即前置主窗口，不再「双击了没反应」。
+    /// </summary>
+    private const string ACTIVATE_EVENT_NAME = "FuShi.Activate";
+
+    /// <summary>
     /// 结束当前线程的「活动菜单」（Win32 原生弹出菜单）。托盘右键菜单若由 H.NotifyIcon 以原生方式弹出，
     /// WPF 的 <c>ContextMenu.IsOpen</c> 管不到它；退出时补一刀 <c>EndMenu</c> 兜底。无活动菜单时返回 0，属无副作用调用。
     /// </summary>
@@ -50,6 +56,13 @@ public partial class App : Application
     private const double DEFAULT_WIDGET_MARGIN = 24.0;
 
     private Mutex? _mutex;
+
+    /// <summary>二次启动唤醒事件（主实例持有）。</summary>
+    private EventWaitHandle? _activateEvent;
+
+    /// <summary>唤醒事件的线程池等待注册；退出时必须注销，否则进程无法干净结束。</summary>
+    private RegisteredWaitHandle? _activateWait;
+
     private IHost? _host;
     private WidgetWindow? _widget;
     private MainWindow? _mainWindow;
@@ -78,14 +91,18 @@ public partial class App : Application
         // 就走到 Shutdown() 分支；若此时 _logger 仍为 null，OnExit 会抛 NullReferenceException。
         _logger = LoggingSetup.Create();
 
-        // 单实例：二次启动直接退出（避免两个引擎/两套托盘）。
+        // 单实例：二次启动唤醒已有主窗口后退出（避免两个引擎/两套托盘）。
         _mutex = new Mutex(true, MUTEX_ID, out var isNewInstance);
         if (!isNewInstance)
         {
-            _logger.Information("已有实例在运行，二次启动退出");
+            var signaled = TryActivateExistingInstance();
+            _logger.Information("已有实例在运行，二次启动退出（唤醒信号：{Signaled}）", signaled);
             Shutdown();
             return;
         }
+
+        // 事件必须早于 base.OnStartup 注册：否则副实例若紧接着启动，会因找不到事件而静默退出。
+        StartActivationWaiter();
 
         base.OnStartup(e);
 
@@ -133,6 +150,7 @@ public partial class App : Application
         RunExitStep(StopReminderEngine, "停止提醒引擎", exitWatch);
         RunExitStep(() => _widget?.SavePosition(), "保存悬浮窗位置", exitWatch);
         RunExitStep(UnhookOpenScheduleRequested, "摘除悬浮窗事件", exitWatch);
+        RunExitStep(StopActivationWaiter, "摘除二次启动唤醒", exitWatch);
         RunExitStep(() => _tray?.Dispose(), "释放托盘图标", exitWatch);
 
         // 释放 DI 宿主会把日志器一并关掉（ILogger 以<b>实例</b>方式注册进容器，容器退出时会 Dispose 它），
@@ -663,6 +681,75 @@ public partial class App : Application
         }
 
         _mainWindow.Activate();
+    }
+
+    /// <summary>
+    /// 主实例：创建命名唤醒事件并在线程池等待。副实例 Set 一次即触发主窗口前置。
+    /// 全部包在 try/catch 里——唤醒只是便利功能，失败绝不能影响主实例启动。
+    /// </summary>
+    private void StartActivationWaiter()
+    {
+        try
+        {
+            _activateEvent = new EventWaitHandle(
+                initialState: false,
+                EventResetMode.AutoReset,
+                ACTIVATE_EVENT_NAME);
+
+            _activateWait = ThreadPool.RegisterWaitForSingleObject(
+                _activateEvent,
+                (_, timedOut) =>
+                {
+                    // AutoReset + 无限等待：只有收到信号才会回调（timedOut 恒为 false）。
+                    if (!timedOut)
+                    {
+                        Dispatcher.InvokeAsync(OpenMainWindow);
+                    }
+                },
+                state: null,
+                Timeout.Infinite,
+                executeOnlyOnce: false);
+        }
+        catch (Exception ex)
+        {
+            _logger.Warning(ex, "注册二次启动唤醒失败（不影响正常启动）");
+            _activateWait = null;
+            _activateEvent?.Dispose();
+            _activateEvent = null;
+        }
+    }
+
+    /// <summary>
+    /// 副实例：通知已有主实例前置主窗口。
+    /// </summary>
+    /// <returns>是否成功发出唤醒信号；主实例尚未注册事件时返回 false（退回静默退出）。</returns>
+    private bool TryActivateExistingInstance()
+    {
+        try
+        {
+            using var handle = EventWaitHandle.OpenExisting(ACTIVATE_EVENT_NAME);
+            handle.Set();
+            return true;
+        }
+        catch (WaitHandleCannotBeOpenedException)
+        {
+            // 主实例还没建好事件（极短竞态），静默退出即可。
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.Warning(ex, "唤醒已有实例失败，按静默退出处理");
+            return false;
+        }
+    }
+
+    /// <summary>退出时注销唤醒等待并释放事件；必须早于日志器关闭执行，失败只记日志。</summary>
+    private void StopActivationWaiter()
+    {
+        _activateWait?.Unregister(null);
+        _activateWait = null;
+        _activateEvent?.Dispose();
+        _activateEvent = null;
     }
 
     /// <summary>悬浮组件请求打开课表。</summary>

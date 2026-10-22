@@ -33,6 +33,9 @@ public partial class ReminderPopupWindow : Window
     /// <summary>用户已选动作；null 表示尚未选择（关闭时按「未响应」补记）。</summary>
     private ReminderAction? _chosen;
 
+    /// <summary>主按钮对应的动作：课表为「开始」，事项为「完成」（M5b）。</summary>
+    private ReminderAction _primaryAction = ReminderAction.Start;
+
     /// <summary>构造弹窗。</summary>
     /// <param name="message">引擎派发的提醒内容（标题 / 正文 / 归属实例）。</param>
     /// <param name="onAction">用户动作回调；汇总类通知传 null 表示无交互。</param>
@@ -49,6 +52,9 @@ public partial class ReminderPopupWindow : Window
         // 三按钮仅在有归属实例时出现；「稍后」文案带上延后天数（取领域默认值，避免硬编码）。
         if (_hasActions)
         {
+            // 事项的主按钮是「完成」：把动作映射成 Finish，弹窗本身不判断来源类型。
+            _primaryAction = message.IsTask ? ReminderAction.Finish : ReminderAction.Start;
+            StartButton.Content = message.IsTask ? ReminderText.ACTION_FINISH : ReminderText.ACTION_START;
             SnoozeButton.Content = string.Format(ReminderText.ACTION_SNOOZE_FORMAT, TimeDefaults.DEFAULT_SNOOZE_MINUTES);
             ActionsPanel.Visibility = Visibility.Visible;
         }
@@ -78,8 +84,8 @@ public partial class ReminderPopupWindow : Window
     /// <summary>自动消失（带动作时到点即视为「未响应」）。</summary>
     private void OnAutoDismiss(object? sender, EventArgs e) => Close();
 
-    /// <summary>「开始」按钮。</summary>
-    private void OnStart(object sender, RoutedEventArgs e) => Choose(ReminderAction.Start);
+    /// <summary>主按钮（课表「开始」/ 事项「完成」）。</summary>
+    private void OnStart(object sender, RoutedEventArgs e) => Choose(_primaryAction);
 
     /// <summary>「稍后」按钮。</summary>
     private void OnSnooze(object sender, RoutedEventArgs e) => Choose(ReminderAction.Snooze);

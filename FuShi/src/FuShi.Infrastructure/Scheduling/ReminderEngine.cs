@@ -343,7 +343,8 @@ public sealed class ReminderEngine : IDisposable
             ReminderStrength.Normal,
             reminder.Occurrence.Id,
             plannedAt,
-            reminder.EndsAt));
+            reminder.EndsAt,
+            reminder.IsTask));
 
         _logger.Information("触发提醒：{Subject} @ {PlannedAt}", reminder.SubjectName, plannedAt);
         ScheduleChanged?.Invoke(this, EventArgs.Empty);

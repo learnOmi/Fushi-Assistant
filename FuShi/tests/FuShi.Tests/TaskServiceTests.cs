@@ -78,7 +78,7 @@ public sealed class TaskServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task MarkDone_ShouldLogCompletion_AndStopFutureReminders()
+    public async Task MarkDone_OnRepeatingTask_ShouldOnlyCloseTodayInstance()
     {
         var task = await _tasks.CreateAsync(
             NewTask("背单词", DateTime.Today.AddHours(9), TaskRecurrenceExpander.RULE_DAILY),
@@ -87,14 +87,16 @@ public sealed class TaskServiceTests : IDisposable
         (await _tasks.MarkDoneAsync(task.Id, _now.AddMinutes(30))).Should().BeTrue();
 
         using var context = _db.CreateContext();
-        context.Tasks.Single(t => t.Id == task.Id).Status.Should().Be(TaskItemStatus.Done);
+        context.Tasks.Single(t => t.Id == task.Id).Status
+            .Should().Be(TaskItemStatus.Pending, "重复事项完成一次 ≠ 结束系列");
 
         var occurrences = context.Occurrences
             .Where(o => o.SourceType == OwnerType.Task && o.SourceId == task.Id)
             .ToList();
 
-        occurrences.Should().ContainSingle("今天这条置为完成，明天及以后不再提醒");
-        occurrences[0].Status.Should().Be(OccurrenceStatus.Done);
+        occurrences.Should().HaveCountGreaterThan(1, "明天及以后的实例必须保留，次日照常提醒");
+        occurrences.Should().Contain(o => o.PlannedAt.Date == DateTime.Today && o.Status == OccurrenceStatus.Done);
+        occurrences.Should().Contain(o => o.PlannedAt.Date > DateTime.Today && o.Status == OccurrenceStatus.Pending);
 
         var log = context.CompletionLogs.Single();
         log.EntryId.Should().Be(task.Id);
@@ -106,20 +108,53 @@ public sealed class TaskServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task MarkSkipped_ShouldSetSkippedAndClearFuture()
+    public async Task MarkDone_OnOneShotTask_ShouldEndSeries()
     {
         var task = await _tasks.CreateAsync(
-            NewTask("刷题", DateTime.Today.AddHours(9), TaskRecurrenceExpander.RULE_WEEKLY),
+            NewTask("交作业", DateTime.Today.AddHours(9), TaskRecurrenceExpander.RULE_NONE),
+            _now);
+
+        (await _tasks.MarkDoneAsync(task.Id, _now.AddMinutes(30))).Should().BeTrue();
+
+        using var context = _db.CreateContext();
+        context.Tasks.Single(t => t.Id == task.Id).Status.Should().Be(TaskItemStatus.Done);
+        context.Occurrences
+            .Where(o => o.SourceType == OwnerType.Task
+                        && o.SourceId == task.Id
+                        && o.Status == OccurrenceStatus.Pending)
+            .Should().BeEmpty("一次性事项完成即结束，未来实例清空");
+    }
+
+    [Fact]
+    public async Task MarkSkipped_OnRepeatingTask_ShouldOnlySkipTodayInstance()
+    {
+        var task = await _tasks.CreateAsync(
+            NewTask("刷题", DateTime.Today.AddHours(9), TaskRecurrenceExpander.RULE_DAILY),
             _now);
 
         (await _tasks.MarkSkippedAsync(task.Id, _now)).Should().BeTrue();
 
         using var context = _db.CreateContext();
-        context.Tasks.Single(t => t.Id == task.Id).Status.Should().Be(TaskItemStatus.Skipped);
+        context.Tasks.Single(t => t.Id == task.Id).Status
+            .Should().Be(TaskItemStatus.Pending, "跳过本次不结束系列");
         context.Occurrences
             .Where(o => o.SourceType == OwnerType.Task && o.SourceId == task.Id && o.Status == OccurrenceStatus.Pending)
-            .Should().BeEmpty("跳过后不再有未来待触发实例");
+            .Should().NotBeEmpty("未来实例仍然保留，次日照常提醒");
         context.CompletionLogs.Single().Status.Should().Be(CompletionStatus.Skipped);
+    }
+
+    [Fact]
+    public async Task MarkDone_TwiceOnSameDay_ShouldNotDoubleLog()
+    {
+        var task = await _tasks.CreateAsync(
+            NewTask("背单词", DateTime.Today.AddHours(9), TaskRecurrenceExpander.RULE_DAILY),
+            _now);
+
+        (await _tasks.MarkDoneAsync(task.Id, _now.AddMinutes(30))).Should().BeTrue();
+        (await _tasks.MarkDoneAsync(task.Id, _now.AddMinutes(40))).Should().BeFalse("同一天不允许重复落账");
+
+        using var context = _db.CreateContext();
+        context.CompletionLogs.Should().ContainSingle();
     }
 
     [Fact]
@@ -185,7 +220,7 @@ public sealed class TaskServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task RespondFinish_OnTaskOccurrence_ShouldCloseTaskAndLogWithoutMinutes()
+    public async Task RespondFinish_OnRepeatingTaskOccurrence_ShouldOnlyCloseTodayInstance()
     {
         var due = DateTime.Today.AddHours(9);
         var task = await _tasks.CreateAsync(
@@ -205,18 +240,44 @@ public sealed class TaskServiceTests : IDisposable
         await _response.RespondFinishAsync(occurrenceId, due.AddMinutes(3));
 
         using var read = _db.CreateContext();
-        read.Tasks.Single(t => t.Id == task.Id).Status.Should().Be(TaskItemStatus.Done);
+        read.Tasks.Single(t => t.Id == task.Id).Status
+            .Should().Be(TaskItemStatus.Pending, "重复事项完成一次不结束系列");
         read.Occurrences
             .Where(o => o.SourceType == OwnerType.Task
                         && o.SourceId == task.Id
                         && o.PlannedAt > due)
-            .Should().BeEmpty("重复事项完成一次后，后续次数不再提醒");
+            .Should().NotBeEmpty("后续次数仍然保留，次日照常提醒");
 
         var log = read.CompletionLogs.Single();
         log.EntryId.Should().Be(task.Id);
         log.SubjectId.Should().BeNull("事项 Id 可能撞上课表条目 Id，不能误取科目");
         log.PlannedMin.Should().Be(0);
         log.ActualMin.Should().Be(0, "事项没有实际耗时语义");
+    }
+
+    [Fact]
+    public async Task RespondFinish_OnOneShotTaskOccurrence_ShouldCloseSeries()
+    {
+        var due = DateTime.Today.AddHours(9);
+        var task = await _tasks.CreateAsync(
+            NewTask("交作业", due, TaskRecurrenceExpander.RULE_NONE), _now);
+
+        int occurrenceId;
+        using (var context = _db.CreateContext())
+        {
+            occurrenceId = context.Occurrences.Single(o => o.SourceId == task.Id).Id;
+        }
+
+        await _schedule.MarkFiredAsync(occurrenceId, due);
+        await _response.RespondFinishAsync(occurrenceId, due.AddMinutes(3));
+
+        using var read = _db.CreateContext();
+        read.Tasks.Single(t => t.Id == task.Id).Status.Should().Be(TaskItemStatus.Done);
+        read.Occurrences
+            .Where(o => o.SourceType == OwnerType.Task
+                        && o.SourceId == task.Id
+                        && o.Status == OccurrenceStatus.Pending)
+            .Should().BeEmpty("一次性事项完成即结束");
     }
 
     [Fact]
